@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>ระบบประเมินการแพ้ยา</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=9" />
   <style>
     body { font-family: sans-serif; background:#f3f4f6; margin:0; }
     header { background: linear-gradient(90deg, #7c3aed, #ec4899); color:white; padding:1rem 1.5rem; }
@@ -21,7 +21,7 @@
     <p>โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
   </header>
 
-  <!-- ปุ่มสลับ 6 หน้า -->
+  <!-- แถบเมนู 6 หน้า -->
   <div class="tabs">
     <button onclick="showPage('p1')" id="tab-p1" class="active">หน้า 1 ผิวหนัง</button>
     <button onclick="showPage('p2')" id="tab-p2">หน้า 2 ระบบอื่นๆ</button>
@@ -35,6 +35,7 @@
     <!-- หน้า 1 -->
     <section id="p1" class="page active">
       <h2>หน้า 1 ระบบผิวหนัง</h2>
+      <!-- 👇 ตัวนี้สำคัญ ถ้าไม่มีอันนี้ หน้า 1 จะโล่ง -->
       <div id="page1-root"></div>
     </section>
 
@@ -70,14 +71,14 @@
     </section>
   </main>
 
-  <!-- สำคัญ: ห้ามลบ และอย่าแทรกสคริปต์ล้างของไว้ตรงนี้แล้ว -->
-  <script src="data.js?v=4"></script>
-  <script src="page1.js?v=4"></script>
-  <script src="page2.js?v=4"></script>
-  <script src="page3.js?v=4"></script>
-  <script src="page4.js?v=4"></script>
-  <script src="page5.js?v=4"></script>
-  <script src="page6.js?v=4"></script>
+  <!-- โหลด JS (เปลี่ยนเป็น v=9 ทั้งหมดเพื่อบังคับโหลดใหม่) -->
+  <script src="data.js?v=9"></script>
+  <script src="page1.js?v=9"></script>
+  <script src="page2.js?v=9"></script>
+  <script src="page3.js?v=9"></script>
+  <script src="page4.js?v=9"></script>
+  <script src="page5.js?v=9"></script>
+  <script src="page6.js?v=9"></script>
 
   <script>
     function showPage(id) {
@@ -86,7 +87,7 @@
       document.getElementById(id).classList.add('active');
       document.getElementById('tab-' + id).classList.add('active');
 
-      // ถ้าเป็นหน้า 6 ให้เรียกแสดงผลใหม่
+      // ถ้าเป็นหน้า 6 ให้ดึงข้อมูลทุกครั้ง
       if (id === 'p6' && typeof renderSummary === 'function') {
         renderSummary();
       }
