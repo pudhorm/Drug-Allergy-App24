@@ -1,737 +1,842 @@
 // page1.js
-document.addEventListener("DOMContentLoaded", initPage1);
+// หน้า 1 ระบบผิวหนัง (เวอร์ชันตัด "หัวเว็บซ้ำ" ออกแล้ว)
+// สมมติว่ามี data.js ที่ประกาศ window.drugAllergyData อยู่ก่อนหน้านี้
 
-function initPage1() {
+document.addEventListener("DOMContentLoaded", function () {
   const root = document.getElementById("page1-root");
   if (!root) return;
 
+  // ถ้ายังไม่มีตัวแปรกลาง ให้สร้างโครงให้ก่อน
+  if (!window.drugAllergyData) {
+    window.drugAllergyData = {
+      patient: {
+        name: "",
+        hn: "",
+        age: "",
+        weight: "",
+        underlying: "",
+        drugAllergyHistory: "",
+      },
+      skin: {
+        rashShape: [],
+        rashColor: [],
+        blisters: [],
+        peeling: "",
+        peelingOther: "",
+        scaling: {
+          flaky: false,
+          dry: false,
+          peeling: false,
+          detail: "",
+          other: "",
+        },
+        exudate: {
+          serous: false,
+          serousDetail: "",
+          crust: false,
+          crustDetail: "",
+        },
+        itch: {
+          hasItch: "",
+          severity: "",
+        },
+        pain: {
+          pain: false,
+          burn: false,
+          sore: false,
+        },
+        swelling: {
+          has: "",
+          detail: "",
+        },
+        pustule: {
+          has: "",
+          size: "",
+          count: "",
+        },
+        location: [],
+        locationOther: "",
+        distribution: "",
+        distributionOther: "",
+        onset: "",
+        onsetOther: "",
+        imageDataUrl: "",
+      },
+    };
+  }
+
+  const data = window.drugAllergyData;
+
+  // ---------- วาดหน้า 1 (ไม่มีหัวซ้ำ) ----------
   root.innerHTML = `
-    <div class="page-card" style="max-width:880px; margin:0 auto;">
-      <!-- ส่วนที่ 1 ข้อมูลผู้ป่วย -->
-      <div class="section-box section-1">
-        <div class="section-title">
-          <span>🧑‍⚕️</span>
-          <span>ส่วนที่ 1 ข้อมูลผู้ป่วย</span>
-        </div>
-
-        <div class="form-grid-2">
-          <!-- ชื่อ -->
-          <div class="form-field" style="grid-column:1 / -1;">
-            <div class="form-label">ชื่อ-สกุล</div>
-            <input id="p1-name" type="text" class="form-input" placeholder="เช่น นางสาวกนกพร ตัวอย่าง">
-          </div>
-
-          <!-- HN -->
-          <div class="form-field">
-            <div class="form-label">HN</div>
-            <input id="p1-hn" type="text" class="form-input" placeholder="เช่น 123456">
-          </div>
-
-          <!-- อายุ -->
-          <div class="form-field">
-            <div class="form-label">อายุ</div>
-            <select id="p1-age-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="ทารก / เด็กเล็ก (< 1 ปี)">ทารก / เด็กเล็ก (&lt; 1 ปี)</option>
-              <option value="1–5 ปี">1–5 ปี</option>
-              <option value="6–12 ปี">6–12 ปี</option>
-              <option value="13–18 ปี">13–18 ปี</option>
-              <option value="19–40 ปี">19–40 ปี</option>
-              <option value="41–60 ปี">41–60 ปี</option>
-              <option value="มากกว่า 60 ปี">มากกว่า 60 ปี</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-age-other" type="text" class="form-input" placeholder="ระบุอายุ (ปี)" style="margin-top:.4rem; display:none;">
-          </div>
-
-          <!-- น้ำหนัก -->
-          <div class="form-field">
-            <div class="form-label">น้ำหนัก (กก.)</div>
-            <select id="p1-weight-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="< 10 กก.">&lt; 10 กก.</option>
-              <option value="10–20 กก.">10–20 กก.</option>
-              <option value="21–40 กก.">21–40 กก.</option>
-              <option value="41–60 กก.">41–60 กก.</option>
-              <option value="61–80 กก.">61–80 กก.</option>
-              <option value="81–100 กก.">81–100 กก.</option>
-              <option value="มากกว่า 100 กก.">มากกว่า 100 กก.</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-weight-other" type="number" min="0" step="0.1" class="form-input" placeholder="เช่น 54.5" style="margin-top:.4rem; display:none;">
-          </div>
-
-          <!-- โรคประจำตัว -->
-          <div class="form-field" style="grid-column:1 / -1;">
-            <div class="form-label">โรคประจำตัว</div>
-            <select id="p1-underlying-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="ไม่มีโรคประจำตัว">ไม่มีโรคประจำตัว</option>
-              <option value="เบาหวาน (DM)">เบาหวาน (DM)</option>
-              <option value="ความดันโลหิตสูง (HT)">ความดันโลหิตสูง (HT)</option>
-              <option value="โรคไตเรื้อรัง (CKD)">โรคไตเรื้อรัง (CKD)</option>
-              <option value="หอบหืด / COPD">หอบหืด / COPD</option>
-              <option value="โรคหัวใจ">โรคหัวใจ</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-underlying-other" type="text" class="form-input" placeholder="ระบุโรคประจำตัว" style="margin-top:.4rem; display:none;">
-          </div>
-
-          <!-- ประวัติการแพ้ยา -->
-          <div class="form-field" style="grid-column:1 / -1;">
-            <div class="form-label">ประวัติการแพ้ยา (เคยแพ้มาก่อน)</div>
-            <textarea id="p1-allergy-history" rows="2" class="form-textarea" placeholder="เช่น แพ้ amoxicillin ผื่นขึ้น, แพ้ NSAIDs บวม"></textarea>
-          </div>
-        </div>
+    <div class="section-card">
+      <h2 class="section-title">🧑‍⚕️ ส่วนที่ 1 ข้อมูลผู้ป่วย</h2>
+      <div class="grid-3">
+        <label class="field">
+          <span>ชื่อ-สกุล</span>
+          <input id="pt-name" type="text" />
+        </label>
+        <label class="field">
+          <span>HN</span>
+          <input id="pt-hn" type="text" />
+        </label>
+        <label class="field">
+          <span>อายุ</span>
+          <input id="pt-age" type="number" min="0" />
+        </label>
+        <label class="field">
+          <span>น้ำหนัก (กก.)</span>
+          <input id="pt-weight" type="number" min="0" step="0.1" />
+        </label>
+        <label class="field field-wide">
+          <span>โรคประจำตัว</span>
+          <input id="pt-underlying" type="text" />
+        </label>
+        <label class="field field-wide">
+          <span>ประวัติการแพ้ยา (รายละเอียด)</span>
+          <textarea id="pt-allergy-history" rows="2"></textarea>
+        </label>
       </div>
+    </div>
 
-      <!-- ส่วนที่ 2 ประเมินผื่นผิวหนัง -->
-      <div class="section-box section-2">
-        <div class="section-title">
-          <span>🩹</span>
-          <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
-        </div>
+    <div class="section-card">
+      <h2 class="section-title">🩹 ส่วนที่ 2 ประเมินอาการผิวหนัง</h2>
 
-        <!-- รูปร่างผื่น -->
-        <p class="form-label">รูปร่างผื่น</p>
-        <div class="check-group check-2col">
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ปื้นนูน"> ปื้นนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลม 3 ชั้น"> วงกลม 3 ชั้น</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบหยัก"> ขอบหยัก</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบไม่ชัดเจน"> ขอบไม่ชัดเจน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จ้ำเลือด"> จ้ำเลือด</label>
-
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มแบนราบ"> ตุ่มแบนราบ</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลมชั้นเดียว"> วงกลมชั้นเดียว</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงรี"> วงรี</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบเรียบ"> ขอบเรียบ</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จุดเล็ก"> จุดเล็ก</label>
-        </div>
-        <input id="p1-rashShape-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
-
-        <!-- สีผื่น -->
-        <p class="form-label" style="margin-top:1rem;">สีผื่น</p>
-        <div class="check-group check-2col">
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงซีด"> แดงซีด</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ใส"> ใส</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เหลือง"> เหลือง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ดำ"> ดำ</label>
-
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงไหม้"> แดงไหม้</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ซีด"> ซีด</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ม่วง"> ม่วง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="มันเงา"> มันเงา</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เทา"> เทา</label>
-        </div>
-        <input id="p1-rashColor-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
-
-        <!-- ตุ่มน้ำ -->
-        <p class="form-label" style="margin-top:1rem;">ตุ่มน้ำ</p>
-        <div class="check-group">
-          <label class="check-inline"><input type="checkbox" name="p1-blister" value="เล็ก"> เล็ก</label>
-          <label class="check-inline"><input type="checkbox" name="p1-blister" value="กลาง"> กลาง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-blister" value="ใหญ่"> ใหญ่</label>
-        </div>
-
-        <!-- ผิวหนังหลุดลอก -->
-        <div class="form-field" style="margin-top:.75rem; max-width:280px;">
-          <div class="form-label">ผิวหนังหลุดลอก</div>
-          <select id="p1-peeling" class="form-select">
-            <option value="">-- เลือก --</option>
-            <option value="ผิวหนังหลุดลอกตรงกลางผื่น">ผิวหนังหลุดลอกตรงกลางผื่น</option>
-            <option value="ไม่เกิน 10% BSA">ไม่เกิน 10% BSA</option>
-            <option value="เกิน 30% BSA">เกิน 30% BSA</option>
-          </select>
-        </div>
-
-        <!-- อาการคัน -->
-        <p class="form-label" style="margin-top:1rem;">อาการคัน</p>
-        <div class="check-group">
-          <label class="check-inline"><input type="checkbox" id="p1-itch-much"> คันมาก</label>
-          <label class="check-inline"><input type="checkbox" id="p1-itch-little"> คันน้อย</label>
-          <label class="check-inline"><input type="checkbox" id="p1-itch-none"> ไม่คัน</label>
-        </div>
-
-        <!-- ปวด แสบ เจ็บ -->
-        <p class="form-label" style="margin-top:1rem;">ปวด / แสบ / เจ็บ</p>
-        <div class="check-group">
-          <label class="check-inline"><input type="checkbox" id="p1-pain-pain"> ปวด</label>
-          <label class="check-inline"><input type="checkbox" id="p1-pain-burn"> แสบ</label>
-          <label class="check-inline"><input type="checkbox" id="p1-pain-sore"> เจ็บ</label>
-        </div>
-
-        <!-- บวม -->
-        <p class="form-label" style="margin-top:1rem;">บวม</p>
-        <div class="check-group" style="max-width:240px;">
-          <label class="check-inline"><input type="checkbox" id="p1-swelling-yes"> บวม</label>
-          <label class="check-inline"><input type="checkbox" id="p1-swelling-no"> ไม่บวม</label>
-        </div>
-
-        <!-- ขุย / แห้ง / ลอก -->
-        <p class="form-label" style="margin-top:1rem;">ขุย / แห้ง / ลอก</p>
-        <div class="check-group" style="max-width:320px;">
-          <label class="check-inline"><input type="checkbox" id="p1-scale-scale" value="ขุย"> ขุย</label>
-          <label class="check-inline"><input type="checkbox" id="p1-scale-dry" value="แห้ง"> แห้ง</label>
-          <label class="check-inline"><input type="checkbox" id="p1-scale-peel" value="ลอก"> ลอก</label>
-          <label class="check-inline"><input type="checkbox" id="p1-scale-none" value="ไม่พบ"> ไม่พบ</label>
-        </div>
-        <input id="p1-scale-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.5rem; display:none;">
-
-        <!-- ตุ่มหนอง -->
-        <p class="form-label" style="margin-top:1rem;">ตุ่มหนอง</p>
-        <div class="check-group" style="max-width:320px;">
-          <label class="check-inline">
-            <input type="checkbox" id="p1-pustule-yes" value="พบ"> พบ
-          </label>
-          <label class="check-inline">
-            <input type="checkbox" id="p1-pustule-no" value="ไม่พบ"> ไม่พบ
+      <!-- 1.1 รูปร่างผื่น -->
+      <div class="sub-block">
+        <h3>1.1 รูปร่างผื่น</h3>
+        <div class="chips" id="rash-shape-group">
+          ${[
+            "ตุ่มนูน",
+            "ตุ่มแบนราบ",
+            "ปื้นนูน",
+            "วงกลมชั้นเดียว",
+            "วงกลม 3 ชั้น",
+            "วงรี",
+            "ขอบหยัก",
+            "ขอบเรียบ",
+            "ขอบไม่ชัดเจน",
+            "จุดเล็ก",
+            "จ้ำเลือด",
+          ]
+            .map(
+              (txt) => `
+              <label class="chip">
+                <input type="checkbox" value="${txt}" />
+                <span>${txt}</span>
+              </label>`
+            )
+            .join("")}
+          <label class="chip chip-input">
+            อื่นๆ
+            <input id="rash-shape-other" type="text" placeholder="ระบุ" />
           </label>
         </div>
-        <input id="p1-pustule-detail" type="text" class="form-input" placeholder="ระบุขนาด/จำนวน เช่น 3 ตุ่ม ที่ลำตัว" style="margin-top:.5rem; display:none;">
+      </div>
 
-        <!-- น้ำเหลือง/สะเก็ด -->
-        <div class="form-field" style="margin-top:1rem;">
-          <div class="form-label">น้ำเหลือง/สะเก็ด</div>
-          <div class="check-group">
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…
-            </label>
-          </div>
-          <input id="p1-exu-other" type="text" class="form-input" placeholder="ระบุลักษณะน้ำเหลือง/สะเก็ด" style="margin-top:.4rem; display:none;">
+      <!-- 1.2 สีผื่น -->
+      <div class="sub-block">
+        <h3>1.2 สีผื่น</h3>
+        <div class="chips" id="rash-color-group">
+          ${[
+            "แดง",
+            "แดงไหม้",
+            "แดงซีด",
+            "ซีด",
+            "ใส",
+            "ม่วง",
+            "เหลือง",
+            "มันเงา",
+            "ดำ",
+            "เทา",
+          ]
+            .map(
+              (txt) => `
+              <label class="chip chip-pink">
+                <input type="checkbox" value="${txt}" />
+                <span>${txt}</span>
+              </label>`
+            )
+            .join("")}
+          <label class="chip chip-input">
+            อื่นๆ
+            <input id="rash-color-other" type="text" placeholder="ระบุ" />
+          </label>
         </div>
+      </div>
 
-        <!-- ตำแหน่งที่พบผื่น -->
-        <div class="form-field" style="margin-top:1rem;">
-          <div class="form-label">ตำแหน่งที่พบ:</div>
-          <div class="check-group check-2col">
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ทั่วร่างกาย"> ทั่วร่างกาย</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="มือ"> มือ</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้า"> หน้า</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ขา"> ขา</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ริมฝีปาก"> ริมฝีปาก</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="จมูก"> จมูก</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="รักแร้"> รักแร้</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้าท้อง"> หน้าท้อง</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ทวาร"> ทวาร</label>
-
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ศีรษะ"> ศีรษะ</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="เท้า"> เท้า</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="แขน"> แขน</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="อวัยวะเพศ"> อวัยวะเพศ</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="รอบดวงตา"> รอบดวงตา</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ลำคอ"> ลำคอ</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="ขาหนีบ"> ขาหนีบ</label>
-            <label class="check-inline"><input type="checkbox" name="p1-location" value="หลัง"> หลัง</label>
-
-            <label class="check-inline"><input type="checkbox" id="p1-location-other-toggle" value="other"> อื่นๆ ระบุ…</label>
-          </div>
-          <input id="p1-location-other" type="text" class="form-input" placeholder="เช่น หนังศีรษะ ข้อพับ ใต้ราวนม ฯลฯ" style="margin-top:.5rem; display:none;">
+      <!-- 1.3 ตุ่มน้ำ -->
+      <div class="sub-block">
+        <h3>1.3 ตุ่มน้ำ</h3>
+        <div class="blister-buttons">
+          <button type="button" data-size="small">+ เล็ก</button>
+          <button type="button" data-size="medium">+ กลาง</button>
+          <button type="button" data-size="large">+ ใหญ่</button>
         </div>
+        <div id="blister-list" class="blister-list"></div>
+      </div>
 
-        <!-- การกระจายตัว -->
-        <div class="form-field" style="margin-top:.75rem; max-width:280px;">
-          <div class="form-label">การกระจายตัว</div>
-          <select id="p1-distribution" class="form-select">
-            <option value="">-- เลือก --</option>
-            <option value="สมมาตร">สมมาตร</option>
-            <option value="ไม่สมมาตร">ไม่สมมาตร</option>
-            <option value="เฉพาะที่">เฉพาะที่</option>
+      <!-- 1.4 ผิวหลุดลอก -->
+      <div class="sub-block">
+        <h3>1.4 ผิวหลุดลอก</h3>
+        <div class="chips" id="peeling-group">
+          <label class="chip chip-orange">
+            <input type="radio" name="peeling" value="ผิวหนังหลุดลอกตรงกลางผื่น" />
+            <span>ผิวหนังหลุดลอกตรงกลางผื่น</span>
+          </label>
+          <label class="chip chip-orange">
+            <input type="radio" name="peeling" value="ไม่เกิน 10% BSA" />
+            <span>ไม่เกิน 10% BSA</span>
+          </label>
+          <label class="chip chip-orange">
+            <input type="radio" name="peeling" value="เกิน 30% BSA" />
+            <span>เกิน 30% BSA</span>
+          </label>
+          <label class="chip chip-input">
+            อื่นๆ
+            <input id="peeling-other" type="text" placeholder="ระบุ" />
+          </label>
+        </div>
+      </div>
+
+      <!-- 1.5 ขุย/แห้ง/ลอก -->
+      <div class="sub-block">
+        <h3>1.5 ขุย/แห้ง/ลอก</h3>
+        <div class="chips line">
+          <label class="chip chip-gray">
+            <input id="scaling-flaky" type="checkbox" />
+            <span>ขุย</span>
+          </label>
+          <label class="chip chip-gray">
+            <input id="scaling-dry" type="checkbox" />
+            <span>แห้ง</span>
+          </label>
+          <label class="chip chip-gray">
+            <input id="scaling-peeling" type="checkbox" />
+            <span>ลอก</span>
+          </label>
+          <input id="scaling-detail" class="inline-input" type="text" placeholder="รายละเอียด" />
+          <input id="scaling-other" class="inline-input" type="text" placeholder="อื่นๆ (ระบุ)" />
+        </div>
+      </div>
+
+      <!-- 1.6 น้ำเหลือง/สะเก็ด -->
+      <div class="sub-block">
+        <h3>1.6 น้ำเหลือง/สะเก็ด</h3>
+        <div class="chips line">
+          <label class="chip chip-yellow">
+            <input id="exudate-serous" type="checkbox" />
+            <span>น้ำเหลือง</span>
+          </label>
+          <input id="exudate-serous-detail" class="inline-input" type="text" placeholder="ปริมาณ/สี" />
+          <label class="chip chip-yellow">
+            <input id="exudate-crust" type="checkbox" />
+            <span>สะเก็ด</span>
+          </label>
+          <input id="exudate-crust-detail" class="inline-input" type="text" placeholder="ปริมาณ/สี" />
+        </div>
+      </div>
+
+      <!-- 1.7 คัน -->
+      <div class="sub-block">
+        <h3>1.7 คัน</h3>
+        <div class="chips" id="itch-group">
+          <label class="chip chip-violet">
+            <input type="radio" name="itch" value="คัน" />
+            <span>คัน</span>
+          </label>
+          <select id="itch-severity" class="inline-input" style="display:none;">
+            <option value="">-- ระดับความคัน --</option>
+            <option value="มาก">คันมาก</option>
+            <option value="น้อย">คันน้อย</option>
           </select>
+          <label class="chip chip-violet">
+            <input type="radio" name="itch" value="ไม่คัน" />
+            <span>ไม่คัน</span>
+          </label>
         </div>
       </div>
 
-      <!-- ส่วนที่ 3 ระยะเวลาที่เริ่มมีอาการ -->
-      <div class="section-box section-3">
-        <div class="section-title">
-          <span>⏱️</span>
-          <span>ส่วนที่ 3 ระยะเวลาที่เริ่มมีอาการ</span>
-        </div>
-        <div class="form-field" style="max-width:280px;">
-          <div class="form-label">เลือกช่วงเวลา</div>
-          <select id="p1-onset" class="form-select">
-            <option value="">-- เลือก --</option>
-            <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
-            <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
-            <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
-            <option value="1–7 วัน">1–7 วัน</option>
-            <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
-            <option value="other">อื่นๆ ระบุ…</option>
-          </select>
-          <input id="p1-onset-other" type="text" class="form-input" placeholder="ระบุช่วงเวลา เช่น 2 เดือนหลังเริ่มยา" style="margin-top:.5rem; display:none;">
+      <!-- 1.8 ปวด/แสบ/เจ็บ -->
+      <div class="sub-block">
+        <h3>1.8 ปวด/แสบ/เจ็บ</h3>
+        <div class="chips">
+          <label class="chip chip-red">
+            <input id="pain-pain" type="checkbox" />
+            <span>ปวด</span>
+          </label>
+          <label class="chip chip-red">
+            <input id="pain-burn" type="checkbox" />
+            <span>แสบ</span>
+          </label>
+          <label class="chip chip-red">
+            <input id="pain-sore" type="checkbox" />
+            <span>เจ็บ</span>
+          </label>
         </div>
       </div>
 
-      <!-- ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย -->
-      <div class="section-box" style="background:#fff8d6; border:1px solid #f5d063; margin-top:1rem;">
-        <div class="section-title" style="color:#b7791f;">
-          <span>🖼️</span>
-          <span>ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย (ถ้ามี)</span>
-        </div>
-        <div id="p1-image-drop"
-             style="border:2px dashed #fbbf24; border-radius:1rem; padding:1.5rem 1rem; text-align:center; background:#fff; cursor:pointer;">
-          <div style="width:80px; height:80px; background:#fef3c7; border-radius:9999px; margin:0 auto 1rem; display:flex; align-items:center; justify-content:center; font-size:2rem;">🖼️</div>
-          <p style="font-weight:600; color:#92400e; margin-bottom:.25rem;">อัปโหลดรูปภาพ</p>
-          <p style="color:#b45309; font-size:.85rem; margin-bottom:1rem;">ลากมาวาง หรือเลือกไฟล์ • PNG, JPG, GIF</p>
-          <button type="button" id="p1-image-btn" style="background:#a855f7; color:white; border:0; padding:.45rem .9rem; border-radius:.6rem; cursor:pointer;">
-            เลือกไฟล์
-          </button>
-          <input type="file" id="p1-image-input" accept="image/*" style="display:none;">
-          <div id="p1-image-preview-wrap" style="margin-top:1rem; display:none;">
-            <img id="p1-image-preview" src="" alt="preview" style="max-width:100%; border-radius:.75rem; border:1px solid #fbbf24;">
-            <div>
-              <button type="button" id="p1-image-clear" style="margin-top:.5rem; background:#f97316; color:white; border:0; padding:.3rem .75rem; border-radius:.5rem; cursor:pointer;">ลบรูปนี้</button>
-            </div>
-          </div>
+      <!-- 1.9 บวม -->
+      <div class="sub-block">
+        <h3>1.9 บวม</h3>
+        <div class="chips" id="swelling-group">
+          <label class="chip chip-green">
+            <input type="radio" name="swelling" value="บวม" />
+            <span>บวม</span>
+          </label>
+          <input id="swelling-detail" class="inline-input" type="text" placeholder="รายละเอียด" style="display:none;" />
+          <label class="chip chip-green">
+            <input type="radio" name="swelling" value="ไม่บวม" />
+            <span>ไม่บวม</span>
+          </label>
         </div>
       </div>
 
-      <div style="margin-top:1.2rem; display:flex; gap:.65rem;">
-        <button id="p1-save" class="primary-btn" style="background:#7c3aed;color:white;border:0;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;">
-          บันทึกหน้า 1
-        </button>
-        <button id="p1-clear" type="button" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;">
-          ล้างข้อมูลหน้านี้
-        </button>
-        <span id="p1-status" class="save-status" style="margin-left:.5rem;"></span>
+      <!-- 1.10 ตุ่มหนอง -->
+      <div class="sub-block">
+        <h3>1.10 ตุ่มหนอง</h3>
+        <div class="chips" id="pustule-group">
+          <label class="chip chip-lime">
+            <input type="radio" name="pustule" value="พบ" />
+            <span>พบ</span>
+          </label>
+          <input id="pustule-size" class="inline-input" type="text" placeholder="ขนาด" style="display:none;" />
+          <input id="pustule-count" class="inline-input" type="text" placeholder="จำนวน" style="display:none;" />
+          <label class="chip chip-lime">
+            <input type="radio" name="pustule" value="ไม่พบ" />
+            <span>ไม่พบ</span>
+          </label>
+        </div>
       </div>
+
+      <!-- 1.11 ตำแหน่ง/การกระจาย -->
+      <div class="sub-block">
+        <h3>1.11 ตำแหน่งที่พบ / การกระจายตัว</h3>
+        <div class="chips" id="location-group">
+          ${[
+            "ใบหน้า/ศีรษะ",
+            "ลำตัว",
+            "แขน",
+            "ขา",
+            "มือ/เท้า",
+            "ลำคอ",
+            "ข้อพับ",
+            "เยื่อบุ",
+          ]
+            .map(
+              (txt) => `
+              <label class="chip chip-sky">
+                <input type="checkbox" value="${txt}" />
+                <span>${txt}</span>
+              </label>`
+            )
+            .join("")}
+          <label class="chip chip-input">
+            อื่นๆ
+            <input id="location-other" type="text" placeholder="ระบุ" />
+          </label>
+        </div>
+        <div class="chips" id="distribution-group">
+          <label class="chip chip-sky">
+            <input type="radio" name="distribution" value="สมมาตร" />
+            <span>สมมาตร</span>
+          </label>
+          <label class="chip chip-sky">
+            <input type="radio" name="distribution" value="ไม่สมมาตร" />
+            <span>ไม่สมมาตร</span>
+          </label>
+          <label class="chip chip-input">
+            อื่นๆ
+            <input id="distribution-other" type="text" placeholder="ระบุ" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2 class="section-title">⏱️ ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h2>
+      <select id="onset-select" class="wide-input">
+        <option value="">-- โปรดเลือก --</option>
+        <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
+        <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
+        <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
+        <option value="1 สัปดาห์">1 สัปดาห์</option>
+        <option value="2 สัปดาห์">2 สัปดาห์</option>
+        <option value="3 สัปดาห์">3 สัปดาห์</option>
+        <option value="4 สัปดาห์">4 สัปดาห์</option>
+        <option value="5 สัปดาห์">5 สัปดาห์</option>
+        <option value="6 สัปดาห์">6 สัปดาห์</option>
+        <option value="อื่นๆ">อื่นๆ ระบุ…</option>
+      </select>
+      <input id="onset-other" class="wide-input" type="text" placeholder="ระบุระยะเวลา" style="display:none;" />
+    </div>
+
+    <div class="section-card">
+      <h2 class="section-title">🖼️ ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย</h2>
+      <label class="upload-box" id="img-drop">
+        ลากรูปมาวาง หรือคลิกเพื่อเลือกไฟล์ (PNG/JPG/GIF)
+        <input id="img-input" type="file" accept="image/*" hidden />
+      </label>
+      <img id="img-preview" class="img-preview" alt="" style="display:none;" />
     </div>
   `;
 
-  // ========= event พื้นฐาน =========
+  // -------------------- BIND PATIENT --------------------
+  const ptName = document.getElementById("pt-name");
+  const ptHN = document.getElementById("pt-hn");
+  const ptAge = document.getElementById("pt-age");
+  const ptWeight = document.getElementById("pt-weight");
+  const ptUnderlying = document.getElementById("pt-underlying");
+  const ptAllergyHistory = document.getElementById("pt-allergy-history");
 
-  // ปุ่มบันทึก
-  const btn = document.getElementById("p1-save");
-  if (btn) btn.addEventListener("click", savePage1);
+  // set initial
+  if (ptName) ptName.value = data.patient.name || "";
+  if (ptHN) ptHN.value = data.patient.hn || "";
+  if (ptAge) ptAge.value = data.patient.age || "";
+  if (ptWeight) ptWeight.value = data.patient.weight || "";
+  if (ptUnderlying) ptUnderlying.value = data.patient.underlying || "";
+  if (ptAllergyHistory) ptAllergyHistory.value = data.patient.drugAllergyHistory || "";
 
-  // ปุ่มล้าง
-  const clearBtn = document.getElementById("p1-clear");
-  if (clearBtn) clearBtn.addEventListener("click", clearPage1);
-
-  // อายุ
-  const ageSel = document.getElementById("p1-age-select");
-  const ageOther = document.getElementById("p1-age-other");
-  if (ageSel && ageOther) {
-    ageSel.addEventListener("change", () => {
-      ageOther.style.display = ageSel.value === "other" ? "block" : "none";
+  // events
+  ptName &&
+    ptName.addEventListener("input", (e) => {
+      data.patient.name = e.target.value;
     });
-  }
-
-  // น้ำหนัก
-  const wtSel = document.getElementById("p1-weight-select");
-  const wtOther = document.getElementById("p1-weight-other");
-  if (wtSel && wtOther) {
-    wtSel.addEventListener("change", () => {
-      wtOther.style.display = wtSel.value === "other" ? "block" : "none";
+  ptHN &&
+    ptHN.addEventListener("input", (e) => {
+      data.patient.hn = e.target.value;
     });
-  }
-
-  // โรคประจำตัว
-  const undSel = document.getElementById("p1-underlying-select");
-  const undOther = document.getElementById("p1-underlying-other");
-  if (undSel && undOther) {
-    undSel.addEventListener("change", () => {
-      undOther.style.display = undSel.value === "other" ? "block" : "none";
+  ptAge &&
+    ptAge.addEventListener("input", (e) => {
+      data.patient.age = e.target.value;
     });
-  }
-
-  // onset
-  const onsetSel = document.getElementById("p1-onset");
-  const onsetOther = document.getElementById("p1-onset-other");
-  if (onsetSel && onsetOther) {
-    onsetSel.addEventListener("change", () => {
-      onsetOther.style.display = onsetSel.value === "other" ? "block" : "none";
+  ptWeight &&
+    ptWeight.addEventListener("input", (e) => {
+      data.patient.weight = e.target.value;
     });
-  }
-
-  // น้ำเหลือง/สะเก็ด
-  const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
-  const exuOtherInput  = document.getElementById("p1-exu-other");
-  if (exuOtherToggle && exuOtherInput) {
-    exuOtherToggle.addEventListener("change", () => {
-      exuOtherInput.style.display = exuOtherToggle.checked ? "block" : "none";
+  ptUnderlying &&
+    ptUnderlying.addEventListener("input", (e) => {
+      data.patient.underlying = e.target.value;
     });
-  }
-
-  // ตำแหน่งอื่นๆ
-  const locOtherToggle = document.getElementById("p1-location-other-toggle");
-  const locOtherInput  = document.getElementById("p1-location-other");
-  if (locOtherToggle && locOtherInput) {
-    locOtherToggle.addEventListener("change", () => {
-      locOtherInput.style.display = locOtherToggle.checked ? "block" : "none";
+  ptAllergyHistory &&
+    ptAllergyHistory.addEventListener("input", (e) => {
+      data.patient.drugAllergyHistory = e.target.value;
     });
-  }
 
-  // ขุย/แห้ง/ลอก
-  const sclScale = document.getElementById("p1-scale-scale");
-  const sclDry   = document.getElementById("p1-scale-dry");
-  const sclPeel  = document.getElementById("p1-scale-peel");
-  const sclNone  = document.getElementById("p1-scale-none");
-  const sclOther = document.getElementById("p1-scale-other");
-  if (sclNone) {
-    sclNone.addEventListener("change", () => {
-      if (sclNone.checked) {
-        if (sclScale) sclScale.checked = false;
-        if (sclDry) sclDry.checked = false;
-        if (sclPeel) sclPeel.checked = false;
-        if (sclOther) sclOther.style.display = "none";
-      }
+  // -------------------- RASH SHAPE --------------------
+  const rashShapeGroup = document.getElementById("rash-shape-group");
+  if (rashShapeGroup) {
+    // set initial
+    const checkboxes = rashShapeGroup.querySelectorAll("input[type=checkbox]");
+    checkboxes.forEach((cb) => {
+      cb.checked = (data.skin.rashShape || []).includes(cb.value);
+      cb.addEventListener("change", () => {
+        const current = new Set(data.skin.rashShape || []);
+        if (cb.checked) current.add(cb.value);
+        else current.delete(cb.value);
+        data.skin.rashShape = Array.from(current);
+      });
     });
-  }
-  [sclScale, sclDry, sclPeel].forEach(chk => {
-    if (chk) {
-      chk.addEventListener("change", () => {
-        if (chk.checked && sclNone) sclNone.checked = false;
-        if (sclOther) sclOther.style.display = "block";
+    const other = document.getElementById("rash-shape-other");
+    if (other) {
+      other.value = data.skin.rashShapeOther || "";
+      other.addEventListener("input", (e) => {
+        data.skin.rashShapeOther = e.target.value;
       });
     }
+  }
+
+  // -------------------- RASH COLOR --------------------
+  const rashColorGroup = document.getElementById("rash-color-group");
+  if (rashColorGroup) {
+    const checkboxes = rashColorGroup.querySelectorAll("input[type=checkbox]");
+    checkboxes.forEach((cb) => {
+      cb.checked = (data.skin.rashColor || []).includes(cb.value);
+      cb.addEventListener("change", () => {
+        const current = new Set(data.skin.rashColor || []);
+        if (cb.checked) current.add(cb.value);
+        else current.delete(cb.value);
+        data.skin.rashColor = Array.from(current);
+      });
+    });
+    const other = document.getElementById("rash-color-other");
+    if (other) {
+      other.value = data.skin.rashColorOther || "";
+      other.addEventListener("input", (e) => {
+        data.skin.rashColorOther = e.target.value;
+      });
+    }
+  }
+
+  // -------------------- BLISTERS --------------------
+  const blisterList = document.getElementById("blister-list");
+  const blisterButtons = root.querySelectorAll(".blister-buttons button");
+
+  function renderBlisters() {
+    if (!blisterList) return;
+    blisterList.innerHTML = "";
+    (data.skin.blisters || []).forEach((b, idx) => {
+      const row = document.createElement("div");
+      row.className = "blister-row";
+      row.innerHTML = `
+        <span class="blister-label">${b.size === "small" ? "เล็ก" : b.size === "medium" ? "กลาง" : "ใหญ่"}</span>
+        <input type="number" min="0" class="blister-count-input" value="${b.count || ""}" />
+        <button type="button" class="blister-del">ลบ</button>
+      `;
+      const countInput = row.querySelector("input");
+      const delBtn = row.querySelector("button");
+      countInput.addEventListener("input", (e) => {
+        data.skin.blisters[idx].count = e.target.value;
+      });
+      delBtn.addEventListener("click", () => {
+        data.skin.blisters.splice(idx, 1);
+        renderBlisters();
+      });
+      blisterList.appendChild(row);
+    });
+  }
+
+  blisterButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const size = btn.getAttribute("data-size");
+      data.skin.blisters = data.skin.blisters || [];
+      data.skin.blisters.push({ size, count: "" });
+      renderBlisters();
+    });
   });
 
-  // ตุ่มหนอง
-  const pusYes = document.getElementById("p1-pustule-yes");
-  const pusNo  = document.getElementById("p1-pustule-no");
-  const pusDet = document.getElementById("p1-pustule-detail");
-  if (pusYes && pusNo && pusDet) {
-    pusYes.addEventListener("change", () => {
-      if (pusYes.checked) {
-        pusNo.checked = false;
-        pusDet.style.display = "block";
-      }
+  // render ถ้ามีของเก่า
+  if (!Array.isArray(data.skin.blisters)) {
+    data.skin.blisters = [];
+  }
+  renderBlisters();
+
+  // -------------------- PEELING --------------------
+  const peelingGroup = document.getElementById("peeling-group");
+  if (peelingGroup) {
+    const radios = peelingGroup.querySelectorAll("input[type=radio][name=peeling]");
+    radios.forEach((r) => {
+      r.checked = data.skin.peeling === r.value;
+      r.addEventListener("change", () => {
+        if (r.checked) {
+          data.skin.peeling = r.value;
+        }
+      });
     });
-    pusNo.addEventListener("change", () => {
-      if (pusNo.checked) {
-        pusYes.checked = false;
-        pusDet.style.display = "none";
-        pusDet.value = "";
-      }
+    const peelingOther = document.getElementById("peeling-other");
+    if (peelingOther) {
+      peelingOther.value = data.skin.peelingOther || "";
+      peelingOther.addEventListener("input", (e) => {
+        data.skin.peelingOther = e.target.value;
+      });
+    }
+  }
+
+  // -------------------- SCALING --------------------
+  const scFlaky = document.getElementById("scaling-flaky");
+  const scDry = document.getElementById("scaling-dry");
+  const scPeel = document.getElementById("scaling-peeling");
+  const scDetail = document.getElementById("scaling-detail");
+  const scOther = document.getElementById("scaling-other");
+
+  if (scFlaky) {
+    scFlaky.checked = !!data.skin.scaling.flaky;
+    scFlaky.addEventListener("change", (e) => {
+      data.skin.scaling.flaky = e.target.checked;
+    });
+  }
+  if (scDry) {
+    scDry.checked = !!data.skin.scaling.dry;
+    scDry.addEventListener("change", (e) => {
+      data.skin.scaling.dry = e.target.checked;
+    });
+  }
+  if (scPeel) {
+    scPeel.checked = !!data.skin.scaling.peeling;
+    scPeel.addEventListener("change", (e) => {
+      data.skin.scaling.peeling = e.target.checked;
+    });
+  }
+  if (scDetail) {
+    scDetail.value = data.skin.scaling.detail || "";
+    scDetail.addEventListener("input", (e) => {
+      data.skin.scaling.detail = e.target.value;
+    });
+  }
+  if (scOther) {
+    scOther.value = data.skin.scaling.other || "";
+    scOther.addEventListener("input", (e) => {
+      data.skin.scaling.other = e.target.value;
     });
   }
 
-  // บวม
-  const swYes = document.getElementById("p1-swelling-yes");
-  const swNo = document.getElementById("p1-swelling-no");
-  if (swYes && swNo) {
-    swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
-    swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
+  // -------------------- EXUDATE --------------------
+  const exSerous = document.getElementById("exudate-serous");
+  const exSerousDet = document.getElementById("exudate-serous-detail");
+  const exCrust = document.getElementById("exudate-crust");
+  const exCrustDet = document.getElementById("exudate-crust-detail");
+
+  if (exSerous) {
+    exSerous.checked = !!data.skin.exudate.serous;
+    exSerous.addEventListener("change", (e) => {
+      data.skin.exudate.serous = e.target.checked;
+    });
+  }
+  if (exSerousDet) {
+    exSerousDet.value = data.skin.exudate.serousDetail || "";
+    exSerousDet.addEventListener("input", (e) => {
+      data.skin.exudate.serousDetail = e.target.value;
+    });
+  }
+  if (exCrust) {
+    exCrust.checked = !!data.skin.exudate.crust;
+    exCrust.addEventListener("change", (e) => {
+      data.skin.exudate.crust = e.target.checked;
+    });
+  }
+  if (exCrustDet) {
+    exCrustDet.value = data.skin.exudate.crustDetail || "";
+    exCrustDet.addEventListener("input", (e) => {
+      data.skin.exudate.crustDetail = e.target.value;
+    });
   }
 
-  // ========== อัปโหลดรูป ==========
-  const imgDrop   = document.getElementById("p1-image-drop");
-  const imgInput  = document.getElementById("p1-image-input");
-  const imgBtn    = document.getElementById("p1-image-btn");
-  const imgPrev   = document.getElementById("p1-image-preview");
-  const imgWrap   = document.getElementById("p1-image-preview-wrap");
-  const imgClear  = document.getElementById("p1-image-clear");
+  // -------------------- ITCH --------------------
+  const itchGroup = document.getElementById("itch-group");
+  const itchSeverity = document.getElementById("itch-severity");
+  if (itchGroup) {
+    const radios = itchGroup.querySelectorAll("input[type=radio][name=itch]");
+    radios.forEach((r) => {
+      r.checked = data.skin.itch.hasItch === r.value;
+      r.addEventListener("change", () => {
+        data.skin.itch.hasItch = r.value;
+        if (r.value === "คัน") {
+          itchSeverity.style.display = "inline-block";
+        } else {
+          itchSeverity.style.display = "none";
+          data.skin.itch.severity = "";
+          itchSeverity.value = "";
+        }
+      });
+    });
+  }
+  if (itchSeverity) {
+    if (data.skin.itch.hasItch === "คัน") {
+      itchSeverity.style.display = "inline-block";
+      itchSeverity.value = data.skin.itch.severity || "";
+    }
+    itchSeverity.addEventListener("change", (e) => {
+      data.skin.itch.severity = e.target.value;
+    });
+  }
 
-  function showImage(file) {
+  // -------------------- PAIN --------------------
+  const painPain = document.getElementById("pain-pain");
+  const painBurn = document.getElementById("pain-burn");
+  const painSore = document.getElementById("pain-sore");
+  if (painPain) {
+    painPain.checked = !!data.skin.pain.pain;
+    painPain.addEventListener("change", (e) => {
+      data.skin.pain.pain = e.target.checked;
+    });
+  }
+  if (painBurn) {
+    painBurn.checked = !!data.skin.pain.burn;
+    painBurn.addEventListener("change", (e) => {
+      data.skin.pain.burn = e.target.checked;
+    });
+  }
+  if (painSore) {
+    painSore.checked = !!data.skin.pain.sore;
+    painSore.addEventListener("change", (e) => {
+      data.skin.pain.sore = e.target.checked;
+    });
+  }
+
+  // -------------------- SWELLING --------------------
+  const swellingGroup = document.getElementById("swelling-group");
+  const swellingDetail = document.getElementById("swelling-detail");
+  if (swellingGroup) {
+    const radios = swellingGroup.querySelectorAll("input[type=radio][name=swelling]");
+    radios.forEach((r) => {
+      r.checked = data.skin.swelling.has === r.value;
+      r.addEventListener("change", () => {
+        data.skin.swelling.has = r.value;
+        if (r.value === "บวม") {
+          swellingDetail.style.display = "inline-block";
+          swellingDetail.value = data.skin.swelling.detail || "";
+        } else {
+          swellingDetail.style.display = "none";
+          data.skin.swelling.detail = "";
+          swellingDetail.value = "";
+        }
+      });
+    });
+  }
+  if (swellingDetail && data.skin.swelling.has === "บวม") {
+    swellingDetail.style.display = "inline-block";
+    swellingDetail.value = data.skin.swelling.detail || "";
+    swellingDetail.addEventListener("input", (e) => {
+      data.skin.swelling.detail = e.target.value;
+    });
+  }
+
+  // -------------------- PUSTULE --------------------
+  const pustuleGroup = document.getElementById("pustule-group");
+  const pustuleSize = document.getElementById("pustule-size");
+  const pustuleCount = document.getElementById("pustule-count");
+  if (pustuleGroup) {
+    const radios = pustuleGroup.querySelectorAll("input[type=radio][name=pustule]");
+    radios.forEach((r) => {
+      r.checked = data.skin.pustule.has === r.value;
+      r.addEventListener("change", () => {
+        data.skin.pustule.has = r.value;
+        if (r.value === "พบ") {
+          pustuleSize.style.display = "inline-block";
+          pustuleCount.style.display = "inline-block";
+          pustuleSize.value = data.skin.pustule.size || "";
+          pustuleCount.value = data.skin.pustule.count || "";
+        } else {
+          pustuleSize.style.display = "none";
+          pustuleCount.style.display = "none";
+          data.skin.pustule.size = "";
+          data.skin.pustule.count = "";
+        }
+      });
+    });
+  }
+  if (pustuleSize) {
+    pustuleSize.addEventListener("input", (e) => {
+      data.skin.pustule.size = e.target.value;
+    });
+  }
+  if (pustuleCount) {
+    pustuleCount.addEventListener("input", (e) => {
+      data.skin.pustule.count = e.target.value;
+    });
+  }
+
+  // -------------------- LOCATION / DISTRIBUTION --------------------
+  const locationGroup = document.getElementById("location-group");
+  if (locationGroup) {
+    const boxes = locationGroup.querySelectorAll("input[type=checkbox]");
+    boxes.forEach((cb) => {
+      cb.checked = (data.skin.location || []).includes(cb.value);
+      cb.addEventListener("change", () => {
+        const set = new Set(data.skin.location || []);
+        if (cb.checked) set.add(cb.value);
+        else set.delete(cb.value);
+        data.skin.location = Array.from(set);
+      });
+    });
+
+    const locOther = document.getElementById("location-other");
+    if (locOther) {
+      locOther.value = data.skin.locationOther || "";
+      locOther.addEventListener("input", (e) => {
+        data.skin.locationOther = e.target.value;
+      });
+    }
+  }
+
+  const distributionGroup = document.getElementById("distribution-group");
+  if (distributionGroup) {
+    const radios = distributionGroup.querySelectorAll("input[type=radio][name=distribution]");
+    radios.forEach((r) => {
+      r.checked = data.skin.distribution === r.value;
+      r.addEventListener("change", () => {
+        data.skin.distribution = r.value;
+      });
+    });
+    const distOther = document.getElementById("distribution-other");
+    if (distOther) {
+      distOther.value = data.skin.distributionOther || "";
+      distOther.addEventListener("input", (e) => {
+        data.skin.distributionOther = e.target.value;
+      });
+    }
+  }
+
+  // -------------------- ONSET --------------------
+  const onsetSelect = document.getElementById("onset-select");
+  const onsetOther = document.getElementById("onset-other");
+  if (onsetSelect) {
+    onsetSelect.value = data.skin.onset || "";
+    if (data.skin.onset === "อื่นๆ") {
+      onsetOther.style.display = "block";
+      onsetOther.value = data.skin.onsetOther || "";
+    }
+    onsetSelect.addEventListener("change", (e) => {
+      data.skin.onset = e.target.value;
+      if (e.target.value === "อื่นๆ") {
+        onsetOther.style.display = "block";
+      } else {
+        onsetOther.style.display = "none";
+        data.skin.onsetOther = "";
+        onsetOther.value = "";
+      }
+    });
+  }
+  if (onsetOther) {
+    onsetOther.addEventListener("input", (e) => {
+      data.skin.onsetOther = e.target.value;
+    });
+  }
+
+  // -------------------- IMAGE UPLOAD --------------------
+  const imgDrop = document.getElementById("img-drop");
+  const imgInput = document.getElementById("img-input");
+  const imgPreview = document.getElementById("img-preview");
+
+  function showImageFromDataUrl(url) {
+    if (!imgPreview) return;
+    if (url) {
+      imgPreview.src = url;
+      imgPreview.style.display = "block";
+    } else {
+      imgPreview.style.display = "none";
+    }
+  }
+
+  // ถ้ามีรูปเดิม
+  if (data.skin.imageDataUrl) {
+    showImageFromDataUrl(data.skin.imageDataUrl);
+  }
+
+  function handleFile(file) {
     if (!file) return;
-    const ok = /image\/(png|jpe?g|gif|webp)/i.test(file.type);
-    if (!ok) return;
+    if (!/image\/(png|jpe?g|gif)/i.test(file.type)) return;
     const reader = new FileReader();
-    reader.onload = e => {
-      imgPrev.src = e.target.result;
-      imgWrap.style.display = "block";
-      // เก็บใส่ dataset ไว้ตอนเซฟ
-      imgPrev.dataset.imgdata = e.target.result;
+    reader.onload = function (ev) {
+      const url = ev.target.result;
+      data.skin.imageDataUrl = url;
+      showImageFromDataUrl(url);
     };
     reader.readAsDataURL(file);
   }
 
-  if (imgBtn && imgInput) {
-    imgBtn.addEventListener("click", () => imgInput.click());
+  if (imgDrop) {
+    imgDrop.addEventListener("click", () => {
+      imgInput && imgInput.click();
+    });
+    imgDrop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      imgDrop.classList.add("dragging");
+    });
+    imgDrop.addEventListener("dragleave", () => {
+      imgDrop.classList.remove("dragging");
+    });
+    imgDrop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      imgDrop.classList.remove("dragging");
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      handleFile(file);
+    });
   }
   if (imgInput) {
-    imgInput.addEventListener("change", () => {
-      const f = imgInput.files[0];
-      showImage(f);
+    imgInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      handleFile(file);
     });
   }
-  if (imgDrop) {
-    imgDrop.addEventListener("dragover", e => {
-      e.preventDefault();
-      imgDrop.style.background = "#fff1ce";
-    });
-    imgDrop.addEventListener("dragleave", e => {
-      e.preventDefault();
-      imgDrop.style.background = "#fff";
-    });
-    imgDrop.addEventListener("drop", e => {
-      e.preventDefault();
-      imgDrop.style.background = "#fff";
-      const f = e.dataTransfer.files[0];
-      showImage(f);
-    });
-  }
-  if (imgClear) {
-    imgClear.addEventListener("click", () => {
-      imgPrev.src = "";
-      imgPrev.removeAttribute("data-imgdata");
-      imgWrap.style.display = "none";
-      if (imgInput) imgInput.value = "";
-    });
-  }
-}
-
-// ================== save ==================
-function savePage1(e) {
-  if (e && e.preventDefault) e.preventDefault();
-
-  const name = document.getElementById("p1-name").value;
-  const hn = document.getElementById("p1-hn").value;
-
-  // อายุ
-  const ageSel = document.getElementById("p1-age-select");
-  const ageOther = document.getElementById("p1-age-other");
-  let age = "";
-  if (ageSel) {
-    age = ageSel.value === "other" ? (ageOther ? ageOther.value : "") : ageSel.value;
-  }
-
-  // น้ำหนัก
-  const wtSel = document.getElementById("p1-weight-select");
-  const wtOther = document.getElementById("p1-weight-other");
-  let weight = "";
-  if (wtSel) {
-    weight = wtSel.value === "other" ? (wtOther ? wtOther.value : "") : wtSel.value;
-  }
-
-  // โรคประจำตัว
-  const undSel = document.getElementById("p1-underlying-select");
-  const undOther = document.getElementById("p1-underlying-other");
-  let underlying = "";
-  if (undSel) {
-    underlying = undSel.value === "other" ? (undOther ? undOther.value : "") : undSel.value;
-  }
-
-  const allergyHistory = document.getElementById("p1-allergy-history").value;
-
-  // รูปร่างผื่น
-  const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
-  const rashShapeOther = document.getElementById("p1-rashShape-other")?.value.trim();
-  if (rashShapeOther) {
-    rashShapeValues.push("อื่นๆ: " + rashShapeOther);
-  }
-
-  // สีผื่น
-  const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
-  const rashColorOther = document.getElementById("p1-rashColor-other")?.value.trim();
-  if (rashColorOther) {
-    rashColorValues.push("อื่นๆ: " + rashColorOther);
-  }
-
-  // ตุ่มน้ำ
-  const blisterValues = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
-
-  // หลุดลอก
-  const peeling = document.getElementById("p1-peeling").value;
-
-  // คัน
-  const itchList = [
-    document.getElementById("p1-itch-much")?.checked ? "คันมาก" : "",
-    document.getElementById("p1-itch-little")?.checked ? "คันน้อย" : "",
-    document.getElementById("p1-itch-none")?.checked ? "ไม่คัน" : "",
-  ].filter(Boolean);
-
-  // ปวด/แสบ/เจ็บ
-  const painList = [
-    document.getElementById("p1-pain-pain")?.checked ? "ปวด" : "",
-    document.getElementById("p1-pain-burn")?.checked ? "แสบ" : "",
-    document.getElementById("p1-pain-sore")?.checked ? "เจ็บ" : "",
-  ].filter(Boolean);
-
-  // บวม
-  const swellingList = [
-    document.getElementById("p1-swelling-yes")?.checked ? "บวม" : "",
-    document.getElementById("p1-swelling-no")?.checked ? "ไม่บวม" : "",
-  ].filter(Boolean);
-
-  // ขุย/แห้ง/ลอก
-  const scaleList = [
-    document.getElementById("p1-scale-scale")?.checked ? "ขุย" : "",
-    document.getElementById("p1-scale-dry")?.checked ? "แห้ง" : "",
-    document.getElementById("p1-scale-peel")?.checked ? "ลอก" : "",
-    document.getElementById("p1-scale-none")?.checked ? "ไม่พบ" : "",
-  ].filter(Boolean);
-  const scaleOther = document.getElementById("p1-scale-other")?.value.trim();
-  if (scaleOther && !scaleList.includes("ไม่พบ")) {
-    scaleList.push("อื่นๆ: " + scaleOther);
-  }
-
-  // ตุ่มหนอง
-  let pustule = "";
-  const pusYes = document.getElementById("p1-pustule-yes")?.checked;
-  const pusNo  = document.getElementById("p1-pustule-no")?.checked;
-  const pusDet = document.getElementById("p1-pustule-detail")?.value || "";
-  if (pusYes) {
-    pustule = pusDet ? "พบ: " + pusDet : "พบ";
-  } else if (pusNo) {
-    pustule = "ไม่พบ";
-  }
-
-  // ตำแหน่งที่พบ
-  const locationList = Array.from(document.querySelectorAll("input[name='p1-location']:checked")).map(el => el.value);
-  const locOtherT = document.getElementById("p1-location-other-toggle");
-  const locOtherI = document.getElementById("p1-location-other");
-  if (locOtherT && locOtherT.checked) {
-    const txt = (locOtherI && locOtherI.value.trim()) ? locOtherI.value.trim() : "อื่นๆ";
-    locationList.push(txt);
-  }
-
-  // การกระจายตัว
-  const distribution = document.getElementById("p1-distribution").value;
-
-  // น้ำเหลือง/สะเก็ด
-  const exudateList = [
-    document.getElementById("p1-exu-fluid")?.checked ? "มีน้ำเหลือง" : "",
-    document.getElementById("p1-exu-crust")?.checked ? "มีสะเก็ด" : "",
-    document.getElementById("p1-exu-both")?.checked ? "มีน้ำเหลืองและสะเก็ด" : "",
-    document.getElementById("p1-exu-none")?.checked ? "ไม่มี" : "",
-    document.getElementById("p1-exu-other-toggle")?.checked
-      ? (document.getElementById("p1-exu-other")?.value || "อื่นๆ")
-      : ""
-  ].filter(Boolean);
-
-  // onset
-  const onsetSel2 = document.getElementById("p1-onset");
-  const onsetOther2 = document.getElementById("p1-onset-other");
-  let onset = "";
-  if (onsetSel2) {
-    onset = onsetSel2.value === "other" ? (onsetOther2 ? onsetOther2.value : "") : onsetSel2.value;
-  }
-
-  // รูปภาพ
-  const imgPrev = document.getElementById("p1-image-preview");
-  const imgData = imgPrev && imgPrev.dataset && imgPrev.dataset.imgdata ? imgPrev.dataset.imgdata : "";
-
-  // เก็บ
-  if (!window.drugAllergyData) {
-    window.drugAllergyData = {};
-  }
-
-  window.drugAllergyData.patient = {
-    name,
-    hn,
-    age,
-    weight,
-    underlying,
-    drugAllergyHistory: allergyHistory,
-  };
-
-  window.drugAllergyData.skin = {
-    ...(window.drugAllergyData.skin || {}),
-    rashShape: rashShapeValues,
-    rashColor: rashColorValues,
-    blister: blisterValues,
-    peeling,
-    itch: itchList,
-    pain: painList,
-    swelling: swellingList,
-    scale: scaleList,
-    pustule: pustule,
-    locations: locationList,
-    distribution,
-    exudate: exudateList,
-    onset,
-  };
-
-  // เก็บรูป
-  if (imgData) {
-    window.drugAllergyData.images = {
-      ...(window.drugAllergyData.images || {}),
-      skinPhoto: imgData,
-    };
-  } else {
-    // ถ้าไม่มีรูป ก็อย่าเขียนทับ images อื่น
-  }
-
-  localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
-
-  const st = document.getElementById("p1-status");
-  const btn = document.getElementById("p1-save");
-  if (st) st.textContent = "บันทึกแล้ว ✔";
-  if (btn) {
-    btn.textContent = "บันทึกแล้ว ✔";
-    btn.style.background = "#22c55e";
-    btn.disabled = true;
-  }
-
-  console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
-
-  setTimeout(() => {
-    if (st) st.textContent = "";
-    if (btn) {
-      btn.textContent = "บันทึกหน้า 1";
-      btn.style.background = "#7c3aed";
-      btn.disabled = false;
-    }
-  }, 1500);
-}
-
-// ============= ล้างเฉพาะหน้า 1 =============
-function clearPage1() {
-  // input text / textarea
-  ["p1-name","p1-hn","p1-age-other","p1-weight-other","p1-underlying-other","p1-allergy-history",
-   "p1-rashShape-other","p1-rashColor-other","p1-scale-other","p1-pustule-detail","p1-exu-other","p1-location-other","p1-onset-other"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.value = "";
-      // บางอันอาจถูกซ่อนไว้ ให้ซ่อนกลับ
-      if (id.endsWith("other")) el.style.display = "none";
-    }
-  });
-
-  // select
-  ["p1-age-select","p1-weight-select","p1-underlying-select","p1-peeling","p1-distribution","p1-onset"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-
-  // checkbox ทุกตัวบนหน้า 1
-  document.querySelectorAll("#page1-root input[type='checkbox']").forEach(chk => {
-    chk.checked = false;
-  });
-
-  // รูปภาพ
-  const imgPrev  = document.getElementById("p1-image-preview");
-  const imgWrap  = document.getElementById("p1-image-preview-wrap");
-  const imgInput = document.getElementById("p1-image-input");
-  if (imgPrev) {
-    imgPrev.src = "";
-    imgPrev.removeAttribute("data-imgdata");
-  }
-  if (imgWrap) imgWrap.style.display = "none";
-  if (imgInput) imgInput.value = "";
-
-  // ลบข้อมูลหน้า 1 ออกจาก localStorage แต่ไม่ยุ่งหน้าอื่น
-  const raw = localStorage.getItem("drugAllergyData");
-  if (raw) {
-    try {
-      const obj = JSON.parse(raw);
-      delete obj.patient;
-      delete obj.skin;
-      if (obj.images && obj.images.skinPhoto) {
-        delete obj.images.skinPhoto;
-      }
-      localStorage.setItem("drugAllergyData", JSON.stringify(obj));
-    } catch (err) {
-      console.warn("clearPage1 parse error", err);
-    }
-  }
-
-  const st = document.getElementById("p1-status");
-  if (st) st.textContent = "ล้างข้อมูลแล้ว";
-  setTimeout(() => { if (st) st.textContent = ""; }, 1200);
-}
+});
