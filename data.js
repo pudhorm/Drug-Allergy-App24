@@ -1,40 +1,91 @@
 // data.js
-// ศูนย์รวมข้อมูลกลาง
-window.drugAllergyData = {
-  page1: {
+// ศูนย์กลางข้อมูลของแอพ
+window.drugAllergyData = window.drugAllergyData || {};
+
+// ✅ หน้า 1 — แบบละเอียดตามฟอร์มที่แนบมา
+if (!window.drugAllergyData.page1) {
+  window.drugAllergyData.page1 = {
+    // ส่วนที่ 1 ผู้ป่วย
     name: "",
     hn: "",
     age: "",
     weight: "",
     underlying: "",
     drugAllergyHistory: "",
-    rashShape: "",
-    rashColor: "",
-    skinDetach: "",
-    onset: ""
-  },
-  // กันที่ไว้ก่อนสำหรับหน้า 2-3
-  page2: {
-    resp: { dyspnea: false, wheeze: false },
-    cvs: { lowBP: "", tachy: false },
-    gi: { nvd: false, diarrhea: false }
-  },
-  page3: {
-    wbc: "",
-    eos: "",
-    ast: "",
-    alt: ""
-  },
-  assessment: {
-    level: "ข้อมูลยังไม่พอประเมิน",
-    reason: "ยังไม่มีข้อมูลจากหน้า 1–3",
-    usedPages: ["page1", "page2", "page3"]
-  }
-};
 
+    // ส่วนที่ 2 อาการทางผิวหนัง
+    rashShapes: [],          // 1.1 รูปร่างผื่น (เลือกหลายข้อ)
+    rashShapesOther: "",
+    rashColors: [],          // 1.2 สีผื่น
+    rashColorsOther: "",
+    blisters: {              // 1.3 ตุ่มน้ำ
+      small: false,
+      medium: false,
+      large: false,
+      other: ""
+    },
+    skinDetach: {            // 1.4 ผิวหลุดลอก
+      center: false,
+      lt10: false,
+      gt30: false,
+      none: false,
+      other: ""
+    },
+    scales: {                // 1.5 ขุย/แห้ง/ลอก
+      scale: false,
+      dry: false,
+      peel: false,
+      none: false,
+      other: ""
+    },
+    exudate: {               // 1.6 น้ำเหลือง/สะเก็ด
+      serous: false,
+      crust: false,
+      none: false,
+      other: ""
+    },
+    itch: {                  // 1.7 คัน
+      has: false,
+      severe: false,
+      mild: false,
+      none: false
+    },
+    pain: {                  // 1.8 ปวด/แสบ/เจ็บ
+      pain: false,
+      burn: false,
+      sore: false,
+      none: false
+    },
+    swelling: {              // 1.9 บวม
+      has: false,
+      none: false
+    },
+    pustule: {               // 1.10 ตุ่มหนอง
+      has: false,
+      none: false,
+      detail: ""
+    },
+    locations: [],           // 1.21 ตำแหน่งที่พบ (เลือกหลายข้อ)
+    distribution: "",        // สมมาตร / ไม่สมมาตร / อื่นๆ
+    distributionOther: "",
+
+    // ส่วนที่ 3 ระยะเวลาเริ่มอาการ
+    onset: "",
+    onsetOther: "",
+
+    // ส่วนที่ 4 รูป
+    imageName: "",
+    imageDataUrl: ""
+  };
+}
+
+// ถ้าคุณมี page2 / page3 อยู่แล้วให้คงไว้
+window.drugAllergyData.page2 = window.drugAllergyData.page2 || {};
+window.drugAllergyData.page3 = window.drugAllergyData.page3 || {};
+
+// key สำหรับ localStorage
 const STORAGE_KEY = "drug_allergy_app_v1";
 
-// โหลดข้อมูลเก่า (ถ้ามี)
 (function () {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -43,7 +94,7 @@ const STORAGE_KEY = "drug_allergy_app_v1";
       window.drugAllergyData = Object.assign(window.drugAllergyData, parsed);
     }
   } catch (err) {
-    console.warn("โหลดข้อมูลไม่ได้ ใช้ค่าเริ่มต้นแทน");
+    console.warn("โหลดข้อมูลเก่าไม่ได้ ใช้ค่าเริ่มต้น");
   }
 })();
 
@@ -51,7 +102,7 @@ window.saveDrugAllergyData = function () {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(window.drugAllergyData));
 };
 
-// ประเมินอัตโนมัติ (ตอนนี้เอาจากหน้า 1 ก่อน)
+// ฟังก์ชันประเมินกลาง (ตอนนี้ยังใช้หน้า 1 ได้บางส่วน เดี๋ยวค่อยเพิ่มหน้า 2–3)
 window.evaluateDrugAllergy = function () {
   const d = window.drugAllergyData;
   const p1 = d.page1;
@@ -59,25 +110,35 @@ window.evaluateDrugAllergy = function () {
   let level = "ข้อมูลยังไม่พอประเมิน";
   const reasons = [];
 
-  if (p1.skinDetach === "gt30") {
+  // ถ้ามีผิวหลุดลอก >30% → สงสัย SJS/TEN
+  if (p1.skinDetach && p1.skinDetach.gt30) {
     level = "รุนแรงมาก (สงสัย SJS/TEN)";
-    reasons.push("ผิวหนังหลุดลอก >30%");
+    reasons.push("ผิวหนังหลุดลอกเกิน 30% BSA");
   }
 
-  if (
-    p1.onset === "8to21d" &&
-    (p1.rashShape === "mp" || p1.rashShape === "target")
-  ) {
+  // ถ้ามีตุ่มน้ำ + ผิวหลุดลอกตรงกลางผื่น → ใส่เป็นผื่นรุนแรงไว้ก่อน
+  if (p1.blisters && (p1.blisters.small || p1.blisters.medium || p1.blisters.large) && p1.skinDetach && p1.skinDetach.center) {
     if (level === "ข้อมูลยังไม่พอประเมิน") {
-      level = "ผื่นแพ้ยาทั่วไป (exanthematous)";
+      level = "ผื่นรุนแรง (bullous + central detachment)";
     }
-    reasons.push("ผื่น MP + onset 1–3 สัปดาห์");
+    reasons.push("มีตุ่มน้ำ + ผิวหนังหลุดลอกตรงกลางผื่น");
   }
 
-  d.assessment.level = level;
-  d.assessment.reason = reasons.length
-    ? reasons.join(" / ")
-    : "ยังไม่มีเกณฑ์ชี้ชัด ต้องใส่ข้อมูลเพิ่มจากหน้า 2 และ 3";
+  // onset 1–3 สัปดาห์ + ผื่นแบบ mp → ผื่นแพ้ยาทั่วไป
+  if (p1.onset === "1w" || p1.onset === "2w" || p1.onset === "3w") {
+    if (p1.rashShapes && p1.rashShapes.includes("ตุ่มนูน") || p1.rashShapes.includes("ปื้นนูน")) {
+      if (level === "ข้อมูลยังไม่พอประเมิน") {
+        level = "ผื่นแพ้ยาทั่วไป (morbilliform/exanthematous)";
+      }
+      reasons.push("onset 1–3 สัปดาห์ + ผื่นตุ่ม/ปื้น");
+    }
+  }
+
+  window.drugAllergyData.assessment = {
+    level,
+    reason: reasons.length ? reasons.join(" / ") : "รอข้อมูลจากหน้า 2–3 เพิ่มเติม",
+    usedPages: ["page1"]
+  };
 
   window.saveDrugAllergyData();
 };
