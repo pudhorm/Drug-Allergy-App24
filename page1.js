@@ -92,7 +92,7 @@ function initPage1() {
           <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
         </div>
 
-        <!-- 1.1 รูปร่างผื่น -->
+        <!--  รูปร่างผื่น -->
         <p class="form-label">1.1 รูปร่างผื่น</p>
         <div class="check-group check-2col">
           <!-- ซ้าย -->
@@ -111,7 +111,7 @@ function initPage1() {
         </div>
         <input id="p1-rashShape-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
 
-        <!-- 1.2 สีผื่น (10 ตัว + อื่นๆ) -->
+        <!--  สีผื่น (10 ตัว + อื่นๆ) -->
         <p class="form-label" style="margin-top:1rem;">1.2 สีผื่น</p>
         <div class="check-group check-2col">
           <!-- ซ้าย -->
