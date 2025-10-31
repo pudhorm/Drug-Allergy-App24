@@ -1,11 +1,10 @@
 // page1.js
-// หน้า 1: เก็บ "ข้อมูลผู้ป่วย" + "อาการผิวหนัง" แล้วเขียนเข้า window.drugAllergyData
+// หน้า 1: ข้อมูลผู้ป่วย + อาการผิวหนัง แล้วเขียนเข้า window.drugAllergyData
 
 function initPage1() {
   const root = document.getElementById("page1-root");
   if (!root) return;
 
-  // สร้างฟอร์มหน้า 1
   root.innerHTML = `
     <div style="max-width:720px; background:white; padding:1rem 1.2rem; border-radius:.75rem; box-shadow:0 2px 10px rgba(0,0,0,.05);">
       <h3>🧑‍⚕️ ส่วนที่ 1 ข้อมูลผู้ป่วย</h3>
@@ -24,7 +23,7 @@ function initPage1() {
       <label>โรคประจำตัว
         <input id="p1-underlying" type="text">
       </label>
-      <label>ประวัติการแพ้ยา (เคยแพ้อะไรมาก่อน)
+      <label>ประวัติการแพ้ยา (เคยแพ้มาก่อน)
         <textarea id="p1-allergy-history" rows="2"></textarea>
       </label>
 
@@ -52,17 +51,49 @@ function initPage1() {
     </div>
   `;
 
-  // ผูกปุ่มบันทึก
+  // ผูกปุ่ม
   document.getElementById("p1-save").addEventListener("click", savePage1);
 }
 
 function savePage1() {
-  // 1) อ่านค่าจากฟอร์ม
+  // อ่านค่าจากฟอร์ม
   const name = document.getElementById("p1-name").value;
   const hn = document.getElementById("p1-hn").value;
   const age = document.getElementById("p1-age").value;
   const weight = document.getElementById("p1-weight").value;
   const underlying = document.getElementById("p1-underlying").value;
   const allergyHistory = document.getElementById("p1-allergy-history").value;
-  const onset = document.getElementBy
+  const onset = document.getElementById("p1-onset").value;
 
+  const rashShapeNodes = document.querySelectorAll("input[name='p1-rashShape']:checked");
+  const rashShapeValues = Array.from(rashShapeNodes).map(el => el.value);
+
+  // เขียนเข้าตัวแปรกลาง
+  if (!window.drugAllergyData) {
+    window.drugAllergyData = {};
+  }
+
+  window.drugAllergyData.patient = {
+    name,
+    hn,
+    age,
+    weight,
+    underlying,
+    drugAllergyHistory: allergyHistory
+  };
+
+  window.drugAllergyData.skin = {
+    ...(window.drugAllergyData.skin || {}),
+    rashShape: rashShapeValues,
+    onset: onset
+  };
+
+  // แจ้งผู้ใช้
+  const st = document.getElementById("p1-status");
+  if (st) st.textContent = "บันทึกแล้ว ✔";
+
+  console.log("หลังบันทึกหน้า 1 =", window.drugAllergyData);
+}
+
+// ให้รันตอนโหลดหน้า
+document.addEventListener("DOMContentLoaded", initPage1);
