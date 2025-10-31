@@ -6,7 +6,7 @@ body {
   color: #111827;
 }
 
-/* ================== HEADER ================== */
+/* HEADER: ม่วงไล่สี + ฟองอากาศ + ไอคอนยา */
 header {
   background: linear-gradient(90deg, #7c3aed, #ec4899);
   color: #fff;
@@ -17,81 +17,135 @@ header {
   display: flex;
   align-items: center;
 }
-
 .header-inner {
   position: relative;
   z-index: 5;
 }
-
 .header-title-line {
   display: flex;
   align-items: center;
-  gap: .7rem;
+  gap: 0.7rem;
 }
-
 .header-pill {
   font-size: 2.15rem;
   line-height: 1;
 }
-
 header h1 {
   margin: 0;
   font-size: 2.25rem;
   font-weight: 700;
-  letter-spacing: -.01em;
+  letter-spacing: -0.01em;
 }
-
 header p {
-  margin: .35rem 0 0;
+  margin: 0.35rem 0 0;
   font-size: 1.02rem;
-  opacity: .9;
+  opacity: 0.9;
 }
 
-/* ================== ฟองอากาศ (เข้ม + ลอยสูง) ================== */
+/* ฟองอากาศ */
 .bubble-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
 }
-
 .bubble {
   position: absolute;
   border-radius: 9999px;
-  opacity: 0.68;
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.14));
-  animation: bubble-up 6.3s ease-in-out infinite;
+  opacity: 0.42;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.08));
+  animation: bubble-up 6.3s linear infinite;
 }
-
 .bubble.white {
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0)
+  );
 }
 .bubble.pink {
-  background: radial-gradient(circle at 30% 30%, rgba(236,72,153,0.82), rgba(236,72,153,0));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 179, 215, 0.6),
+    rgba(255, 179, 215, 0)
+  );
 }
 .bubble.purple {
-  background: radial-gradient(circle at 30% 30%, rgba(124,58,237,0.78), rgba(124,58,237,0));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(201, 178, 255, 0.55),
+    rgba(201, 178, 255, 0)
+  );
 }
 .bubble.blue {
-  background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.75), rgba(59,130,246,0));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(173, 214, 255, 0.55),
+    rgba(173, 214, 255, 0)
+  );
 }
-
-/* จุดเริ่มล่าง → ลอยขึ้นสูง */
-.bubble.b1 { width: 68px; height: 68px; left: 4%;  bottom: -85px; animation-duration: 5.5s; }
-.bubble.b2 { width: 54px; height: 54px; left: 19%; bottom: -95px; animation-duration: 6.1s; animation-delay: .4s; }
-.bubble.b3 { width: 110px; height: 110px; left: 38%; bottom: -120px; animation-duration: 6.8s; animation-delay: .8s; }
-.bubble.b4 { width: 72px; height: 72px; right: 18%; bottom: -105px; animation-duration: 5.9s; animation-delay: .2s; }
-.bubble.b5 { width: 48px; height: 48px; right: 6%;  bottom: -90px; animation-duration: 5.4s; animation-delay: 1s; }
-.bubble.b6 { width: 130px; height: 130px; left: 70%; bottom: -140px; animation-duration: 6.5s; }
-
+.bubble.b1 {
+  width: 58px;
+  height: 58px;
+  left: 4%;
+  bottom: -65px;
+  animation-duration: 5.5s;
+}
+.bubble.b2 {
+  width: 42px;
+  height: 42px;
+  left: 19%;
+  bottom: -52px;
+  animation-duration: 6.1s;
+  animation-delay: 0.4s;
+}
+.bubble.b3 {
+  width: 70px;
+  height: 70px;
+  left: 38%;
+  bottom: -78px;
+  opacity: 0.35;
+  animation-duration: 6.8s;
+  animation-delay: 0.8s;
+}
+.bubble.b4 {
+  width: 48px;
+  height: 48px;
+  right: 18%;
+  bottom: -58px;
+  animation-duration: 5.9s;
+  animation-delay: 0.2s;
+}
+.bubble.b5 {
+  width: 36px;
+  height: 36px;
+  right: 6%;
+  bottom: -45px;
+  animation-duration: 5.4s;
+  animation-delay: 1s;
+}
+.bubble.b6 {
+  width: 80px;
+  height: 80px;
+  left: 70%;
+  bottom: -90px;
+  opacity: 0.32;
+  animation-duration: 6.5s;
+}
 @keyframes bubble-up {
-  0%   { transform: translateY(0) translateX(0); }
-  25%  { transform: translateY(-55px) translateX(5px); }
-  55%  { transform: translateY(-120px) translateX(-6px); }
-  100% { transform: translateY(-180px) translateX(3px); }
+  0% {
+    transform: translateY(0) translateX(0);
+  }
+  35% {
+    transform: translateY(-40px) translateX(4px);
+  }
+  70% {
+    transform: translateY(-85px) translateX(-4px);
+  }
+  100% {
+    transform: translateY(-130px) translateX(2px);
+  }
 }
-
-/* จอเล็ก */
 @media (max-width: 600px) {
   header {
     min-height: 115px;
@@ -108,19 +162,19 @@ header p {
   }
 }
 
-/* ================== TABS ================== */
+/* แท็บ 6 หน้า */
 .tabs {
   display: flex;
-  gap: .6rem;
+  gap: 0.6rem;
   background: #fff;
-  padding: .6rem 1.2rem;
+  padding: 0.6rem 1.2rem;
   border-bottom: 1px solid #e5e7eb;
 }
 .tabs button {
   background: #eef2ff;
   border: 0;
-  padding: .4rem .9rem;
-  border-radius: .65rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.65rem;
   cursor: pointer;
   font-weight: 500;
   color: #4b5563;
@@ -130,7 +184,7 @@ header p {
   color: #fff;
 }
 
-/* ================== PAGE LAYOUT ================== */
+/* ตัวหน้าแต่ละหน้า */
 .page {
   display: none;
   padding: 1.5rem 1.2rem 2.5rem;
@@ -139,253 +193,154 @@ header p {
   display: block;
 }
 
-/* ================== คืนการตกแต่งหน้า 1 (กรณี page1.js ไม่มีคลาส) ================== */
+/* ========================= */
+/* สไตล์ของหน้า 1           */
+/* ========================= */
 
-/* โซนของหน้า 1 ทั้งก้อน */
-#page1 {
-  background: #f3f4f6;
+.page-card {
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-/* ให้เนื้อหาหน้า 1 อยู่กลางจอ และเป็นการ์ด */
-#page1-root {
-  max-width: 1080px;
-  margin: 1.5rem auto 2.5rem;
-}
-
-/* ทุก block ชั้นแรกในหน้า 1 ให้เป็นกล่องขาว */
-#page1-root > h2,
-#page1-root > div,
-#page1-root > section,
-#page1-root > form {
+.section-box {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.85rem;
+  margin-bottom: 1rem;
   background: #fff;
-  border-radius: 1rem;
-  padding: 1rem 1.25rem 1.1rem;
-  margin-bottom: 1.1rem;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
-  border: 1px solid rgba(148,163,184,0.18);
+  padding: 1rem 1rem 1.1rem;
 }
 
-/* หัวข้อส่วนที่ 1 / ส่วนที่ 2 ให้เด่นขึ้น */
-#page1-root h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
+.section-box.section-1 {
+  background: #e8fff7;
+  border-color: #8ff1cf;
+}
+
+.section-box.section-2 {
+  background: #fff1f7;
+  border-color: #ffb7d6;
+}
+
+.section-box.section-3 {
+  background: #eef5ff;
+  border-color: #b4cafc;
+}
+
+.section-box.section-4 {
+  background: #fffbe6;
+  border: 1px dashed #fbbf24;
+}
+
+.section-title {
   display: flex;
+  gap: 0.5rem;
   align-items: center;
-  gap: .35rem;
-  margin-top: 0;
-  margin-bottom: .7rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
 }
 
-/* หัวข้อย่อย 1.1, 1.2, ... */
-#page1-root h3 {
-  font-size: .93rem;
-  font-weight: 600;
-  margin: 1rem 0 .5rem;
-}
-
-/* ฟอร์มให้เรียงสองคอลัมน์แบบยืดหยุ่น */
-#page1-root .form-row,
-#page1-root .row {
+/* layout 2 คอลัมน์ */
+.form-grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: .75rem 1.1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+@media (max-width: 720px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* input / textarea / select ทั้งหมดในหน้า 1 */
-#page1-root input[type="text"],
-#page1-root input[type="number"],
-#page1-root input[type="date"],
-#page1-root textarea,
-#page1-root select {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: .6rem;
-  padding: .4rem .55rem;
-  font-size: .9rem;
-  background: #fff;
-  transition: .12s;
-}
-#page1-root textarea {
-  min-height: 65px;
-  resize: vertical;
-}
-#page1-root input:focus,
-#page1-root textarea:focus,
-#page1-root select:focus {
-  outline: none;
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124,58,237,.13);
-}
-
-/* checkbox กลุ่มให้เว้นบรรทัดสวยๆ */
-#page1-root label {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  margin-right: .6rem;
-  margin-bottom: .35rem;
-  font-size: .9rem;
-}
-
-/* กล่อง “อื่นๆ” ที่เป็น input ตามหัวข้อ ให้ความกว้างกำลังดี */
-#page1-root input[placeholder="ระบุ"],
-#page1-root input[placeholder="ระบุ "] {
-  max-width: 170px;
-  display: inline-block;
-}
-
-/* กล่องอัปโหลดรูป ถ้ามี id แบบนี้ */
-#page1-root .upload-box,
-#page1-root #img-drop {
-  background: #faf5ff;
-  border: 1.5px dashed rgba(124,58,237,.55);
-  border-radius: .85rem;
-  padding: 1rem .5rem;
-  text-align: center;
-  font-size: .85rem;
-  color: #5b21b6;
-  cursor: pointer;
-}
-
-/* พรีวิวรูป */
-#page1-root .img-preview,
-#page1-root #img-preview {
-  margin-top: .75rem;
-  max-width: 280px;
-  border-radius: .5rem;
-  border: 1px solid rgba(148,163,184,.35);
+.form-label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
   display: block;
 }
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  background: #fff;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
 
-/* ================== ปุ่มบันทึก (เผื่อใช้) ================== */
+.check-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.check-inline {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.check-2col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 0.35rem 0.75rem;
+}
+@media (max-width: 540px) {
+  .check-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ปุ่ม */
 .primary-btn {
   background: #7c3aed;
   color: #fff;
   border: 0;
-  padding: .45rem .9rem;
-  border-radius: .5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
 }
-.primary-btn:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
-.save-status {
-  margin-left: .5rem;
-  font-size: .8rem;
-  color: #16a34a;
-}
-/* ================== PATCH คืนการตกแต่งหน้าใน <section class="page"> ================== */
-
-/* ให้ทุกหน้าข้างใน main เป็นพื้นเทาแบบเดิม */
-main .page.active {
-  background: #f3f4f6;
-}
-
-/* อะไรที่อยู่ชั้นแรกในหน้า (h2, div, form, section) ให้เป็นกล่องขาว */
-main .page.active > h2,
-main .page.active > div,
-main .page.active > section,
-main .page.active > form {
-  background: #fff;
-  border-radius: 1rem;
-  padding: 1rem 1.25rem 1.1rem;
-  margin-bottom: 1.1rem;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* หัวข้อ “ส่วนที่ …” “1.1 …” ให้ตัวหนาและเรียงบรรทัดสวย */
-main .page.active h2 {
-  margin-top: 0;
-  font-size: 1.02rem;
-  font-weight: 700;
-  display: flex;
-  gap: .4rem;
-  align-items: center;
-}
-main .page.active h3 {
-  margin-top: .9rem;
-  margin-bottom: .5rem;
-  font-size: .93rem;
-  font-weight: 600;
-  display: flex;
-  gap: .35rem;
-  align-items: center;
-}
-
-/* input / textarea / select ทั้งหมดในหน้าฟอร์มให้เป็นกล่องขาวโค้ง */
-main .page.active input[type="text"],
-main .page.active input[type="number"],
-main .page.active input[type="date"],
-main .page.active textarea,
-main .page.active select {
-  width: 100%;
-  box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: .6rem;
-  padding: .4rem .55rem;
-  font-size: .9rem;
-  transition: .13s;
-}
-main .page.active textarea {
-  min-height: 60px;
-  resize: vertical;
-}
-main .page.active input:focus,
-main .page.active textarea:focus,
-main .page.active select:focus {
-  outline: none;
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.13);
-}
-
-/* label ที่เป็นฟิลด์ (ชื่อ-สกุล, HN, อายุ...) ให้เรียงสวยขึ้น */
-main .page.active label {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: .35rem;
-  align-items: center;
-  font-size: .9rem;
-  margin-bottom: .45rem;
-}
-
-/* ช่อง “อื่นๆ” ให้กว้างขึ้นนิด */
-main .page.active input[placeholder="ระบุ"],
-main .page.active input[placeholder="อื่นๆ"],
-main .page.active input[placeholder="ระบุ ..."] {
-  max-width: 200px;
-}
-
-/* กลุ่ม checkbox หลายอันต่อกัน (1.1, 1.2) ให้เว้นบรรทัดอัตโนมัติ */
-main .page.active h3 + label,
-main .page.active h3 + div > label {
-  margin-right: .6rem;
-}
-
-/* กล่องอัปโหลดรูป (ถ้ามี id แบบนี้) */
-main .page.active #img-drop,
-main .page.active .upload-box {
-  background: #faf5ff;
-  border: 1.5px dashed rgba(124,58,237,.5);
-  border-radius: .9rem;
-  padding: 1rem .5rem;
-  text-align: center;
-  font-size: .85rem;
-  color: #5b21b6;
+.secondary-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
   cursor: pointer;
 }
-main .page.active #img-preview,
-main .page.active .img-preview {
-  margin-top: .75rem;
-  max-width: 280px;
-  border-radius: .5rem;
-  border: 1px solid rgba(148,163,184,.35);
-  display: block;
+.save-status {
+  color: #16a34a;
+  font-size: 0.8rem;
+}
+
+/* อัปโหลดรูป */
+.upload-box {
+  border: 2px dashed #f59e0b;
+  border-radius: 1rem;
+  background: rgba(255, 237, 213, 0.35);
+  padding: 1.4rem 1rem 1.3rem;
+  text-align: center;
+}
+.upload-btn {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.img-preview {
+  margin-top: 0.6rem;
+  max-width: 240px;
+  border-radius: 0.75rem;
+  border: 2px solid #f59e0b;
 }
