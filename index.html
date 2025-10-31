@@ -61,13 +61,15 @@
       <div id="page5-root"></div>
     </section>
 
-    <section id="p6" class="page">
-      <h2>หน้า 6 ผลการประเมิน</h2>
-      <div id="page6-root"></div>
-      <button onclick="renderSummary()">ดึงข้อมูลจากหน้า 1–5</button>
-      <div id="summary-box" style="margin-top:1rem;"></div>
-    </section>
-  </main>
+    <!-- หน้า 6 สรุปผล -->
+<section id="page-summary" class="page">
+  <h2>หน้า 6 ผลการประเมิน</h2>
+  <button onclick="renderSummary()">ดึงข้อมูลจากหน้า 1–5</button>
+
+  <!-- 👇 กล่องนี้แหละที่ยังไม่มี -->
+  <div id="summary-box" style="margin-top:1rem;"></div>
+</section>
+
 
   <!-- ✅ โหลดตัวแปรกลางก่อน -->
    <script src="data.js?v=4"></script>
