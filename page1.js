@@ -1,6 +1,4 @@
 // page1.js
-// หน้า 1: ระบบผิวหนัง + ข้อมูลผู้ป่วย
-
 window.renderPage1 = function () {
   const d = window.drugAllergyData.page1;
   const el = document.getElementById("page1");
@@ -73,7 +71,6 @@ window.renderPage1 = function () {
     <button class="btn-primary" id="p1_save">บันทึกหน้า 1</button>
   `;
 
-  // เมื่อกดบันทึก
   document.getElementById("p1_save").addEventListener("click", () => {
     const store = window.drugAllergyData;
     store.page1.name = document.getElementById("p1_name").value;
@@ -87,15 +84,8 @@ window.renderPage1 = function () {
     store.page1.skinDetach = document.getElementById("p1_skin_detach").value;
     store.page1.onset = document.getElementById("p1_onset").value;
 
-    // คำนวณอัตโนมัติ (จากหน้า 1–3)
-    if (typeof window.evaluateDrugAllergy === "function") {
-      window.evaluateDrugAllergy();
-    }
-
-    // เซฟเก็บ
-    if (typeof window.saveDrugAllergyData === "function") {
-      window.saveDrugAllergyData();
-    }
+    if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
+    if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
     alert("บันทึกหน้า 1 แล้ว");
   });
