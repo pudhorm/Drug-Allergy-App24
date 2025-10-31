@@ -93,14 +93,31 @@ function initPage1() {
           <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
         </div>
 
-        <p class="form-label">รูปร่างผื่น (เลือกได้หลายข้อ)</p>
-        <div class="check-group">
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ปื้นนูน"> ปื้นนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จ้ำเลือด"> จ้ำเลือด</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลมชั้นเดียว"> วงกลมชั้นเดียว</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลม 3 ชั้น"> วงกลม 3 ชั้น</label>
-        </div>
+       <p class="form-label">1.1 รูปร่างผื่น</p>
+<div class="check-group check-2col">
+  <!-- ซ้าย -->
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ปื้นนูน"> ปื้นนูน</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลม 3 ชั้น"> วงกลม 3 ชั้น</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบหยัก"> ขอบหยัก</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบไม่ชัดเจน"> ขอบไม่ชัดเจน</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จ้ำเลือด"> จ้ำเลือด</label>
+
+  <!-- ขวา -->
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มแบนราบ"> ตุ่มแบนราบ</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลมชั้นเดียว"> วงกลมชั้นเดียว</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงรี"> วงรี</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบเรียบ"> ขอบเรียบ</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จุดเล็ก"> จุดเล็ก</label>
+</div>
+
+<!-- ช่องอื่นๆ -->
+<input id="p1-rashShape-other"
+       type="text"
+       class="form-input"
+       placeholder="อื่นๆ ระบุ..."
+       style="margin-top:.6rem;">
+
 
         <p class="form-label" style="margin-top:.75rem;">สีผื่น</p>
         <div class="check-group">
@@ -300,7 +317,16 @@ function savePage1(e) {
   const allergyHistory = document.getElementById("p1-allergy-history").value;
 
   // --- ผิวหนัง ---
-  const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
+  // รูปร่างผื่น
+const rashShapeValues = Array
+  .from(document.querySelectorAll("input[name='p1-rashShape']:checked"))
+  .map(el => el.value);
+
+const rashShapeOther = document.getElementById("p1-rashShape-other")?.value.trim();
+if (rashShapeOther) {
+  rashShapeValues.push("อื่นๆ: " + rashShapeOther);
+}
+
   const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const blisterValues   = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
   const peeling         = document.getElementById("p1-peeling").value;
