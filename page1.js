@@ -185,13 +185,16 @@ function savePage1(e) {
     exudate: exudate,
     onset: onset
   };
-  localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
-
-  // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
+ // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
 localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-  const st = document.getElementById("p1-status");
-  if (st) st.textContent = "บันทึกแล้ว ✔";
+const st = document.getElementById("p1-status");
+if (st) {
+  st.textContent = "บันทึกแล้ว ✔";
+  setTimeout(() => {
+    st.textContent = "";
+  }, 1500);
+}
 
-  console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
-} ตรงไหนหาไม่เจอ
+console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
+
