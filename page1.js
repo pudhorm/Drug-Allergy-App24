@@ -2,7 +2,6 @@
 // หน้า 1: ระบบผิวหนัง + ข้อมูลผู้ป่วย
 
 window.renderPage1 = function () {
-  // ดึงค่าที่มีอยู่แล้ว (ถ้าเคยกรอก)
   const d = window.drugAllergyData.page1;
   const el = document.getElementById("page1");
 
@@ -33,7 +32,7 @@ window.renderPage1 = function () {
 
     <div class="card">
       <h3>ส่วนที่ 2 อาการทางผิวหนัง</h3>
-      <p class="small-note">* ส่วนนี้จะเอาไปประเมินอัตโนมัติที่หน้า 6</p>
+      <p class="small-note">* ส่วนนี้จะถูกใช้คำนวณอัตโนมัติ</p>
 
       <label>รูปร่างผื่น
         <select id="p1_rash_shape">
@@ -46,7 +45,7 @@ window.renderPage1 = function () {
       </label>
 
       <label>สีผื่น
-        <input type="text" id="p1_rash_color" value="${d.rashColor || ""}" placeholder="เช่น แดง, แดงไหม้, มีจ้ำเลือด">
+        <input type="text" id="p1_rash_color" value="${d.rashColor || ""}">
       </label>
 
       <label>ผิวหนังหลุดลอก
@@ -88,7 +87,7 @@ window.renderPage1 = function () {
     store.page1.skinDetach = document.getElementById("p1_skin_detach").value;
     store.page1.onset = document.getElementById("p1_onset").value;
 
-    // เรียกให้ระบบประเมินอัตโนมัติทันที
+    // คำนวณอัตโนมัติ (จากหน้า 1–3)
     if (typeof window.evaluateDrugAllergy === "function") {
       window.evaluateDrugAllergy();
     }
