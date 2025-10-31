@@ -77,6 +77,16 @@ function initPage1() {
             <input id="p1-underlying-other" type="text" class="form-input" placeholder="ระบุโรคประจำตัว" style="margin-top:.4rem; display:none;">
           </div>
 
+            // แสดง/ซ่อน "อื่นๆ" ของระยะเวลาที่เริ่มมีอาการ
+  const onsetSel = document.getElementById("p1-onset");
+  const onsetOther = document.getElementById("p1-onset-other");
+  if (onsetSel && onsetOther) {
+    onsetSel.addEventListener("change", () => {
+      onsetOther.style.display = onsetSel.value === "other" ? "block" : "none";
+    });
+  }
+
+
           <!-- ประวัติการแพ้ยา -->
           <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">ประวัติการแพ้ยา (เคยแพ้มาก่อน)</div>
@@ -167,7 +177,7 @@ function initPage1() {
         </div>
       </div>
 
-      <!-- ส่วนที่ 3 เวลาเริ่มมีอาการ -->
+           <!-- ส่วนที่ 3 เวลาเริ่มมีอาการ -->
       <div class="section-box section-3">
         <div class="section-title">
           <span>⏱️</span>
@@ -182,9 +192,17 @@ function initPage1() {
             <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
             <option value="1–7 วัน">1–7 วัน</option>
             <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
+            <option value="other">อื่นๆ ระบุ…</option>
           </select>
+          <!-- ช่องซ่อน เอาไว้กรอกถ้าเลือกอื่นๆ -->
+          <input id="p1-onset-other"
+                 type="text"
+                 class="form-input"
+                 placeholder="ระบุช่วงเวลา เช่น 2 เดือนหลังเริ่มยา"
+                 style="margin-top:.5rem; display:none;">
         </div>
       </div>
+
 
       <div style="margin-top:1.2rem;">
         <button id="p1-save" class="primary-btn" style="background:#7c3aed;color:white;border:0;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;">
@@ -306,7 +324,18 @@ function savePage1(e) {
   const location     = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
   const exudate      = document.getElementById("p1-exudate").value;
-  const onset        = document.getElementById("p1-onset").value;
+  // ระยะเวลาที่เริ่มมีอาการ
+const onsetSel2 = document.getElementById("p1-onset");
+const onsetOther2 = document.getElementById("p1-onset-other");
+let onset = "";
+if (onsetSel2) {
+  if (onsetSel2.value === "other") {
+    onset = onsetOther2 ? onsetOther2.value : "";
+  } else {
+    onset = onsetSel2.value;
+  }
+}
+
 
   // เก็บลงตัวแปรกลาง
   if (!window.drugAllergyData) {
