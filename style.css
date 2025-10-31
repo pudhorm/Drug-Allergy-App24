@@ -259,3 +259,11 @@ header p {
   font-size: .8rem;
   color: #16a34a;
 }
+/* ให้แสดงเฉพาะหน้าที่มีคลาส .visible */
+.page {
+  display: none;
+}
+
+.page.visible {
+  display: block;
+}
