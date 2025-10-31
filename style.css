@@ -148,3 +148,29 @@ header p {
   font-size: .8rem;
   color: #16a34a;
 }
+/* กรอบของแต่ละส่วนในหน้า 1 */
+.section-box {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: .85rem;
+  padding: 1rem 1rem 1.1rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}
+
+/* ส่วนที่ 1 สีเขียวมิ้น */
+.section-box.section-1 {
+  background: #e8fff7;
+  border-color: #8ff1cf;
+}
+
+/* ส่วนที่ 2 สีชมพูอ่อน */
+.section-box.section-2 {
+  background: #fff1f7;
+  border-color: #ffb7d6;
+}
+
+/* ส่วนที่ 3 สีฟ้าอ่อน */
+.section-box.section-3 {
+  background: #eef5ff;
+  border-color: #b4cafc;
+}
