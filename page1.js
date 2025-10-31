@@ -5,7 +5,7 @@ function initPage1() {
   const root = document.getElementById("page1-root");
   if (!root) return;
 
-  // ================== HTML ==================
+  // ======================= HTML ของหน้า 1 =======================
   root.innerHTML = `
     <div class="page-card" style="max-width:880px; margin:0 auto;">
       <!-- ส่วนที่ 1 -->
@@ -86,7 +86,7 @@ function initPage1() {
         </div>
       </div>
 
-      <!-- ส่วนที่ 2 ผิวหนัง -->
+      <!-- ส่วนที่ 2 -->
       <div class="section-box section-2">
         <div class="section-title">
           <span>🩹</span>
@@ -162,31 +162,21 @@ function initPage1() {
           </select>
         </div>
 
-        <!-- น้ำเหลือง / สะเก็ด -->
+        <!-- น้ำเหลือง/สะเก็ด -->
         <div class="form-field" style="margin-top:.75rem;">
           <div class="form-label">น้ำเหลือง/สะเก็ด</div>
           <div class="check-group">
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี
-            </label>
-            <label class="check-inline">
-              <input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…
-            </label>
+            <label class="check-inline"><input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง</label>
+            <label class="check-inline"><input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด</label>
+            <label class="check-inline"><input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด</label>
+            <label class="check-inline"><input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี</label>
+            <label class="check-inline"><input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…</label>
           </div>
           <input id="p1-exu-other" type="text" class="form-input" placeholder="ระบุลักษณะน้ำเหลือง/สะเก็ด" style="margin-top:.4rem; display:none;">
         </div>
       </div>
 
-      <!-- ส่วนที่ 3 เวลาเริ่มมีอาการ -->
+      <!-- ส่วนที่ 3 -->
       <div class="section-box section-3">
         <div class="section-title">
           <span>⏱️</span>
@@ -215,13 +205,13 @@ function initPage1() {
       </div>
     </div>
   `;
-  // =============== END HTML ===============
+  // =================== จบ HTML ===================
 
-  // ปุ่มบันทึก
+  // ---------- ผูกปุ่มบันทึก ----------
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
-  // อายุ: show/hide อื่นๆ
+  // ---------- แสดง/ซ่อน "อื่นๆ" ของอายุ ----------
   const ageSel = document.getElementById("p1-age-select");
   const ageOther = document.getElementById("p1-age-other");
   if (ageSel && ageOther) {
@@ -230,7 +220,7 @@ function initPage1() {
     });
   }
 
-  // น้ำหนัก: show/hide อื่นๆ
+  // ---------- แสดง/ซ่อน "อื่นๆ" ของน้ำหนัก ----------
   const wtSel = document.getElementById("p1-weight-select");
   const wtOther = document.getElementById("p1-weight-other");
   if (wtSel && wtOther) {
@@ -239,7 +229,7 @@ function initPage1() {
     });
   }
 
-  // โรคประจำตัว: show/hide อื่นๆ
+  // ---------- แสดง/ซ่อน "อื่นๆ" ของโรคประจำตัว ----------
   const undSel = document.getElementById("p1-underlying-select");
   const undOther = document.getElementById("p1-underlying-other");
   if (undSel && undOther) {
@@ -248,7 +238,7 @@ function initPage1() {
     });
   }
 
-  // ระยะเวลาที่เริ่มมีอาการ: show/hide อื่นๆ
+  // ---------- แสดง/ซ่อน "อื่นๆ" ของระยะเวลาที่เริ่มมีอาการ ----------
   const onsetSel = document.getElementById("p1-onset");
   const onsetOther = document.getElementById("p1-onset-other");
   if (onsetSel && onsetOther) {
@@ -257,7 +247,7 @@ function initPage1() {
     });
   }
 
-  // น้ำเหลือง/สะเก็ด: show/hide อื่นๆ
+  // ---------- แสดง/ซ่อน input ของน้ำเหลือง/สะเก็ด ----------
   const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
   const exuOtherInput  = document.getElementById("p1-exu-other");
   if (exuOtherToggle && exuOtherInput) {
@@ -266,20 +256,20 @@ function initPage1() {
     });
   }
 
-  // กันบวม/ไม่บวมพร้อมกัน
+  // ---------- กันบวม/ไม่บวมพร้อมกัน ----------
   const swYes = document.getElementById("p1-swelling-yes");
-  const swNo = document.getElementById("p1-swelling-no");
+  const swNo  = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
     swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
     swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
   }
 }
 
-// ================== SAVE ==================
+// ===================== บันทึกหน้า 1 =====================
 function savePage1(e) {
   if (e && e.preventDefault) e.preventDefault();
 
-  // ผู้ป่วย
+  // --- พื้นฐานผู้ป่วย ---
   const name = document.getElementById("p1-name").value;
   const hn = document.getElementById("p1-hn").value;
 
@@ -288,7 +278,7 @@ function savePage1(e) {
   const ageOther = document.getElementById("p1-age-other");
   let age = "";
   if (ageSel) {
-    age = (ageSel.value === "other") ? (ageOther ? ageOther.value : "") : ageSel.value;
+    age = ageSel.value === "other" ? (ageOther?.value || "") : ageSel.value;
   }
 
   // น้ำหนัก
@@ -296,7 +286,7 @@ function savePage1(e) {
   const wtOther = document.getElementById("p1-weight-other");
   let weight = "";
   if (wtSel) {
-    weight = (wtSel.value === "other") ? (wtOther ? wtOther.value : "") : wtSel.value;
+    weight = wtSel.value === "other" ? (wtOther?.value || "") : wtSel.value;
   }
 
   // โรคประจำตัว
@@ -304,12 +294,12 @@ function savePage1(e) {
   const undOther = document.getElementById("p1-underlying-other");
   let underlying = "";
   if (undSel) {
-    underlying = (undSel.value === "other") ? (undOther ? undOther.value : "") : undSel.value;
+    underlying = undSel.value === "other" ? (undOther?.value || "") : undSel.value;
   }
 
   const allergyHistory = document.getElementById("p1-allergy-history").value;
 
-  // ผิวหนัง
+  // --- ผิวหนัง ---
   const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
   const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const blisterValues   = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
@@ -332,10 +322,11 @@ function savePage1(e) {
   const swellingNo  = document.getElementById("p1-swelling-no")?.checked ? "ไม่บวม" : "";
   const swellingList = [swellingYes, swellingNo].filter(Boolean);
 
-  // ตำแหน่ง / การกระจาย / น้ำเหลือง-สะเก็ด
+  // อื่นๆ
   const location     = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
 
+  // น้ำเหลือง/สะเก็ด
   const exuFluid = document.getElementById("p1-exu-fluid")?.checked ? "มีน้ำเหลือง" : "";
   const exuCrust = document.getElementById("p1-exu-crust")?.checked ? "มีสะเก็ด" : "";
   const exuBoth  = document.getElementById("p1-exu-both")?.checked ? "มีน้ำเหลืองและสะเก็ด" : "";
@@ -355,10 +346,10 @@ function savePage1(e) {
   const onsetOther2 = document.getElementById("p1-onset-other");
   let onset = "";
   if (onsetSel2) {
-    onset = (onsetSel2.value === "other") ? (onsetOther2 ? onsetOther2.value : "") : onsetSel2.value;
+    onset = onsetSel2.value === "other" ? (onsetOther2?.value || "") : onsetSel2.value;
   }
 
-  // เก็บลงตัวแปรกลาง
+  // --- เก็บลงตัวแปรกลาง ---
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -390,7 +381,7 @@ function savePage1(e) {
   // เซฟลง localStorage
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-  // แจ้งผล
+  // แจ้งผลแบบแฟลช
   const st = document.getElementById("p1-status");
   const btn = document.getElementById("p1-save");
   if (st) st.textContent = "บันทึกแล้ว ✔";
@@ -402,7 +393,6 @@ function savePage1(e) {
 
   console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
 
-  // กลับเป็นปกติ
   setTimeout(() => {
     if (st) st.textContent = "";
     if (btn) {
