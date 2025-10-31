@@ -216,8 +216,33 @@ function initPage1() {
 
         <!-- ตำแหน่งที่พบผื่น -->
         <div class="form-field" style="margin-top:1rem;">
-          <div class="form-label">ตำแหน่งที่พบผื่น</div>
-          <input id="p1-location" type="text" class="form-input" placeholder="เช่น ใบหน้า ลำตัว แขน ขา ฝ่ามือ ฝ่าเท้า">
+          <div class="form-label">ตำแหน่งที่พบ:</div>
+          <div class="check-group check-2col">
+            <!-- ซ้าย -->
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ทั่วร่างกาย"> ทั่วร่างกาย</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="มือ"> มือ</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้า"> หน้า</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ขา"> ขา</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ริมฝีปาก"> ริมฝีปาก</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="จมูก"> จมูก</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="รักแร้"> รักแร้</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้าท้อง"> หน้าท้อง</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ทวาร"> ทวาร</label>
+
+            <!-- ขวา -->
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ศีรษะ"> ศีรษะ</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="เท้า"> เท้า</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="แขน"> แขน</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="อวัยวะเพศ"> อวัยวะเพศ</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="รอบดวงตา"> รอบดวงตา</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ลำคอ"> ลำคอ</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="ขาหนีบ"> ขาหนีบ</label>
+            <label class="check-inline"><input type="checkbox" name="p1-location" value="หลัง"> หลัง</label>
+
+            <!-- อื่นๆ -->
+            <label class="check-inline"><input type="checkbox" id="p1-location-other-toggle" value="other"> อื่นๆ ระบุ…</label>
+          </div>
+          <input id="p1-location-other" type="text" class="form-input" placeholder="เช่น หนังศีรษะ ข้อพับ ใต้ราวนม ฯลฯ" style="margin-top:.5rem; display:none;">
         </div>
 
         <!-- การกระจายตัว -->
@@ -264,11 +289,10 @@ function initPage1() {
 
   // ================== ใส่ event ==================
 
-  // ปุ่มบันทึก
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
-  // อายุ other
+  // อายุ
   const ageSel = document.getElementById("p1-age-select");
   const ageOther = document.getElementById("p1-age-other");
   if (ageSel && ageOther) {
@@ -277,7 +301,7 @@ function initPage1() {
     });
   }
 
-  // น้ำหนัก other
+  // น้ำหนัก
   const wtSel = document.getElementById("p1-weight-select");
   const wtOther = document.getElementById("p1-weight-other");
   if (wtSel && wtOther) {
@@ -286,7 +310,7 @@ function initPage1() {
     });
   }
 
-  // โรคประจำตัว other
+  // โรคประจำตัว
   const undSel = document.getElementById("p1-underlying-select");
   const undOther = document.getElementById("p1-underlying-other");
   if (undSel && undOther) {
@@ -295,7 +319,7 @@ function initPage1() {
     });
   }
 
-  // onset other
+  // onset
   const onsetSel = document.getElementById("p1-onset");
   const onsetOther = document.getElementById("p1-onset-other");
   if (onsetSel && onsetOther) {
@@ -304,7 +328,7 @@ function initPage1() {
     });
   }
 
-  // น้ำเหลือง/สะเก็ด other
+  // น้ำเหลือง/สะเก็ด
   const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
   const exuOtherInput  = document.getElementById("p1-exu-other");
   if (exuOtherToggle && exuOtherInput) {
@@ -313,13 +337,12 @@ function initPage1() {
     });
   }
 
-  // ขุย/แห้ง/ลอก → ถ้าเลือก "ไม่พบ" ให้ติ๊กตัวอื่นออก
+  // ขุย/แห้ง/ลอก
   const sclScale = document.getElementById("p1-scale-scale");
   const sclDry   = document.getElementById("p1-scale-dry");
   const sclPeel  = document.getElementById("p1-scale-peel");
   const sclNone  = document.getElementById("p1-scale-none");
   const sclOther = document.getElementById("p1-scale-other");
-
   if (sclNone) {
     sclNone.addEventListener("change", () => {
       if (sclNone.checked) {
@@ -330,16 +353,16 @@ function initPage1() {
       }
     });
   }
-  // ถ้าเลือกข้ออื่น ให้เอา "ไม่พบ" ออก
   [sclScale, sclDry, sclPeel].forEach(chk => {
     if (chk) {
       chk.addEventListener("change", () => {
         if (chk.checked && sclNone) sclNone.checked = false;
+        if (sclOther) sclOther.style.display = "block";
       });
     }
   });
 
-  // ตุ่มหนอง → พบ/ไม่พบ
+  // ตุ่มหนอง
   const pusYes = document.getElementById("p1-pustule-yes");
   const pusNo  = document.getElementById("p1-pustule-no");
   const pusDet = document.getElementById("p1-pustule-detail");
@@ -359,7 +382,16 @@ function initPage1() {
     });
   }
 
-  // กันบวม/ไม่บวม
+  // ตำแหน่งอื่นๆ
+  const locOtherToggle = document.getElementById("p1-location-other-toggle");
+  const locOtherInput  = document.getElementById("p1-location-other");
+  if (locOtherToggle && locOtherInput) {
+    locOtherToggle.addEventListener("change", () => {
+      locOtherInput.style.display = locOtherToggle.checked ? "block" : "none";
+    });
+  }
+
+  // บวม
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
@@ -464,7 +496,16 @@ function savePage1(e) {
     pustule = "ไม่พบ";
   }
 
-  const location = document.getElementById("p1-location").value;
+  // ตำแหน่งที่พบ (ใหม่)
+  const locationList = Array.from(document.querySelectorAll("input[name='p1-location']:checked")).map(el => el.value);
+  const locOtherToggle = document.getElementById("p1-location-other-toggle");
+  const locOtherInput  = document.getElementById("p1-location-other");
+  if (locOtherToggle && locOtherToggle.checked) {
+    const txt = (locOtherInput && locOtherInput.value.trim()) ? locOtherInput.value.trim() : "อื่นๆ";
+    locationList.push(txt);
+  }
+
+  // การกระจายตัว
   const distribution = document.getElementById("p1-distribution").value;
 
   // น้ำเหลือง/สะเก็ด
@@ -486,6 +527,7 @@ function savePage1(e) {
     onset = onsetSel2.value === "other" ? (onsetOther2 ? onsetOther2.value : "") : onsetSel2.value;
   }
 
+  // เก็บ
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -510,13 +552,12 @@ function savePage1(e) {
     swelling: swellingList,
     scale: scaleList,
     pustule: pustule,
-    location,
+    locations: locationList,   // 👈 อันใหม่
     distribution,
     exudate: exudateList,
     onset,
   };
 
-  // save
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
   const st = document.getElementById("p1-status");
