@@ -15,34 +15,77 @@ function initPage1() {
         </div>
 
         <div class="form-grid-2">
-          <div class="form-field">
+          <!-- ชื่อ -->
+          <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">ชื่อ-สกุล</div>
             <input id="p1-name" type="text" class="form-input" placeholder="เช่น นางสาวกนกพร ตัวอย่าง">
           </div>
+
+          <!-- HN -->
           <div class="form-field">
             <div class="form-label">HN</div>
             <input id="p1-hn" type="text" class="form-input" placeholder="เช่น 123456">
           </div>
+
+          <!-- อายุ: เลือกได้ + อื่นๆ -->
           <div class="form-field">
             <div class="form-label">อายุ</div>
-            <input id="p1-age" type="number" min="0" class="form-input">
+            <select id="p1-age-select" class="form-select">
+              <option value="">-- เลือก --</option>
+              <option value="ทารก / เด็กเล็ก (&lt; 1 ปี)">ทารก / เด็กเล็ก (&lt; 1 ปี)</option>
+              <option value="1–5 ปี">1–5 ปี</option>
+              <option value="6–12 ปี">6–12 ปี</option>
+              <option value="13–18 ปี">13–18 ปี</option>
+              <option value="19–40 ปี">19–40 ปี</option>
+              <option value="41–60 ปี">41–60 ปี</option>
+              <option value="มากกว่า 60 ปี">มากกว่า 60 ปี</option>
+              <option value="other">อื่นๆ ระบุ…</option>
+            </select>
+            <input id="p1-age-other" type="text" class="form-input" placeholder="ระบุอายุ (ปี)" style="margin-top:.4rem; display:none;">
           </div>
+
+          <!-- น้ำหนัก: เลือกได้ + อื่นๆ -->
           <div class="form-field">
             <div class="form-label">น้ำหนัก (กก.)</div>
-            <input id="p1-weight" type="number" min="0" step="0.1" class="form-input">
+            <select id="p1-weight-select" class="form-select">
+              <option value="">-- เลือก --</option>
+              <option value="&lt; 10 กก.">&lt; 10 กก.</option>
+              <option value="10–20 กก.">10–20 กก.</option>
+              <option value="21–40 กก.">21–40 กก.</option>
+              <option value="41–60 กก.">41–60 กก.</option>
+              <option value="61–80 กก.">61–80 กก.</option>
+              <option value="81–100 กก.">81–100 กก.</option>
+              <option value="มากกว่า 100 กก.">มากกว่า 100 กก.</option>
+              <option value="other">อื่นๆ ระบุ…</option>
+            </select>
+            <input id="p1-weight-other" type="number" min="0" step="0.1" class="form-input" placeholder="เช่น 54.5" style="margin-top:.4rem; display:none;">
           </div>
-          <div class="form-field">
+
+          <!-- โรคประจำตัว -->
+          <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">โรคประจำตัว</div>
-            <input id="p1-underlying" type="text" class="form-input">
+            <select id="p1-underlying-select" class="form-select">
+              <option value="">-- เลือก --</option>
+              <option value="ไม่มีโรคประจำตัว">ไม่มีโรคประจำตัว</option>
+              <option value="เบาหวาน (DM)">เบาหวาน (DM)</option>
+              <option value="ความดันโลหิตสูง (HT)">ความดันโลหิตสูง (HT)</option>
+              <option value="โรคไตเรื้อรัง (CKD)">โรคไตเรื้อรัง (CKD)</option>
+              <option value="หอบหืด / COPD">หอบหืด / COPD</option>
+              <option value="โรคหัวใจ">โรคหัวใจ</option>
+              <option value="other">อื่นๆ ระบุ…</option>
+            </select>
+            <input id="p1-underlying-other" type="text" class="form-input" placeholder="ระบุโรคประจำตัว" style="margin-top:.4rem; display:none;">
           </div>
+
+          <!-- ประวัติการแพ้ยา -->
           <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">ประวัติการแพ้ยา (เคยแพ้มาก่อน)</div>
-            <textarea id="p1-allergy-history" rows="2" class="form-textarea"></textarea>
+            <textarea id="p1-allergy-history" rows="2" class="form-textarea" placeholder="เช่น แพ้ amoxicillin ผื่นขึ้น, แพ้ NSAIDs บวม"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- ส่วนที่ 2 -->
+      <!-- ส่วนที่ 2 ผิวหนัง -->
       <div class="section-box section-2">
         <div class="section-title">
           <span>🩹</span>
@@ -124,7 +167,7 @@ function initPage1() {
         </div>
       </div>
 
-      <!-- ส่วนที่ 3 -->
+      <!-- ส่วนที่ 3 เวลาเริ่มมีอาการ -->
       <div class="section-box section-3">
         <div class="section-title">
           <span>⏱️</span>
@@ -152,31 +195,92 @@ function initPage1() {
     </div>
   `;
 
-  // ผูกปุ่มบันทึก
+  // ปุ่มบันทึก
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
-  // กันบวม / ไม่บวม ติ๊กพร้อมกัน
+  // แสดง/ซ่อน "อื่นๆ" ของอายุ
+  const ageSel = document.getElementById("p1-age-select");
+  const ageOther = document.getElementById("p1-age-other");
+  if (ageSel && ageOther) {
+    ageSel.addEventListener("change", () => {
+      ageOther.style.display = ageSel.value === "other" ? "block" : "none";
+    });
+  }
+
+  // แสดง/ซ่อน "อื่นๆ" ของน้ำหนัก
+  const wtSel = document.getElementById("p1-weight-select");
+  const wtOther = document.getElementById("p1-weight-other");
+  if (wtSel && wtOther) {
+    wtSel.addEventListener("change", () => {
+      wtOther.style.display = wtSel.value === "other" ? "block" : "none";
+    });
+  }
+
+  // แสดง/ซ่อน "อื่นๆ" ของโรคประจำตัว
+  const undSel = document.getElementById("p1-underlying-select");
+  const undOther = document.getElementById("p1-underlying-other");
+  if (undSel && undOther) {
+    undSel.addEventListener("change", () => {
+      undOther.style.display = undSel.value === "other" ? "block" : "none";
+    });
+  }
+
+  // กันบวม/ไม่บวมพร้อมกัน
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
-    swYes.addEventListener("change", (e) => { if (e.target.checked) swNo.checked = false; });
-    swNo.addEventListener("change", (e) => { if (e.target.checked) swYes.checked = false; });
+    swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
+    swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
   }
 }
 
 function savePage1(e) {
   if (e && e.preventDefault) e.preventDefault();
 
-  // ผู้ป่วย
+  // --- อ่านค่าพื้นฐาน ---
   const name = document.getElementById("p1-name").value;
   const hn = document.getElementById("p1-hn").value;
-  const age = document.getElementById("p1-age").value;
-  const weight = document.getElementById("p1-weight").value;
-  const underlying = document.getElementById("p1-underlying").value;
+
+  // อายุ
+  const ageSel = document.getElementById("p1-age-select");
+  const ageOther = document.getElementById("p1-age-other");
+  let age = "";
+  if (ageSel) {
+    if (ageSel.value === "other") {
+      age = ageOther ? ageOther.value : "";
+    } else {
+      age = ageSel.value;
+    }
+  }
+
+  // น้ำหนัก
+  const wtSel = document.getElementById("p1-weight-select");
+  const wtOther = document.getElementById("p1-weight-other");
+  let weight = "";
+  if (wtSel) {
+    if (wtSel.value === "other") {
+      weight = wtOther ? wtOther.value : "";
+    } else {
+      weight = wtSel.value;
+    }
+  }
+
+  // โรคประจำตัว
+  const undSel = document.getElementById("p1-underlying-select");
+  const undOther = document.getElementById("p1-underlying-other");
+  let underlying = "";
+  if (undSel) {
+    if (undSel.value === "other") {
+      underlying = undOther ? undOther.value : "";
+    } else {
+      underlying = undSel.value;
+    }
+  }
+
   const allergyHistory = document.getElementById("p1-allergy-history").value;
 
-  // ผิวหนัง
+  // --- ผิวหนัง ---
   const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
   const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const blisterValues   = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
@@ -204,6 +308,7 @@ function savePage1(e) {
   const exudate      = document.getElementById("p1-exudate").value;
   const onset        = document.getElementById("p1-onset").value;
 
+  // เก็บลงตัวแปรกลาง
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -235,7 +340,7 @@ function savePage1(e) {
   // เซฟลง localStorage ด้วย
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-  // แสดงสถานะชั่วคราว
+  // แจ้งผล
   const st = document.getElementById("p1-status");
   const btn = document.getElementById("p1-save");
   if (st) st.textContent = "บันทึกแล้ว ✔";
