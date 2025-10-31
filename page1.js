@@ -179,12 +179,14 @@ function savePage1(e) {
     peeling: peeling,
     itch: itchList,
     pain: painList,
-    swelling: swellingList,   // ✅ มีแค่ตัวนี้ตัวเดียว
+    swelling: swellingList,   
     location: location,
     distribution: distribution,
     exudate: exudate,
     onset: onset
   };
+  // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
+localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
   const st = document.getElementById("p1-status");
   if (st) st.textContent = "บันทึกแล้ว ✔";
