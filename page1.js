@@ -146,7 +146,7 @@ function initPage1() {
           </select>
         </div>
 
-        <!-- คัน -->
+        <!-- อาการคัน -->
         <p class="form-label" style="margin-top:1rem;">อาการคัน</p>
         <div class="check-group">
           <label class="check-inline"><input type="checkbox" id="p1-itch-much"> คันมาก</label>
@@ -218,7 +218,6 @@ function initPage1() {
         <div class="form-field" style="margin-top:1rem;">
           <div class="form-label">ตำแหน่งที่พบ:</div>
           <div class="check-group check-2col">
-            <!-- ซ้าย -->
             <label class="check-inline"><input type="checkbox" name="p1-location" value="ทั่วร่างกาย"> ทั่วร่างกาย</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="มือ"> มือ</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้า"> หน้า</label>
@@ -229,7 +228,6 @@ function initPage1() {
             <label class="check-inline"><input type="checkbox" name="p1-location" value="หน้าท้อง"> หน้าท้อง</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="ทวาร"> ทวาร</label>
 
-            <!-- ขวา -->
             <label class="check-inline"><input type="checkbox" name="p1-location" value="ศีรษะ"> ศีรษะ</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="เท้า"> เท้า</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="แขน"> แขน</label>
@@ -239,7 +237,6 @@ function initPage1() {
             <label class="check-inline"><input type="checkbox" name="p1-location" value="ขาหนีบ"> ขาหนีบ</label>
             <label class="check-inline"><input type="checkbox" name="p1-location" value="หลัง"> หลัง</label>
 
-            <!-- อื่นๆ -->
             <label class="check-inline"><input type="checkbox" id="p1-location-other-toggle" value="other"> อื่นๆ ระบุ…</label>
           </div>
           <input id="p1-location-other" type="text" class="form-input" placeholder="เช่น หนังศีรษะ ข้อพับ ใต้ราวนม ฯลฯ" style="margin-top:.5rem; display:none;">
@@ -278,19 +275,51 @@ function initPage1() {
         </div>
       </div>
 
-      <div style="margin-top:1.2rem;">
+      <!-- ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย -->
+      <div class="section-box" style="background:#fff8d6; border:1px solid #f5d063; margin-top:1rem;">
+        <div class="section-title" style="color:#b7791f;">
+          <span>🖼️</span>
+          <span>ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย (ถ้ามี)</span>
+        </div>
+        <div id="p1-image-drop"
+             style="border:2px dashed #fbbf24; border-radius:1rem; padding:1.5rem 1rem; text-align:center; background:#fff; cursor:pointer;">
+          <div style="width:80px; height:80px; background:#fef3c7; border-radius:9999px; margin:0 auto 1rem; display:flex; align-items:center; justify-content:center; font-size:2rem;">🖼️</div>
+          <p style="font-weight:600; color:#92400e; margin-bottom:.25rem;">อัปโหลดรูปภาพ</p>
+          <p style="color:#b45309; font-size:.85rem; margin-bottom:1rem;">ลากมาวาง หรือเลือกไฟล์ • PNG, JPG, GIF</p>
+          <button type="button" id="p1-image-btn" style="background:#a855f7; color:white; border:0; padding:.45rem .9rem; border-radius:.6rem; cursor:pointer;">
+            เลือกไฟล์
+          </button>
+          <input type="file" id="p1-image-input" accept="image/*" style="display:none;">
+          <div id="p1-image-preview-wrap" style="margin-top:1rem; display:none;">
+            <img id="p1-image-preview" src="" alt="preview" style="max-width:100%; border-radius:.75rem; border:1px solid #fbbf24;">
+            <div>
+              <button type="button" id="p1-image-clear" style="margin-top:.5rem; background:#f97316; color:white; border:0; padding:.3rem .75rem; border-radius:.5rem; cursor:pointer;">ลบรูปนี้</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem; display:flex; gap:.65rem;">
         <button id="p1-save" class="primary-btn" style="background:#7c3aed;color:white;border:0;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;">
           บันทึกหน้า 1
+        </button>
+        <button id="p1-clear" type="button" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;">
+          ล้างข้อมูลหน้านี้
         </button>
         <span id="p1-status" class="save-status" style="margin-left:.5rem;"></span>
       </div>
     </div>
   `;
 
-  // ================== ใส่ event ==================
+  // ========= event พื้นฐาน =========
 
+  // ปุ่มบันทึก
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
+
+  // ปุ่มล้าง
+  const clearBtn = document.getElementById("p1-clear");
+  if (clearBtn) clearBtn.addEventListener("click", clearPage1);
 
   // อายุ
   const ageSel = document.getElementById("p1-age-select");
@@ -334,6 +363,15 @@ function initPage1() {
   if (exuOtherToggle && exuOtherInput) {
     exuOtherToggle.addEventListener("change", () => {
       exuOtherInput.style.display = exuOtherToggle.checked ? "block" : "none";
+    });
+  }
+
+  // ตำแหน่งอื่นๆ
+  const locOtherToggle = document.getElementById("p1-location-other-toggle");
+  const locOtherInput  = document.getElementById("p1-location-other");
+  if (locOtherToggle && locOtherInput) {
+    locOtherToggle.addEventListener("change", () => {
+      locOtherInput.style.display = locOtherToggle.checked ? "block" : "none";
     });
   }
 
@@ -382,21 +420,68 @@ function initPage1() {
     });
   }
 
-  // ตำแหน่งอื่นๆ
-  const locOtherToggle = document.getElementById("p1-location-other-toggle");
-  const locOtherInput  = document.getElementById("p1-location-other");
-  if (locOtherToggle && locOtherInput) {
-    locOtherToggle.addEventListener("change", () => {
-      locOtherInput.style.display = locOtherToggle.checked ? "block" : "none";
-    });
-  }
-
   // บวม
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
     swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
     swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
+  }
+
+  // ========== อัปโหลดรูป ==========
+  const imgDrop   = document.getElementById("p1-image-drop");
+  const imgInput  = document.getElementById("p1-image-input");
+  const imgBtn    = document.getElementById("p1-image-btn");
+  const imgPrev   = document.getElementById("p1-image-preview");
+  const imgWrap   = document.getElementById("p1-image-preview-wrap");
+  const imgClear  = document.getElementById("p1-image-clear");
+
+  function showImage(file) {
+    if (!file) return;
+    const ok = /image\/(png|jpe?g|gif|webp)/i.test(file.type);
+    if (!ok) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      imgPrev.src = e.target.result;
+      imgWrap.style.display = "block";
+      // เก็บใส่ dataset ไว้ตอนเซฟ
+      imgPrev.dataset.imgdata = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  if (imgBtn && imgInput) {
+    imgBtn.addEventListener("click", () => imgInput.click());
+  }
+  if (imgInput) {
+    imgInput.addEventListener("change", () => {
+      const f = imgInput.files[0];
+      showImage(f);
+    });
+  }
+  if (imgDrop) {
+    imgDrop.addEventListener("dragover", e => {
+      e.preventDefault();
+      imgDrop.style.background = "#fff1ce";
+    });
+    imgDrop.addEventListener("dragleave", e => {
+      e.preventDefault();
+      imgDrop.style.background = "#fff";
+    });
+    imgDrop.addEventListener("drop", e => {
+      e.preventDefault();
+      imgDrop.style.background = "#fff";
+      const f = e.dataTransfer.files[0];
+      showImage(f);
+    });
+  }
+  if (imgClear) {
+    imgClear.addEventListener("click", () => {
+      imgPrev.src = "";
+      imgPrev.removeAttribute("data-imgdata");
+      imgWrap.style.display = "none";
+      if (imgInput) imgInput.value = "";
+    });
   }
 }
 
@@ -496,12 +581,12 @@ function savePage1(e) {
     pustule = "ไม่พบ";
   }
 
-  // ตำแหน่งที่พบ (ใหม่)
+  // ตำแหน่งที่พบ
   const locationList = Array.from(document.querySelectorAll("input[name='p1-location']:checked")).map(el => el.value);
-  const locOtherToggle = document.getElementById("p1-location-other-toggle");
-  const locOtherInput  = document.getElementById("p1-location-other");
-  if (locOtherToggle && locOtherToggle.checked) {
-    const txt = (locOtherInput && locOtherInput.value.trim()) ? locOtherInput.value.trim() : "อื่นๆ";
+  const locOtherT = document.getElementById("p1-location-other-toggle");
+  const locOtherI = document.getElementById("p1-location-other");
+  if (locOtherT && locOtherT.checked) {
+    const txt = (locOtherI && locOtherI.value.trim()) ? locOtherI.value.trim() : "อื่นๆ";
     locationList.push(txt);
   }
 
@@ -526,6 +611,10 @@ function savePage1(e) {
   if (onsetSel2) {
     onset = onsetSel2.value === "other" ? (onsetOther2 ? onsetOther2.value : "") : onsetSel2.value;
   }
+
+  // รูปภาพ
+  const imgPrev = document.getElementById("p1-image-preview");
+  const imgData = imgPrev && imgPrev.dataset && imgPrev.dataset.imgdata ? imgPrev.dataset.imgdata : "";
 
   // เก็บ
   if (!window.drugAllergyData) {
@@ -552,11 +641,21 @@ function savePage1(e) {
     swelling: swellingList,
     scale: scaleList,
     pustule: pustule,
-    locations: locationList,   // 👈 อันใหม่
+    locations: locationList,
     distribution,
     exudate: exudateList,
     onset,
   };
+
+  // เก็บรูป
+  if (imgData) {
+    window.drugAllergyData.images = {
+      ...(window.drugAllergyData.images || {}),
+      skinPhoto: imgData,
+    };
+  } else {
+    // ถ้าไม่มีรูป ก็อย่าเขียนทับ images อื่น
+  }
 
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
@@ -579,4 +678,60 @@ function savePage1(e) {
       btn.disabled = false;
     }
   }, 1500);
+}
+
+// ============= ล้างเฉพาะหน้า 1 =============
+function clearPage1() {
+  // input text / textarea
+  ["p1-name","p1-hn","p1-age-other","p1-weight-other","p1-underlying-other","p1-allergy-history",
+   "p1-rashShape-other","p1-rashColor-other","p1-scale-other","p1-pustule-detail","p1-exu-other","p1-location-other","p1-onset-other"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = "";
+      // บางอันอาจถูกซ่อนไว้ ให้ซ่อนกลับ
+      if (id.endsWith("other")) el.style.display = "none";
+    }
+  });
+
+  // select
+  ["p1-age-select","p1-weight-select","p1-underlying-select","p1-peeling","p1-distribution","p1-onset"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  // checkbox ทุกตัวบนหน้า 1
+  document.querySelectorAll("#page1-root input[type='checkbox']").forEach(chk => {
+    chk.checked = false;
+  });
+
+  // รูปภาพ
+  const imgPrev  = document.getElementById("p1-image-preview");
+  const imgWrap  = document.getElementById("p1-image-preview-wrap");
+  const imgInput = document.getElementById("p1-image-input");
+  if (imgPrev) {
+    imgPrev.src = "";
+    imgPrev.removeAttribute("data-imgdata");
+  }
+  if (imgWrap) imgWrap.style.display = "none";
+  if (imgInput) imgInput.value = "";
+
+  // ลบข้อมูลหน้า 1 ออกจาก localStorage แต่ไม่ยุ่งหน้าอื่น
+  const raw = localStorage.getItem("drugAllergyData");
+  if (raw) {
+    try {
+      const obj = JSON.parse(raw);
+      delete obj.patient;
+      delete obj.skin;
+      if (obj.images && obj.images.skinPhoto) {
+        delete obj.images.skinPhoto;
+      }
+      localStorage.setItem("drugAllergyData", JSON.stringify(obj));
+    } catch (err) {
+      console.warn("clearPage1 parse error", err);
+    }
+  }
+
+  const st = document.getElementById("p1-status");
+  if (st) st.textContent = "ล้างข้อมูลแล้ว";
+  setTimeout(() => { if (st) st.textContent = ""; }, 1200);
 }
