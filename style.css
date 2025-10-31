@@ -287,3 +287,10 @@ header p {
     font-size: 1.7rem;
   }
 }
+
+.section-box .form-input,
+.section-box .form-select,
+.section-box .form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
