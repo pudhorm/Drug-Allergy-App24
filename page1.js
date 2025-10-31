@@ -70,10 +70,10 @@ function initPage1() {
       </select>
 
       <!-- 5) คัน/ไม่คัน -->
-      <p style="margin-top:1rem;"><strong>อาการคัน</strong></p>
-      <label><input type="radio" name="p1-itch" value="คันมาก"> คันมาก</label>
-      <label><input type="radio" name="p1-itch" value="คันน้อย"> คันน้อย</label>
-      <label><input type="radio" name="p1-itch" value="ไม่คัน"> ไม่คัน</label>
+      <p style="margin-top:1rem;"><strong>อาการคัน</strong> (ติ๊กได้หลายข้อ)</p>
+      <label><input type="checkbox" id="p1-itch-much"> คันมาก</label>
+      <label><input type="checkbox" id="p1-itch-little"> คันน้อย</label>
+      <label><input type="checkbox" id="p1-itch-none"> ไม่คัน</label>
 
       <!-- 6) ปวด/แสบ/เจ็บ -->
      <p style="margin-top:1rem;"><strong>ปวด / แสบ / เจ็บ</strong> (เลือกได้หลายข้อ)</p>
@@ -84,8 +84,8 @@ function initPage1() {
 
       <!-- 7) บวม -->
       <p style="margin-top:1rem;"><strong>บวม</strong></p>
-      <label><input type="radio" name="p1-swelling" value="บวม"> บวม</label>
-      <label><input type="radio" name="p1-swelling" value="ไม่บวม"> ไม่บวม</label>
+      <label><input type="checkbox" id="p1-swelling-yes"> บวม</label>
+      <label><input type="checkbox" id="p1-swelling-no"> ไม่บวม</label>
 
       <!-- 8) ตำแหน่ง -->
       <label style="margin-top:1rem; display:block;">ตำแหน่งที่พบผื่น
@@ -142,14 +142,17 @@ function savePage1() {
   const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const blisterValues = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
   const peeling = document.getElementById("p1-peeling").value;
-  const itchNode = document.querySelector("input[name='p1-itch']:checked");
-  const itch = itchNode ? itchNode.value : "";
+  const itchMuch   = document.getElementById("p1-itch-much")?.checked ? "คันมาก" : "";
+  const itchLittle = document.getElementById("p1-itch-little")?.checked ? "คันน้อย" : "";
+  const itchNone   = document.getElementById("p1-itch-none")?.checked ? "ไม่คัน" : "";
+  const itchList = [itchMuch, itchLittle, itchNone].filter(Boolean);
   const painPain = document.getElementById("p1-pain-pain")?.checked ? "ปวด" : "";
   const painBurn = document.getElementById("p1-pain-burn")?.checked ? "แสบ" : "";
   const painSore = document.getElementById("p1-pain-sore")?.checked ? "เจ็บ" : "";
   const painList = [painPain, painBurn, painSore].filter(Boolean);
-  const swellingNode = document.querySelector("input[name='p1-swelling']:checked");
-  const swelling = swellingNode ? swellingNode.value : "";
+  const swellingYes = document.getElementById("p1-swelling-yes")?.checked ? "บวม" : "";
+  const swellingNo  = document.getElementById("p1-swelling-no")?.checked ? "ไม่บวม" : "";
+  const swellingList = [swellingYes, swellingNo].filter(Boolean);
   const location = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
   const exudate = document.getElementById("p1-exudate").value;
@@ -176,7 +179,7 @@ function savePage1() {
   rashColor: rashColorValues,
   blister: blisterValues,
   peeling: peeling,
-  itch: itch,
+  itch: itchList,
   swelling: swelling,
   location: location,
   distribution: distribution,
