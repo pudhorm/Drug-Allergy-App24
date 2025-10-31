@@ -120,17 +120,24 @@ function initPage1() {
         <input id="p1-exudate" type="text" class="form-input" placeholder="เช่น มีน้ำเหลืองเล็กน้อย / มีสะเก็ดแห้ง">
       </div>
 
-      <div class="form-field" style="margin-top:1rem; max-width:280px;">
-        <div class="form-label">⏱️ ระยะเวลาที่เริ่มมีอาการ</div>
-        <select id="p1-onset" class="form-select">
-          <option value="">-- เลือก --</option>
-          <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
-          <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
-          <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
-          <option value="1–7 วัน">1–7 วัน</option>
-          <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
-        </select>
-      </div>
+     <!-- ส่วนที่ 3 -->
+<div class="section-title" style="margin-top:1.35rem;">
+  <span>⏱️</span>
+  <span>ส่วนที่ 3 ระยะเวลาที่เริ่มมีอาการ</span>
+</div>
+
+<div class="form-field" style="max-width:280px;">
+  <div class="form-label">เลือกช่วงเวลา</div>
+  <select id="p1-onset" class="form-select">
+    <option value="">-- เลือก --</option>
+    <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
+    <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
+    <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
+    <option value="1–7 วัน">1–7 วัน</option>
+    <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
+  </select>
+</div>
+
 
       <div style="margin-top:1.2rem;">
         <button id="p1-save" class="primary-btn">บันทึกหน้า 1</button>
