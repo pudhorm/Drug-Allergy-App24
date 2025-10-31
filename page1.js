@@ -103,6 +103,7 @@ function initPage1() {
     </div>
   `;
 
+  // ปุ่มเซฟ
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
@@ -110,12 +111,8 @@ function initPage1() {
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
-    swYes.addEventListener("change", e => {
-      if (e.target.checked) swNo.checked = false;
-    });
-    swNo.addEventListener("change", e => {
-      if (e.target.checked) swYes.checked = false;
-    });
+    swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
+    swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
   }
 }
 
@@ -142,7 +139,7 @@ function savePage1(e) {
   const itchNone   = document.getElementById("p1-itch-none")?.checked ? "ไม่คัน" : "";
   const itchList   = [itchMuch, itchLittle, itchNone].filter(Boolean);
 
-  // ปวด แสบ เจ็บ
+  // ปวด / แสบ / เจ็บ
   const painPain = document.getElementById("p1-pain-pain")?.checked ? "ปวด" : "";
   const painBurn = document.getElementById("p1-pain-burn")?.checked ? "แสบ" : "";
   const painSore = document.getElementById("p1-pain-sore")?.checked ? "เจ็บ" : "";
@@ -158,6 +155,7 @@ function savePage1(e) {
   const exudate      = document.getElementById("p1-exudate").value;
   const onset        = document.getElementById("p1-onset").value;
 
+  // ตั้งตัวแปรกลางถ้ายังไม่มี
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -179,22 +177,35 @@ function savePage1(e) {
     peeling: peeling,
     itch: itchList,
     pain: painList,
-    swelling: swellingList,   
+    swelling: swellingList,
     location: location,
     distribution: distribution,
     exudate: exudate,
     onset: onset
   };
- // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
-localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-const st = document.getElementById("p1-status");
-if (st) {
-  st.textContent = "บันทึกแล้ว ✔";
+  // เซฟลง localStorage 1 ครั้งพอ
+  localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
+
+  // แสดงสถานะ
+  const st  = document.getElementById("p1-status");
+  const btn = document.getElementById("p1-save");
+  if (st) st.textContent = "บันทึกแล้ว ✔";
+  if (btn) {
+    btn.textContent = "บันทึกแล้ว ✓";
+    btn.style.background = "#22c55e";
+    btn.disabled = true;
+  }
+
+  console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
+
+  // ให้หายไปใน 1.5 วิ
   setTimeout(() => {
-    st.textContent = "";
+    if (st) st.textContent = "";
+    if (btn) {
+      btn.textContent = "บันทึกหน้า 1";
+      btn.style.background = "#7c3aed";
+      btn.disabled = false;
+    }
   }, 1500);
 }
-
-console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
-
