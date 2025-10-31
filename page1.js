@@ -1,12 +1,16 @@
 // page1.js
+// หน้า 1: ระบบผิวหนัง + ข้อมูลผู้ป่วย
+
 window.renderPage1 = function () {
+  // ดึงค่าที่มีอยู่แล้ว (ถ้าเคยกรอก)
   const d = window.drugAllergyData.page1;
   const el = document.getElementById("page1");
 
   el.innerHTML = `
     <h2>หน้า 1: ระบบผิวหนัง / ข้อมูลผู้ป่วย</h2>
+
     <div class="card">
-      <h3>ข้อมูลผู้ป่วย</h3>
+      <h3>ส่วนที่ 1 ข้อมูลผู้ป่วย</h3>
       <label>ชื่อ-สกุล
         <input type="text" id="p1_name" value="${d.name || ""}">
       </label>
@@ -22,13 +26,15 @@ window.renderPage1 = function () {
       <label>โรคประจำตัว
         <input type="text" id="p1_underlying" value="${d.underlying || ""}">
       </label>
-      <label>ประวัติการแพ้ยาเดิม
+      <label>ประวัติการแพ้ยา (เดิม)
         <textarea id="p1_allergy_history">${d.drugAllergyHistory || ""}</textarea>
       </label>
     </div>
 
     <div class="card">
-      <h3>อาการผิวหนัง</h3>
+      <h3>ส่วนที่ 2 อาการทางผิวหนัง</h3>
+      <p class="small-note">* ส่วนนี้จะเอาไปประเมินอัตโนมัติที่หน้า 6</p>
+
       <label>รูปร่างผื่น
         <select id="p1_rash_shape">
           <option value="">-- เลือก --</option>
@@ -38,17 +44,20 @@ window.renderPage1 = function () {
           <option value="target" ${d.rashShape === "target" ? "selected" : ""}>Target-like / EM</option>
         </select>
       </label>
+
       <label>สีผื่น
-        <input type="text" id="p1_rash_color" value="${d.rashColor || ""}">
+        <input type="text" id="p1_rash_color" value="${d.rashColor || ""}" placeholder="เช่น แดง, แดงไหม้, มีจ้ำเลือด">
       </label>
+
       <label>ผิวหนังหลุดลอก
         <select id="p1_skin_detach">
           <option value="">-- เลือก --</option>
           <option value="none" ${d.skinDetach === "none" ? "selected" : ""}>ไม่มี</option>
           <option value="lt10" ${d.skinDetach === "lt10" ? "selected" : ""}>มี แต่ไม่เกิน 10%</option>
-          <option value="gt30" ${d.skinDetach === "gt30" ? "selected" : ""}>มากกว่า 30% (ระวัง SJS/TEN)</option>
+          <option value="gt30" ${d.skinDetach === "gt30" ? "selected" : ""}>มากกว่า 30% (สงสัย SJS/TEN)</option>
         </select>
       </label>
+
       <label>ระยะเวลาหลังได้ยา → เริ่มมีผื่น
         <select id="p1_onset">
           <option value="">-- เลือก --</option>
@@ -63,24 +72,32 @@ window.renderPage1 = function () {
     </div>
 
     <button class="btn-primary" id="p1_save">บันทึกหน้า 1</button>
-    <p class="small-note">* เมื่อบันทึกแล้ว ระบบจะประเมินอัตโนมัติทันทีจากหน้า 1–3</p>
   `;
 
+  // เมื่อกดบันทึก
   document.getElementById("p1_save").addEventListener("click", () => {
-    const g = window.drugAllergyData;
-    g.page1.name = document.getElementById("p1_name").value;
-    g.page1.hn = document.getElementById("p1_hn").value;
-    g.page1.age = document.getElementById("p1_age").value;
-    g.page1.weight = document.getElementById("p1_weight").value;
-    g.page1.underlying = document.getElementById("p1_underlying").value;
-    g.page1.drugAllergyHistory = document.getElementById("p1_allergy_history").value;
-    g.page1.rashShape = document.getElementById("p1_rash_shape").value;
-    g.page1.rashColor = document.getElementById("p1_rash_color").value;
-    g.page1.skinDetach = document.getElementById("p1_skin_detach").value;
-    g.page1.onset = document.getElementById("p1_onset").value;
+    const store = window.drugAllergyData;
+    store.page1.name = document.getElementById("p1_name").value;
+    store.page1.hn = document.getElementById("p1_hn").value;
+    store.page1.age = document.getElementById("p1_age").value;
+    store.page1.weight = document.getElementById("p1_weight").value;
+    store.page1.underlying = document.getElementById("p1_underlying").value;
+    store.page1.drugAllergyHistory = document.getElementById("p1_allergy_history").value;
+    store.page1.rashShape = document.getElementById("p1_rash_shape").value;
+    store.page1.rashColor = document.getElementById("p1_rash_color").value;
+    store.page1.skinDetach = document.getElementById("p1_skin_detach").value;
+    store.page1.onset = document.getElementById("p1_onset").value;
 
-    // ประเมินใหม่ทันที
-    window.evaluateDrugAllergy();
+    // เรียกให้ระบบประเมินอัตโนมัติทันที
+    if (typeof window.evaluateDrugAllergy === "function") {
+      window.evaluateDrugAllergy();
+    }
+
+    // เซฟเก็บ
+    if (typeof window.saveDrugAllergyData === "function") {
+      window.saveDrugAllergyData();
+    }
+
     alert("บันทึกหน้า 1 แล้ว");
   });
 };
