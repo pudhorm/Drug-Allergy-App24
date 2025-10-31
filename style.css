@@ -185,56 +185,7 @@ header p {
   gap: .35rem .75rem;
 }
 
-/* ========================= */
-/* ⬇️ วางฟองอากาศไว้ "ท้ายไฟล์" */
-/* ========================= */
-
-.bubble-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.bubble {
-  position: absolute;
-  display: block;
-  border-radius: 9999px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0));
-  opacity: 0.45;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
-  animation: bubble-up 6s linear infinite;
-}
-
-.bubble.b1 { width: 90px; height: 90px; left: 5%; bottom: -90px; animation-duration: 5.2s; }
-.bubble.b2 { width: 55px; height: 55px; left: 23%; bottom: -70px; animation-duration: 4.3s; animation-delay: .6s; }
-.bubble.b3 { width: 120px; height: 120px; left: 45%; bottom: -110px; opacity: 0.35; animation-duration: 6s; animation-delay: 1s; }
-.bubble.b4 { width: 65px; height: 65px; right: 18%; bottom: -80px; animation-duration: 3.9s; animation-delay: .3s; }
-.bubble.b5 { width: 40px; height: 40px; right: 5%; bottom: -60px; animation-duration: 3.4s; animation-delay: 1.3s; }
-.bubble.b6 { width: 110px; height: 110px; left: 70%; bottom: -120px; opacity: 0.28; animation-duration: 5.5s; animation-delay: .9s; }
-
-@keyframes bubble-up {
-  0%   { transform: translateY(0) translateX(0); }
-  35%  { transform: translateY(-45px) translateX(8px); }
-  70%  { transform: translateY(-115px) translateX(-6px); }
-  100% { transform: translateY(-165px) translateX(4px); }
-}
-
-/* ========== ฟองอากาศบนเฮดเดอร์ ========== */
-header {
-  background: linear-gradient(90deg, #7c3aed, #ec4899);
-  color: #fff;
-  padding: 1.3rem 1.6rem 1.4rem;
-  position: relative;
-  overflow: hidden;
-  min-height: 110px;           /* ทำให้มีที่ให้ฟองลอย */
-}
-
-.header-inner {
-  position: relative;
-  z-index: 5;                  /* เอาข้อความขึ้นมาบนสุด */
-}
-
+/* ========== ฟองอากาศบนเฮดเดอร์ (เวอร์ชันเล็ก+หลายสี) ========== */
 .bubble-layer {
   position: absolute;
   inset: 0;
@@ -246,30 +197,39 @@ header {
   position: absolute;
   display: block;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0));
-  opacity: 0.55;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
-  animation: bubble-up 5.2s linear infinite;
+  opacity: 0.45;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.08));
+  animation: bubble-up 6.3s linear infinite;
 }
 
-.bubble.b1 { width: 90px; height: 90px; left: 4%;  bottom: -95px; animation-duration: 4.5s; }
-.bubble.b2 { width: 55px; height: 55px; left: 20%; bottom: -70px; animation-duration: 3.8s; animation-delay: .4s; }
-.bubble.b3 { width: 120px; height: 120px; left: 43%; bottom: -120px; opacity: .35; animation-duration: 5.4s; animation-delay: .8s; }
-.bubble.b4 { width: 65px; height: 65px; right: 18%; bottom: -80px; animation-duration: 3.6s; animation-delay: .2s; }
-.bubble.b5 { width: 40px; height: 40px; right: 5%;  bottom: -60px; animation-duration: 3.1s; animation-delay: 1s; }
-.bubble.b6 { width: 110px; height: 110px; left: 70%; bottom: -125px; opacity: .3; animation-duration: 4.9s; }
+.bubble.white {
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0));
+}
+.bubble.pink {
+  background: radial-gradient(circle at 30% 30%, rgba(255,179,215,0.6), rgba(255,179,215,0));
+}
+.bubble.purple {
+  background: radial-gradient(circle at 30% 30%, rgba(201,178,255,0.6), rgba(201,178,255,0));
+}
+.bubble.blue {
+  background: radial-gradient(circle at 30% 30%, rgba(173,214,255,0.55), rgba(173,214,255,0));
+}
+
+.bubble.b1 { width: 58px; height: 58px; left: 4%;  bottom: -65px; animation-duration: 5.5s; }
+.bubble.b2 { width: 42px; height: 42px; left: 19%; bottom: -52px; animation-duration: 6.1s; animation-delay: .4s; }
+.bubble.b3 { width: 70px; height: 70px; left: 38%; bottom: -78px; opacity: .35; animation-duration: 6.8s; animation-delay: .8s; }
+.bubble.b4 { width: 48px; height: 48px; right: 18%; bottom: -58px; animation-duration: 5.9s; animation-delay: .2s; }
+.bubble.b5 { width: 36px; height: 36px; right: 6%;  bottom: -45px; animation-duration: 5.4s; animation-delay: 1s; }
+.bubble.b6 { width: 80px; height: 80px; left: 70%; bottom: -90px; opacity: .32; animation-duration: 6.5s; }
 
 @keyframes bubble-up {
   0%   { transform: translateY(0) translateX(0); }
-  30%  { transform: translateY(-40px) translateX(6px); }
-  60%  { transform: translateY(-95px) translateX(-6px); }
-  100% { transform: translateY(-150px) translateX(3px); }
+  35%  { transform: translateY(-40px) translateX(4px); }
+  70%  { transform: translateY(-85px) translateX(-4px); }
+  100% { transform: translateY(-130px) translateX(2px); }
 }
 
-/* จอเล็กให้ฟองขึ้นช้าๆ */
 @media (max-width: 580px) {
   .bubble.b3,
   .bubble.b6 { display: none; }
-  header { min-height: 95px; }
 }
-
