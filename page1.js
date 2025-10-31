@@ -92,8 +92,8 @@ function initPage1() {
           <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
         </div>
 
-        <!--  รูปร่างผื่น -->
-        <p class="form-label">1.1 รูปร่างผื่น</p>
+        <!-- รูปร่างผื่น -->
+        <p class="form-label">รูปร่างผื่น</p>
         <div class="check-group check-2col">
           <!-- ซ้าย -->
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
@@ -111,8 +111,8 @@ function initPage1() {
         </div>
         <input id="p1-rashShape-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
 
-        <!--  สีผื่น (10 ตัว + อื่นๆ) -->
-        <p class="form-label" style="margin-top:1rem;">1.2 สีผื่น</p>
+        <!-- สีผื่น -->
+        <p class="form-label" style="margin-top:1rem;">สีผื่น</p>
         <div class="check-group check-2col">
           <!-- ซ้าย -->
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
@@ -233,11 +233,9 @@ function initPage1() {
   `;
 
   // ====== ใส่ event ======
-  // ปุ่มบันทึก
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
-  // อายุ other
   const ageSel = document.getElementById("p1-age-select");
   const ageOther = document.getElementById("p1-age-other");
   if (ageSel && ageOther) {
@@ -246,7 +244,6 @@ function initPage1() {
     });
   }
 
-  // น้ำหนัก other
   const wtSel = document.getElementById("p1-weight-select");
   const wtOther = document.getElementById("p1-weight-other");
   if (wtSel && wtOther) {
@@ -255,7 +252,6 @@ function initPage1() {
     });
   }
 
-  // โรคประจำตัว other
   const undSel = document.getElementById("p1-underlying-select");
   const undOther = document.getElementById("p1-underlying-other");
   if (undSel && undOther) {
@@ -264,7 +260,6 @@ function initPage1() {
     });
   }
 
-  // onset other
   const onsetSel = document.getElementById("p1-onset");
   const onsetOther = document.getElementById("p1-onset-other");
   if (onsetSel && onsetOther) {
@@ -273,7 +268,6 @@ function initPage1() {
     });
   }
 
-  // น้ำเหลือง/สะเก็ด other
   const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
   const exuOtherInput = document.getElementById("p1-exu-other");
   if (exuOtherToggle && exuOtherInput) {
@@ -282,7 +276,6 @@ function initPage1() {
     });
   }
 
-  // กันบวม/ไม่บวม
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
@@ -347,7 +340,7 @@ function savePage1(e) {
     document.querySelectorAll("input[name='p1-blister']:checked")
   ).map(el => el.value);
 
-  // ผิวหลุดลอก
+  // ผิวหนังหลุดลอก
   const peeling = document.getElementById("p1-peeling").value;
 
   // คัน
@@ -394,7 +387,7 @@ function savePage1(e) {
       : onsetSel2.value;
   }
 
-  // เก็บข้อมูลรวม
+  // เก็บรวม
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -423,7 +416,7 @@ function savePage1(e) {
     onset,
   };
 
-  // เซฟลง localStorage
+  // เซฟ
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
   // แจ้งผล
