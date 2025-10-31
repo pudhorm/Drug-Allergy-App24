@@ -174,3 +174,79 @@ header p {
   background: #eef5ff;
   border-color: #b4cafc;
 }
+/* ฟอร์มในหน้า 1 ให้สวยขึ้น */
+.form-label {
+  font-weight: 600;
+  margin-bottom: .25rem;
+  display: block;
+  color: #0f172a;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: .45rem .6rem;
+  border: 1px solid #d1d5db;
+  border-radius: .5rem;
+  background: #fff;
+  font-size: .9rem;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .75rem .85rem;
+}
+
+.check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem 1rem;
+}
+
+.check-inline {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .9rem;
+}
+
+/* กล่องใหญ่ของหน้า 1 */
+.page-card {
+  background: transparent;
+}
+
+/* ให้ปุ่มบันทึกสวยขึ้นหน่อย */
+.primary-btn {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: .55rem .9rem;
+  border-radius: .5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.primary-btn:hover {
+  filter: brightness(0.95);
+}
+
+.save-status {
+  font-weight: 500;
+  color: #22c55e;
+}
+
+/* เผื่อจอเล็ก */
+@media (max-width: 540px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
