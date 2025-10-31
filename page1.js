@@ -171,11 +171,28 @@ function initPage1() {
           </select>
         </div>
 
-        <div class="form-field" style="margin-top:.75rem;">
-          <div class="form-label">น้ำเหลือง/สะเก็ด (ระบุ)</div>
-          <input id="p1-exudate" type="text" class="form-input" placeholder="เช่น มีน้ำเหลืองเล็กน้อย / มีสะเก็ดแห้ง">
-        </div>
-      </div>
+      <div class="form-field" style="margin-top:.75rem;">
+  <div class="form-label">น้ำเหลือง/สะเก็ด</div>
+  <div class="check-group">
+    <label class="check-inline">
+      <input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…
+    </label>
+  </div>
+  <input id="p1-exu-other" type="text" class="form-input" placeholder="ระบุลักษณะน้ำเหลือง/สะเก็ด" style="margin-top:.4rem; display:none;">
+</div>
+
 
            <!-- ส่วนที่ 3 เวลาเริ่มมีอาการ -->
       <div class="section-box section-3">
@@ -202,6 +219,42 @@ function initPage1() {
                  style="margin-top:.5rem; display:none;">
         </div>
       </div>
+
+  // แสดง/ซ่อน "อื่นๆ" ของโรคประจำตัว
+  const undSel = document.getElementById("p1-underlying-select");
+  const undOther = document.getElementById("p1-underlying-other");
+  if (undSel && undOther) {
+    undSel.addEventListener("change", () => {
+      undOther.style.display = undSel.value === "other" ? "block" : "none";
+    });
+  }
+
+  // แสดง/ซ่อน "อื่นๆ" ของระยะเวลาที่เริ่มมีอาการ
+  const onsetSel = document.getElementById("p1-onset");
+  const onsetOther = document.getElementById("p1-onset-other");
+  if (onsetSel && onsetOther) {
+    onsetSel.addEventListener("change", () => {
+      onsetOther.style.display = onsetSel.value === "other" ? "block" : "none";
+    });
+  }
+
+  // 👇 อันใหม่นี้แหละ (น้ำเหลือง/สะเก็ด)
+  const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
+  const exuOtherInput  = document.getElementById("p1-exu-other");
+  if (exuOtherToggle && exuOtherInput) {
+    exuOtherToggle.addEventListener("change", () => {
+      exuOtherInput.style.display = exuOtherToggle.checked ? "block" : "none";
+    });
+  }
+
+  // กันบวม/ไม่บวมพร้อมกัน ...
+  const swYes = document.getElementById("p1-swelling-yes");
+  const swNo = document.getElementById("p1-swelling-no");
+  if (swYes && swNo) {
+    swYes.addEventListener("change", e => { if (e.target.checked) swNo.checked = false; });
+    swNo.addEventListener("change", e => { if (e.target.checked) swYes.checked = false; });
+  }
+}
 
 
       <div style="margin-top:1.2rem;">
@@ -323,7 +376,22 @@ function savePage1(e) {
 
   const location     = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
-  const exudate      = document.getElementById("p1-exudate").value;
+  // น้ำเหลือง / สะเก็ด
+const exuFluid = document.getElementById("p1-exu-fluid")?.checked ? "มีน้ำเหลือง" : "";
+const exuCrust = document.getElementById("p1-exu-crust")?.checked ? "มีสะเก็ด" : "";
+const exuBoth  = document.getElementById("p1-exu-both")?.checked ? "มีน้ำเหลืองและสะเก็ด" : "";
+const exuNone  = document.getElementById("p1-exu-none")?.checked ? "ไม่มี" : "";
+const exuOtherToggle = document.getElementById("p1-exu-other-toggle")?.checked;
+const exuOther = document.getElementById("p1-exu-other")?.value || "";
+
+const exudateList = [
+  exuFluid,
+  exuCrust,
+  exuBoth,
+  exuNone,
+  exuOtherToggle ? exuOther : ""
+].filter(Boolean);
+
   // ระยะเวลาที่เริ่มมีอาการ
 const onsetSel2 = document.getElementById("p1-onset");
 const onsetOther2 = document.getElementById("p1-onset-other");
@@ -362,7 +430,7 @@ if (onsetSel2) {
     swelling: swellingList,
     location: location,
     distribution: distribution,
-    exudate: exudate,
+    exudate: exudateList,  // 👈 เปลี่ยนเป็นอาเรย์
     onset: onset
   };
 
