@@ -4,125 +4,64 @@
   <meta charset="UTF-8" />
   <title>ระบบประเมินการแพ้ยา</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css?v=9" />
-  <style>
-    body { font-family: sans-serif; background:#f3f4f6; margin:0; }
-    header { background: linear-gradient(90deg, #7c3aed, #ec4899); color:white; padding:1rem 1.5rem; }
-    .tabs { display:flex; gap:.5rem; background:white; padding:.5rem 1rem; border-bottom:1px solid #ddd; }
-    .tabs button { background:#eef; border:0; padding:.5rem .75rem; border-radius:.5rem; cursor:pointer; }
-    .tabs button.active { background:#7c3aed; color:white; }
-    .page { display:none; padding:1.5rem; }
-    .page.active { display:block; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header>
-  <div class="header-inner">
-    <h1>
-      ระบบประเมินการแพ้ยา
-      <span class="pill-icon" aria-label="ยา" title="Drug Allergy App">💊</span>
-    </h1>
-    <p>โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
-  </div>
-
-  <!-- ชั้นฟองอากาศที่ทำไว้ก่อนหน้านี้ -->
-  <div class="bubble-layer">
-    <span class="bubble b1"></span>
-    <span class="bubble b2"></span>
-    <span class="bubble b3"></span>
-    <span class="bubble b4"></span>
-    <span class="bubble b5"></span>
-    <span class="bubble b6"></span>
-  </div>
-</header>
-
-
-  <!-- ข้อความบนสุด -->
-  <div class="header-inner">
-    <div class="header-title-line">
-      <span class="header-pill">💊</span>
-      <h1>ระบบประเมินการแพ้ยา</h1>
+  <!-- ✅ เฮดเดอร์เดียวเท่านั้น -->
+  <header>
+    <div class="header-inner">
+      <div class="header-title-line">
+        <h1>ระบบประเมินการแพ้ยา</h1>
+        <span class="header-pill" aria-label="ยา" title="Drug Allergy">💊</span>
+      </div>
+      <p>โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
     </div>
-    <p>โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
-  </div>
-</header>
 
+    <!-- ฟองอากาศ -->
+    <div class="bubble-layer">
+      <span class="bubble white b1"></span>
+      <span class="bubble pink  b2"></span>
+      <span class="bubble purple b3"></span>
+      <span class="bubble blue  b4"></span>
+      <span class="bubble white b5"></span>
+      <span class="bubble pink  b6"></span>
+    </div>
+  </header>
 
+  <!-- แถบเปลี่ยนหน้า -->
+  <nav class="tabs">
+    <button class="active" data-page="page1">หน้า 1 ระบบผิวหนัง</button>
+    <button data-page="page2">หน้า 2 ระบบอื่นๆ</button>
+    <button data-page="page3">หน้า 3 ผลตรวจทางห้องปฏิบัติการ</button>
+    <button data-page="page4">หน้า 4 Naranjo</button>
+    <button data-page="page5">หน้า 5 Timeline</button>
+    <button data-page="page6">หน้า 6 สรุปผล</button>
+  </nav>
 
-
-
-  <!-- แถบเมนู 6 หน้า -->
-  <div class="tabs">
-    <button onclick="showPage('p1')" id="tab-p1" class="active">หน้า 1 ผิวหนัง</button>
-    <button onclick="showPage('p2')" id="tab-p2">หน้า 2 ระบบอื่นๆ</button>
-    <button onclick="showPage('p3')" id="tab-p3">หน้า 3 ผล Lab</button>
-    <button onclick="showPage('p4')" id="tab-p4">หน้า 4 Naranjo</button>
-    <button onclick="showPage('p5')" id="tab-p5">หน้า 5 Timeline</button>
-    <button onclick="showPage('p6')" id="tab-p6">หน้า 6 สรุปผล</button>
-  </div>
-
+  <!-- เนื้อหาแต่ละหน้า -->
   <main>
-    <!-- หน้า 1 -->
-    <section id="p1" class="page active">
-      <h2>หน้า 1 ระบบผิวหนัง</h2>
-      <!-- 👇 ตัวนี้สำคัญ ถ้าไม่มีอันนี้ หน้า 1 จะโล่ง -->
-      <div id="page1-root"></div>
+    <section id="page1" class="page active">
+      <div id="page1-root"><!-- page1.js จะมาเติมตรงนี้ --></div>
     </section>
-
-    <!-- หน้า 2 -->
-    <section id="p2" class="page">
+    <section id="page2" class="page">
       <h2>หน้า 2 ระบบอื่นๆ</h2>
-      <div id="page2-root"></div>
     </section>
-
-    <!-- หน้า 3 -->
-    <section id="p3" class="page">
+    <section id="page3" class="page">
       <h2>หน้า 3 ผลตรวจทางห้องปฏิบัติการ</h2>
-      <div id="page3-root"></div>
     </section>
-
-    <!-- หน้า 4 -->
-    <section id="p4" class="page">
+    <section id="page4" class="page">
       <h2>หน้า 4 Naranjo</h2>
-      <div id="page4-root"></div>
     </section>
-
-    <!-- หน้า 5 -->
-    <section id="p5" class="page">
+    <section id="page5" class="page">
       <h2>หน้า 5 Timeline</h2>
-      <div id="page5-root"></div>
     </section>
-
-    <!-- หน้า 6 -->
-    <section id="p6" class="page">
-      <h2>หน้า 6 ผลการประเมิน</h2>
-      <button onclick="renderSummary()">ดึงข้อมูลจากหน้า 1–5</button>
-      <div id="summary-box" style="margin-top:1rem;"></div>
+    <section id="page6" class="page">
+      <h2>หน้า 6 สรุปผล</h2>
     </section>
   </main>
 
-  <!-- โหลด JS (เปลี่ยนเป็น v=9 ทั้งหมดเพื่อบังคับโหลดใหม่) -->
-  <script src="data.js?v=4"></script>
-  <script src="page1.js?v=15"></script>
-  <script src="page2.js?v=9"></script>
-  <script src="page3.js?v=9"></script>
-  <script src="page4.js?v=9"></script>
-  <script src="page5.js?v=9"></script>
-  <script src="page6.js?v=9"></script>
-
-  <script>
-    function showPage(id) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.getElementById('tab-' + id).classList.add('active');
-
-      // ถ้าเป็นหน้า 6 ให้ดึงข้อมูลทุกครั้ง
-      if (id === 'p6' && typeof renderSummary === 'function') {
-        renderSummary();
-      }
-    }
-  </script>
+  <script src="script.js"></script>
+  <script src="page1.js"></script>
 </body>
 </html>
