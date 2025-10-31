@@ -122,7 +122,7 @@ function initPage1() {
 function savePage1(e) {
   if (e && e.preventDefault) e.preventDefault();
 
-  // ผู้ป่วย
+  // 🧑‍⚕️ ผู้ป่วย
   const name = document.getElementById("p1-name").value;
   const hn = document.getElementById("p1-hn").value;
   const age = document.getElementById("p1-age").value;
@@ -130,7 +130,7 @@ function savePage1(e) {
   const underlying = document.getElementById("p1-underlying").value;
   const allergyHistory = document.getElementById("p1-allergy-history").value;
 
-  // ผิวหนัง
+  // 🩹 ผิวหนัง
   const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
   const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const blisterValues   = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
@@ -142,7 +142,7 @@ function savePage1(e) {
   const itchNone   = document.getElementById("p1-itch-none")?.checked ? "ไม่คัน" : "";
   const itchList   = [itchMuch, itchLittle, itchNone].filter(Boolean);
 
-  // ปวด แสบ เจ็บ
+  // ปวด / แสบ / เจ็บ
   const painPain = document.getElementById("p1-pain-pain")?.checked ? "ปวด" : "";
   const painBurn = document.getElementById("p1-pain-burn")?.checked ? "แสบ" : "";
   const painSore = document.getElementById("p1-pain-sore")?.checked ? "เจ็บ" : "";
@@ -153,15 +153,18 @@ function savePage1(e) {
   const swellingNo  = document.getElementById("p1-swelling-no")?.checked ? "ไม่บวม" : "";
   const swellingList = [swellingYes, swellingNo].filter(Boolean);
 
+  // อื่นๆ
   const location     = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
   const exudate      = document.getElementById("p1-exudate").value;
   const onset        = document.getElementById("p1-onset").value;
 
+  // ✅ ตั้งตัวแปรกลางถ้ายังไม่มี
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
 
+  // ✅ เก็บฝั่งข้อมูลผู้ป่วย
   window.drugAllergyData.patient = {
     name,
     hn,
@@ -171,6 +174,7 @@ function savePage1(e) {
     drugAllergyHistory: allergyHistory
   };
 
+  // ✅ เก็บฝั่งผิวหนัง
   window.drugAllergyData.skin = {
     ...(window.drugAllergyData.skin || {}),
     rashShape: rashShapeValues,
@@ -179,19 +183,38 @@ function savePage1(e) {
     peeling: peeling,
     itch: itchList,
     pain: painList,
-    swelling: swellingList,   
+    swelling: swellingList,
     location: location,
     distribution: distribution,
     exudate: exudate,
     onset: onset
   };
+
+  // ✅ เซฟลง localStorage ทุกครั้งที่กด
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-  // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
-localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
+  // ✅ แสดงสถานะชั่วคราว
+  const st  = document.getElementById("p1-status");
+  const btn = document.getElementById("p1-save");
 
-  const st = document.getElementById("p1-status");
-  if (st) st.textContent = "บันทึกแล้ว ✔";
+  if (st) {
+    st.textContent = "บันทึกแล้ว ✔";
+  }
+  if (btn) {
+    btn.textContent = "บันทึกแล้ว ✓";
+    btn.style.background = "#22c55e";   // เขียว
+    btn.disabled = true;
+  }
 
   console.log("★ หน้า 1 บันทึกแล้ว", window.drugAllergyData);
+
+  // ✅ ให้หายไปใน 1.5 วิ
+  setTimeout(() => {
+    if (st) st.textContent = "";
+    if (btn) {
+      btn.textContent = "บันทึกหน้า 1";
+      btn.style.background = "#7c3aed"; // กลับสีเดิม
+      btn.disabled = false;
+    }
+  }, 1500);
 }
