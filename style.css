@@ -277,3 +277,115 @@ header p {
   font-size: .8rem;
   color: #16a34a;
 }
+/* ================== PATCH คืนการตกแต่งหน้าใน <section class="page"> ================== */
+
+/* ให้ทุกหน้าข้างใน main เป็นพื้นเทาแบบเดิม */
+main .page.active {
+  background: #f3f4f6;
+}
+
+/* อะไรที่อยู่ชั้นแรกในหน้า (h2, div, form, section) ให้เป็นกล่องขาว */
+main .page.active > h2,
+main .page.active > div,
+main .page.active > section,
+main .page.active > form {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem 1.1rem;
+  margin-bottom: 1.1rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* หัวข้อ “ส่วนที่ …” “1.1 …” ให้ตัวหนาและเรียงบรรทัดสวย */
+main .page.active h2 {
+  margin-top: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+main .page.active h3 {
+  margin-top: .9rem;
+  margin-bottom: .5rem;
+  font-size: .93rem;
+  font-weight: 600;
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+}
+
+/* input / textarea / select ทั้งหมดในหน้าฟอร์มให้เป็นกล่องขาวโค้ง */
+main .page.active input[type="text"],
+main .page.active input[type="number"],
+main .page.active input[type="date"],
+main .page.active textarea,
+main .page.active select {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: .6rem;
+  padding: .4rem .55rem;
+  font-size: .9rem;
+  transition: .13s;
+}
+main .page.active textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+main .page.active input:focus,
+main .page.active textarea:focus,
+main .page.active select:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.13);
+}
+
+/* label ที่เป็นฟิลด์ (ชื่อ-สกุล, HN, อายุ...) ให้เรียงสวยขึ้น */
+main .page.active label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  align-items: center;
+  font-size: .9rem;
+  margin-bottom: .45rem;
+}
+
+/* ช่อง “อื่นๆ” ให้กว้างขึ้นนิด */
+main .page.active input[placeholder="ระบุ"],
+main .page.active input[placeholder="อื่นๆ"],
+main .page.active input[placeholder="ระบุ ..."] {
+  max-width: 200px;
+}
+
+/* กลุ่ม checkbox หลายอันต่อกัน (1.1, 1.2) ให้เว้นบรรทัดอัตโนมัติ */
+main .page.active h3 + label,
+main .page.active h3 + div > label {
+  margin-right: .6rem;
+}
+
+/* กล่องอัปโหลดรูป (ถ้ามี id แบบนี้) */
+main .page.active #img-drop,
+main .page.active .upload-box {
+  background: #faf5ff;
+  border: 1.5px dashed rgba(124,58,237,.5);
+  border-radius: .9rem;
+  padding: 1rem .5rem;
+  text-align: center;
+  font-size: .85rem;
+  color: #5b21b6;
+  cursor: pointer;
+}
+main .page.active #img-preview,
+main .page.active .img-preview {
+  margin-top: .75rem;
+  max-width: 280px;
+  border-radius: .5rem;
+  border: 1px solid rgba(148,163,184,.35);
+  display: block;
+}
