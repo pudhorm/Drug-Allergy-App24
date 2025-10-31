@@ -92,7 +92,7 @@ function initPage1() {
           <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
         </div>
 
-        <!-- 1.1 รูปร่างผื่น -->
+        <!--  รูปร่างผื่น -->
         <p class="form-label">1.1 รูปร่างผื่น</p>
         <div class="check-group check-2col">
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
@@ -111,13 +111,24 @@ function initPage1() {
         <input id="p1-rashShape-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
 
         <!-- สีผื่น -->
-        <p class="form-label" style="margin-top:1rem;">สีผื่น</p>
-        <div class="check-group">
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงไหม้"> แดงไหม้</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ม่วง"> ม่วง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เหลือง"> เหลือง</label>
-        </div>
+<p class="form-label" style="margin-top:1rem;">1.2 สีผื่น</p>
+<div class="check-group check-2col">
+  <!-- ซ้าย -->
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงซีด"> แดงซีด</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ใส"> ใส</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เหลือง"> เหลือง</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ดำ"> ดำ</label>
+
+  <!-- ขวา -->
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงไหม้"> แดงไหม้</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ซีด"> ซีด</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ม่วง"> ม่วง</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="มันเงา"> มันเงา</label>
+  <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เทา"> เทา</label>
+</div>
+<input id="p1-rashColor-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.6rem;">
+
 
         <!-- ตุ่มน้ำ -->
         <p class="form-label" style="margin-top:1rem;">ตุ่มน้ำ</p>
