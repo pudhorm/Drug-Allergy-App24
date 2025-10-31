@@ -3,7 +3,26 @@ function renderSummary() {
   const box = document.getElementById("summary-box");
   if (!box) return;
 
-  const d = window.drugAllergyData || {};
+  // ✅ ดึงจาก localStorage ก่อน
+  let d = {};
+  const saved = localStorage.getItem("drugAllergyData");
+  if (saved) {
+    try {
+      d = JSON.parse(saved);
+    } catch (e) {
+      d = window.drugAllergyData || {};
+    }
+  } else {
+    // ถ้าใน localStorage ยังไม่มี ก็ใช้ตัวแปรกลางตามเดิม
+    d = window.drugAllergyData || {};
+  }
+
+  // จากตรงนี้ลงไปใช้ตัวแปร d เหมือนเดิมได้เลย
+  const patient = d.patient || {};
+  const skin = d.skin || {};
+  ...
+}
+
   const patient = d.patient || {};
   const skin = d.skin || {};
   const other = d.otherSystems || {};
