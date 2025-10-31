@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* เผื่อยังไม่มี style.css */
     body { font-family: sans-serif; background:#f3f4f6; margin:0; }
     header { background: linear-gradient(90deg, #7c3aed, #ec4899); color:white; padding:1rem 1.5rem; }
     .tabs { display:flex; gap:.5rem; background:white; padding:.5rem 1rem; border-bottom:1px solid #ddd; }
@@ -34,7 +33,6 @@
     <button onclick="showPage('p6')" id="tab-p6">หน้า 6 สรุปผล</button>
   </div>
 
-  <!-- เนื้อหาแต่ละหน้า -->
   <main>
     <section id="p1" class="page active">
       <h2>หน้า 1 ระบบผิวหนัง</h2>
@@ -61,27 +59,24 @@
       <div id="page5-root"></div>
     </section>
 
-    <!-- หน้า 6 สรุปผล -->
-<section id="page-summary" class="page">
-  <h2>หน้า 6 ผลการประเมิน</h2>
-  <button onclick="renderSummary()">ดึงข้อมูลจากหน้า 1–5</button>
-
-  <!-- 👇 กล่องนี้แหละที่ยังไม่มี -->
-  <div id="summary-box" style="margin-top:1rem;"></div>
-</section>
-
+    <!-- ✅ หน้า 6 ใช้ id = p6 ให้ตรงกับปุ่ม -->
+    <section id="p6" class="page">
+      <h2>หน้า 6 ผลการประเมิน</h2>
+      <button onclick="renderSummary()">ดึงข้อมูลจากหน้า 1–5</button>
+      <div id="summary-box" style="margin-top:1rem;"></div>
+    </section>
+  </main>
 
   <!-- ✅ โหลดตัวแปรกลางก่อน -->
-   <script src="data.js?v=4"></script>
+  <script src="data.js?v=4"></script>
 
-  <!-- ✅ (ยังไม่มีแต่ใส่ที่นี่ไว้เลย) โหลดไฟล์แต่ละหน้า -->
- <script src="page1.js?v=4"></script>
- <script src="page2.js?v=4"></script>
- <script src="page3.js?v=4"></script>
- <script src="page4.js?v=4"></script>
- <script src="page5.js?v=4"></script>
- <script src="page6.js?v=4"></script>
-
+  <!-- ✅ โหลดไฟล์แต่ละหน้า -->
+  <script src="page1.js?v=4"></script>
+  <script src="page2.js?v=4"></script>
+  <script src="page3.js?v=4"></script>
+  <script src="page4.js?v=4"></script>
+  <script src="page5.js?v=4"></script>
+  <script src="page6.js?v=4"></script>
 
   <!-- ฟังก์ชันสลับหน้า -->
   <script>
