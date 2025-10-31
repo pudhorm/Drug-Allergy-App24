@@ -47,7 +47,7 @@ header p {
   opacity: .9;
 }
 
-/* ================== ฟองอากาศ (เข้ม + ลอยสูง) ================== */
+/* ฟองอากาศ */
 .bubble-layer {
   position: absolute;
   inset: 0;
@@ -58,37 +58,36 @@ header p {
 .bubble {
   position: absolute;
   border-radius: 9999px;
-  opacity: 0.68;
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.14));
-  animation: bubble-up 6.3s ease-in-out infinite;
+  opacity: 0.42;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.08));
+  animation: bubble-up 6.3s linear infinite;
 }
 
 .bubble.white {
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0));
 }
 .bubble.pink {
-  background: radial-gradient(circle at 30% 30%, rgba(236,72,153,0.82), rgba(236,72,153,0));
+  background: radial-gradient(circle at 30% 30%, rgba(255,179,215,0.6), rgba(255,179,215,0));
 }
 .bubble.purple {
-  background: radial-gradient(circle at 30% 30%, rgba(124,58,237,0.78), rgba(124,58,237,0));
+  background: radial-gradient(circle at 30% 30%, rgba(201,178,255,0.5), rgba(201,178,255,0));
 }
 .bubble.blue {
-  background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.75), rgba(59,130,246,0));
+  background: radial-gradient(circle at 30% 30%, rgba(173,214,255,0.55), rgba(173,214,255,0));
 }
 
-/* ให้จุดเริ่มมันต่ำหน่อย แล้วลอยขึ้นเยอะๆ */
-.bubble.b1 { width: 68px; height: 68px; left: 4%;  bottom: -85px; animation-duration: 5.5s; }
-.bubble.b2 { width: 54px; height: 54px; left: 19%; bottom: -95px; animation-duration: 6.1s; animation-delay: .4s; }
-.bubble.b3 { width: 110px; height: 110px; left: 38%; bottom: -120px; animation-duration: 6.8s; animation-delay: .8s; }
-.bubble.b4 { width: 72px; height: 72px; right: 18%; bottom: -105px; animation-duration: 5.9s; animation-delay: .2s; }
-.bubble.b5 { width: 48px; height: 48px; right: 6%;  bottom: -90px; animation-duration: 5.4s; animation-delay: 1s; }
-.bubble.b6 { width: 130px; height: 130px; left: 70%; bottom: -140px; animation-duration: 6.5s; }
+.bubble.b1 { width: 58px; height: 58px; left: 4%;  bottom: -65px; animation-duration: 5.5s; }
+.bubble.b2 { width: 42px; height: 42px; left: 19%; bottom: -52px; animation-duration: 6.1s; animation-delay: .4s; }
+.bubble.b3 { width: 70px; height: 70px; left: 38%; bottom: -78px; opacity: .35; animation-duration: 6.8s; animation-delay: .8s; }
+.bubble.b4 { width: 48px; height: 48px; right: 18%; bottom: -58px; animation-duration: 5.9s; animation-delay: .2s; }
+.bubble.b5 { width: 36px; height: 36px; right: 6%;  bottom: -45px; animation-duration: 5.4s; animation-delay: 1s; }
+.bubble.b6 { width: 80px; height: 80px; left: 70%; bottom: -90px; opacity: .32; animation-duration: 6.5s; }
 
 @keyframes bubble-up {
   0%   { transform: translateY(0) translateX(0); }
-  25%  { transform: translateY(-55px) translateX(5px); }
-  55%  { transform: translateY(-120px) translateX(-6px); }
-  100% { transform: translateY(-180px) translateX(3px); }
+  35%  { transform: translateY(-40px) translateX(4px); }
+  70%  { transform: translateY(-85px) translateX(-4px); }
+  100% { transform: translateY(-130px) translateX(2px); }
 }
 
 /* จอเล็ก */
@@ -139,7 +138,7 @@ header p {
   display: block;
 }
 
-/* ================== กล่องหลักแบบเดิม (เผื่อหน้าเก่าใช้) ================== */
+/* กล่องหลักของหน้า 1 */
 .page-card {
   max-width: 980px;
   background: #ffffff;
@@ -150,219 +149,84 @@ header p {
   border: 1px solid rgba(124, 58, 237, .08);
 }
 
-/* ================== หน้า 1 แบบใหม่ (ที่ page1.js สร้าง) ================== */
-.section-card {
+/* กรอบส่วนย่อย */
+.section-box {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: .85rem;
+  padding: 1rem 1rem 1.1rem;
+  margin-bottom: 1rem;
   background: #fff;
-  border-radius: 1rem;
-  padding: 1.1rem 1.2rem 1.25rem;
-  margin: 0 auto 1.1rem;
-  max-width: 1080px;
-  border: 1px solid rgba(148,163,184,0.25);
-  box-shadow: 0 6px 18px rgba(15,23,42,0.03);
 }
 
+/* ส่วนที่ 1 สีเขียวมิ้น */
+.section-box.section-1 {
+  background: #e8fff7;
+  border-color: #8ff1cf;
+}
+
+/* ส่วนที่ 2 สีชมพูอ่อน */
+.section-box.section-2 {
+  background: #fff1f7;
+  border-color: #ffb7d6;
+}
+
+/* ส่วนที่ 3 สีฟ้าอ่อน */
+.section-box.section-3 {
+  background: #eef5ff;
+  border-color: #b4cafc;
+}
+
+/* หัวข้อในกรอบ */
 .section-title {
   display: flex;
-  align-items: center;
   gap: .5rem;
-  font-weight: 700;
-  font-size: 1.02rem;
-  margin-bottom: .75rem;
-  color: #0f172a;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .75rem 1rem;
-}
-@media (max-width: 980px) {
-  .grid-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 620px) {
-  .grid-3 {
-    grid-template-columns: 1fr;
-  }
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: .3rem;
-  font-size: .85rem;
-}
-.field span {
-  font-weight: 500;
-  color: #1f2937;
-}
-.field input,
-.field textarea {
-  border: 1px solid #d1d5db;
-  border-radius: .5rem;
-  padding: .4rem .55rem;
-  font-size: .9rem;
-  background: #fff;
-}
-.field textarea {
-  min-height: 60px;
-  resize: vertical;
-}
-
-.sub-block {
-  margin-bottom: 1.2rem;
-}
-
-.sub-block h3 {
-  font-size: .95rem;
-  font-weight: 600;
-  margin-bottom: .5rem;
-  color: #0f172a;
-}
-
-/* กลุ่มชิปเลือกอาการ */
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .4rem;
-}
-
-.chip {
-  display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  background: #ffffff;
-  border: 1px solid rgba(124, 58, 237, .25);
-  border-radius: 9999px;
-  padding: .35rem .6rem .35rem .5rem;
-  font-size: .82rem;
-  cursor: pointer;
-  transition: .15s ease-out;
-  white-space: nowrap;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: .75rem;
 }
-.chip input {
-  accent-color: #7c3aed;
-}
-.chip:hover {
-  background: rgba(124, 58, 237, .08);
-}
-.chip-input {
-  display: inline-flex;
-  gap: .35rem;
-  background: #fff;
-}
-.chip-input input {
-  border: 0;
-  border-bottom: 1px solid rgba(148, 163, 184, .4);
-  border-radius: 0;
-  outline: none;
-  font-size: .78rem;
-  padding: .1rem .25rem;
-  min-width: 80px;
-  background: transparent;
-}
-.chip-pink { border-color: rgba(236,72,153,.48); }
-.chip-orange { border-color: rgba(249,115,22,.45); }
-.chip-gray { border-color: rgba(148,163,184,.52); }
-.chip-yellow { border-color: rgba(234,179,8,.52); }
-.chip-violet { border-color: rgba(139,92,246,.52); }
-.chip-red { border-color: rgba(248,113,113,.52); }
-.chip-green { border-color: rgba(34,197,94,.45); }
-.chip-lime { border-color: rgba(190,242,100,.6); }
-.chip-sky { border-color: rgba(125,211,252,.6); }
 
-/* อินพุตในบรรทัด */
-.inline-input {
-  border: 1px solid #d1d5db;
-  border-radius: .5rem;
-  padding: .25rem .45rem;
-  font-size: .8rem;
-  min-width: 110px;
-  background: #fff;
+/* ฟิลด์ฟอร์ม */
+.form-field { display: block; }
+.form-label {
+  font-size: .85rem;
+  font-weight: 500;
+  margin-bottom: .25rem;
 }
-.wide-input {
+
+/* ให้ input/textarea ไม่ทะลุกล่อง */
+.section-box .form-input,
+.section-box .form-select,
+.section-box .form-textarea {
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   border-radius: .5rem;
   padding: .4rem .6rem;
   font-size: .9rem;
   background: #fff;
-  margin-top: .5rem;
+}
+.section-box .form-input:focus,
+.section-box .form-select:focus,
+.section-box .form-textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .12);
 }
 
-/* ตุ่มน้ำ */
-.blister-buttons {
-  display: flex;
-  gap: .5rem;
-  margin-bottom: .6rem;
+/* สองคอลัมน์ */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem 1.25rem;
 }
-.blister-buttons button {
-  background: #eef2ff;
-  border: 1px solid rgba(124,58,237,.25);
-  border-radius: .5rem;
-  padding: .25rem .65rem;
-  font-size: .78rem;
-  cursor: pointer;
-}
-.blister-buttons button:hover {
-  background: rgba(124,58,237,.08);
-}
-.blister-list {
-  display: flex;
-  flex-direction: column;
-  gap: .35rem;
-}
-.blister-row {
-  display: flex;
-  gap: .4rem;
-  align-items: center;
-}
-.blister-label {
-  min-width: 50px;
-  font-size: .78rem;
-}
-.blister-count-input {
-  width: 80px;
-  border: 1px solid #d1d5db;
-  border-radius: .4rem;
-  padding: .15rem .35rem;
-  font-size: .78rem;
-}
-.blister-del {
-  background: #fee2e2;
-  border: 0;
-  border-radius: .35rem;
-  padding: .25rem .55rem;
-  font-size: .7rem;
-  cursor: pointer;
+@media (max-width: 720px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* อัปโหลดรูป */
-.upload-box {
-  background: #faf5ff;
-  border: 1.5px dashed rgba(124,58,237,.55);
-  border-radius: .85rem;
-  padding: 1.1rem .5rem;
-  text-align: center;
-  font-size: .85rem;
-  color: #5b21b6;
-  cursor: pointer;
-}
-.upload-box.dragging {
-  background: rgba(239, 246, 255, 0.8);
-  border-color: #3b82f6;
-}
-
-.img-preview {
-  margin-top: .75rem;
-  max-width: 280px;
-  border-radius: .5rem;
-  border: 1px solid rgba(148,163,184,.35);
-  display: block;
-}
-
-/* checkbox กลุ่มแบบเดิม (เผื่อหน้าอื่น) */
+/* checkbox กลุ่ม */
 .check-group {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
