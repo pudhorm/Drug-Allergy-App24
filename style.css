@@ -254,8 +254,18 @@ body {
 .p1-chk {
   display: flex;
   gap: .5rem;
-  align-items: center;
+  align-items: flex-start;  /* << สำคัญ ให้ตัวหนังสือเริ่มบนสุด */
   font-size: .88rem;
+}
+
+.p1-chk input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px; /* ให้กล่องขีดอยู่ระดับเดียวกับตัวหนังสือ */
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
 }
 .p1-chk input[type="checkbox"] {
   width: 16px;
@@ -330,13 +340,15 @@ body {
 
 /* ====== ปุ่มด้านล่าง ====== */
 .p1-actions {
-  position: sticky;
-  bottom: 1rem;
+  /* ไม่ให้ลอยตามจอแล้ว */
+  position: static;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   margin-top: 1.5rem;
+  margin-bottom: 1rem; /* เผื่อเว้นหายใจใต้ปุ่ม */
 }
+
 .btn-primary {
   background: linear-gradient(125deg, #2563eb 0%, #7c3aed 80%);
   border: none;
