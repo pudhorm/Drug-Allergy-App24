@@ -185,6 +185,8 @@ function savePage1(e) {
     exudate: exudate,
     onset: onset
   };
+  localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
+
   // เก็บลง localStorage ด้วย (กันหายตอนเปลี่ยนหน้า)
 localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
