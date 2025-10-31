@@ -15,7 +15,7 @@ function initPage1() {
         </div>
 
         <div class="form-grid-2">
-          <!-- ชื่อ-สกุล -->
+          <!-- ชื่อ -->
           <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">ชื่อ-สกุล</div>
             <input id="p1-name" type="text" class="form-input" placeholder="เช่น นางสาวกนกพร ตัวอย่าง">
@@ -27,7 +27,7 @@ function initPage1() {
             <input id="p1-hn" type="text" class="form-input" placeholder="เช่น 123456">
           </div>
 
-          <!-- อายุ (select + อื่นๆ) -->
+          <!-- อายุ -->
           <div class="form-field">
             <div class="form-label">อายุ</div>
             <select id="p1-age-select" class="form-select">
@@ -44,7 +44,7 @@ function initPage1() {
             <input id="p1-age-other" type="text" class="form-input" placeholder="ระบุอายุ (ปี)" style="margin-top:.4rem; display:none;">
           </div>
 
-          <!-- น้ำหนัก (select + อื่นๆ) -->
+          <!-- น้ำหนัก -->
           <div class="form-field">
             <div class="form-label">น้ำหนัก (กก.)</div>
             <select id="p1-weight-select" class="form-select">
@@ -61,7 +61,7 @@ function initPage1() {
             <input id="p1-weight-other" type="number" min="0" step="0.1" class="form-input" placeholder="เช่น 54.5" style="margin-top:.4rem; display:none;">
           </div>
 
-          <!-- โรคประจำตัว (select + อื่นๆ) -->
+          <!-- โรคประจำตัว -->
           <div class="form-field" style="grid-column:1 / -1;">
             <div class="form-label">โรคประจำตัว</div>
             <select id="p1-underlying-select" class="form-select">
@@ -95,14 +95,13 @@ function initPage1() {
         <!-- รูปร่างผื่น -->
         <p class="form-label">รูปร่างผื่น</p>
         <div class="check-group check-2col">
-          <!-- ซ้าย -->
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ปื้นนูน"> ปื้นนูน</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลม 3 ชั้น"> วงกลม 3 ชั้น</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบหยัก"> ขอบหยัก</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบไม่ชัดเจน"> ขอบไม่ชัดเจน</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จ้ำเลือด"> จ้ำเลือด</label>
-          <!-- ขวา -->
+
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มแบนราบ"> ตุ่มแบนราบ</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลมชั้นเดียว"> วงกลมชั้นเดียว</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงรี"> วงรี</label>
@@ -114,13 +113,12 @@ function initPage1() {
         <!-- สีผื่น -->
         <p class="form-label" style="margin-top:1rem;">สีผื่น</p>
         <div class="check-group check-2col">
-          <!-- ซ้าย -->
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงซีด"> แดงซีด</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ใส"> ใส</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เหลือง"> เหลือง</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ดำ"> ดำ</label>
-          <!-- ขวา -->
+
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงไหม้"> แดงไหม้</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ซีด"> ซีด</label>
           <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ม่วง"> ม่วง</label>
@@ -156,7 +154,7 @@ function initPage1() {
           <label class="check-inline"><input type="checkbox" id="p1-itch-none"> ไม่คัน</label>
         </div>
 
-        <!-- ปวด/แสบ/เจ็บ -->
+        <!-- ปวด แสบ เจ็บ -->
         <p class="form-label" style="margin-top:1rem;">ปวด / แสบ / เจ็บ</p>
         <div class="check-group">
           <label class="check-inline"><input type="checkbox" id="p1-pain-pain"> ปวด</label>
@@ -171,8 +169,53 @@ function initPage1() {
           <label class="check-inline"><input type="checkbox" id="p1-swelling-no"> ไม่บวม</label>
         </div>
 
-        <!-- ตำแหน่ง -->
-        <div class="form-field" style="margin-top:.75rem;">
+        <!-- ขุย / แห้ง / ลอก -->
+        <p class="form-label" style="margin-top:1rem;">ขุย / แห้ง / ลอก</p>
+        <div class="check-group" style="max-width:320px;">
+          <label class="check-inline"><input type="checkbox" id="p1-scale-scale" value="ขุย"> ขุย</label>
+          <label class="check-inline"><input type="checkbox" id="p1-scale-dry" value="แห้ง"> แห้ง</label>
+          <label class="check-inline"><input type="checkbox" id="p1-scale-peel" value="ลอก"> ลอก</label>
+          <label class="check-inline"><input type="checkbox" id="p1-scale-none" value="ไม่พบ"> ไม่พบ</label>
+        </div>
+        <input id="p1-scale-other" type="text" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-top:.5rem; display:none;">
+
+        <!-- ตุ่มหนอง -->
+        <p class="form-label" style="margin-top:1rem;">ตุ่มหนอง</p>
+        <div class="check-group" style="max-width:320px;">
+          <label class="check-inline">
+            <input type="checkbox" id="p1-pustule-yes" value="พบ"> พบ
+          </label>
+          <label class="check-inline">
+            <input type="checkbox" id="p1-pustule-no" value="ไม่พบ"> ไม่พบ
+          </label>
+        </div>
+        <input id="p1-pustule-detail" type="text" class="form-input" placeholder="ระบุขนาด/จำนวน เช่น 3 ตุ่ม ที่ลำตัว" style="margin-top:.5rem; display:none;">
+
+        <!-- น้ำเหลือง/สะเก็ด -->
+        <div class="form-field" style="margin-top:1rem;">
+          <div class="form-label">น้ำเหลือง/สะเก็ด</div>
+          <div class="check-group">
+            <label class="check-inline">
+              <input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง
+            </label>
+            <label class="check-inline">
+              <input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด
+            </label>
+            <label class="check-inline">
+              <input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด
+            </label>
+            <label class="check-inline">
+              <input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี
+            </label>
+            <label class="check-inline">
+              <input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…
+            </label>
+          </div>
+          <input id="p1-exu-other" type="text" class="form-input" placeholder="ระบุลักษณะน้ำเหลือง/สะเก็ด" style="margin-top:.4rem; display:none;">
+        </div>
+
+        <!-- ตำแหน่งที่พบผื่น -->
+        <div class="form-field" style="margin-top:1rem;">
           <div class="form-label">ตำแหน่งที่พบผื่น</div>
           <input id="p1-location" type="text" class="form-input" placeholder="เช่น ใบหน้า ลำตัว แขน ขา ฝ่ามือ ฝ่าเท้า">
         </div>
@@ -186,19 +229,6 @@ function initPage1() {
             <option value="ไม่สมมาตร">ไม่สมมาตร</option>
             <option value="เฉพาะที่">เฉพาะที่</option>
           </select>
-        </div>
-
-        <!-- น้ำเหลือง/สะเก็ด -->
-        <div class="form-field" style="margin-top:.75rem;">
-          <div class="form-label">น้ำเหลือง/สะเก็ด</div>
-          <div class="check-group">
-            <label class="check-inline"><input type="checkbox" id="p1-exu-fluid" value="มีน้ำเหลือง"> มีน้ำเหลือง</label>
-            <label class="check-inline"><input type="checkbox" id="p1-exu-crust" value="มีสะเก็ด"> มีสะเก็ด</label>
-            <label class="check-inline"><input type="checkbox" id="p1-exu-both" value="มีน้ำเหลืองและสะเก็ด"> มีทั้งน้ำเหลืองและสะเก็ด</label>
-            <label class="check-inline"><input type="checkbox" id="p1-exu-none" value="ไม่มี"> ไม่มี</label>
-            <label class="check-inline"><input type="checkbox" id="p1-exu-other-toggle" value="other"> อื่นๆ ระบุ…</label>
-          </div>
-          <input id="p1-exu-other" type="text" class="form-input" placeholder="ระบุลักษณะน้ำเหลือง/สะเก็ด" style="margin-top:.4rem; display:none;">
         </div>
       </div>
 
@@ -232,10 +262,13 @@ function initPage1() {
     </div>
   `;
 
-  // ====== ใส่ event ======
+  // ================== ใส่ event ==================
+
+  // ปุ่มบันทึก
   const btn = document.getElementById("p1-save");
   if (btn) btn.addEventListener("click", savePage1);
 
+  // อายุ other
   const ageSel = document.getElementById("p1-age-select");
   const ageOther = document.getElementById("p1-age-other");
   if (ageSel && ageOther) {
@@ -244,6 +277,7 @@ function initPage1() {
     });
   }
 
+  // น้ำหนัก other
   const wtSel = document.getElementById("p1-weight-select");
   const wtOther = document.getElementById("p1-weight-other");
   if (wtSel && wtOther) {
@@ -252,6 +286,7 @@ function initPage1() {
     });
   }
 
+  // โรคประจำตัว other
   const undSel = document.getElementById("p1-underlying-select");
   const undOther = document.getElementById("p1-underlying-other");
   if (undSel && undOther) {
@@ -260,6 +295,7 @@ function initPage1() {
     });
   }
 
+  // onset other
   const onsetSel = document.getElementById("p1-onset");
   const onsetOther = document.getElementById("p1-onset-other");
   if (onsetSel && onsetOther) {
@@ -268,14 +304,62 @@ function initPage1() {
     });
   }
 
+  // น้ำเหลือง/สะเก็ด other
   const exuOtherToggle = document.getElementById("p1-exu-other-toggle");
-  const exuOtherInput = document.getElementById("p1-exu-other");
+  const exuOtherInput  = document.getElementById("p1-exu-other");
   if (exuOtherToggle && exuOtherInput) {
     exuOtherToggle.addEventListener("change", () => {
       exuOtherInput.style.display = exuOtherToggle.checked ? "block" : "none";
     });
   }
 
+  // ขุย/แห้ง/ลอก → ถ้าเลือก "ไม่พบ" ให้ติ๊กตัวอื่นออก
+  const sclScale = document.getElementById("p1-scale-scale");
+  const sclDry   = document.getElementById("p1-scale-dry");
+  const sclPeel  = document.getElementById("p1-scale-peel");
+  const sclNone  = document.getElementById("p1-scale-none");
+  const sclOther = document.getElementById("p1-scale-other");
+
+  if (sclNone) {
+    sclNone.addEventListener("change", () => {
+      if (sclNone.checked) {
+        if (sclScale) sclScale.checked = false;
+        if (sclDry) sclDry.checked = false;
+        if (sclPeel) sclPeel.checked = false;
+        if (sclOther) sclOther.style.display = "none";
+      }
+    });
+  }
+  // ถ้าเลือกข้ออื่น ให้เอา "ไม่พบ" ออก
+  [sclScale, sclDry, sclPeel].forEach(chk => {
+    if (chk) {
+      chk.addEventListener("change", () => {
+        if (chk.checked && sclNone) sclNone.checked = false;
+      });
+    }
+  });
+
+  // ตุ่มหนอง → พบ/ไม่พบ
+  const pusYes = document.getElementById("p1-pustule-yes");
+  const pusNo  = document.getElementById("p1-pustule-no");
+  const pusDet = document.getElementById("p1-pustule-detail");
+  if (pusYes && pusNo && pusDet) {
+    pusYes.addEventListener("change", () => {
+      if (pusYes.checked) {
+        pusNo.checked = false;
+        pusDet.style.display = "block";
+      }
+    });
+    pusNo.addEventListener("change", () => {
+      if (pusNo.checked) {
+        pusYes.checked = false;
+        pusDet.style.display = "none";
+        pusDet.value = "";
+      }
+    });
+  }
+
+  // กันบวม/ไม่บวม
   const swYes = document.getElementById("p1-swelling-yes");
   const swNo = document.getElementById("p1-swelling-no");
   if (swYes && swNo) {
@@ -318,29 +402,23 @@ function savePage1(e) {
   const allergyHistory = document.getElementById("p1-allergy-history").value;
 
   // รูปร่างผื่น
-  const rashShapeValues = Array.from(
-    document.querySelectorAll("input[name='p1-rashShape']:checked")
-  ).map(el => el.value);
+  const rashShapeValues = Array.from(document.querySelectorAll("input[name='p1-rashShape']:checked")).map(el => el.value);
   const rashShapeOther = document.getElementById("p1-rashShape-other")?.value.trim();
   if (rashShapeOther) {
     rashShapeValues.push("อื่นๆ: " + rashShapeOther);
   }
 
   // สีผื่น
-  const rashColorValues = Array.from(
-    document.querySelectorAll("input[name='p1-rashColor']:checked")
-  ).map(el => el.value);
+  const rashColorValues = Array.from(document.querySelectorAll("input[name='p1-rashColor']:checked")).map(el => el.value);
   const rashColorOther = document.getElementById("p1-rashColor-other")?.value.trim();
   if (rashColorOther) {
     rashColorValues.push("อื่นๆ: " + rashColorOther);
   }
 
   // ตุ่มน้ำ
-  const blisterValues = Array.from(
-    document.querySelectorAll("input[name='p1-blister']:checked")
-  ).map(el => el.value);
+  const blisterValues = Array.from(document.querySelectorAll("input[name='p1-blister']:checked")).map(el => el.value);
 
-  // ผิวหนังหลุดลอก
+  // หลุดลอก
   const peeling = document.getElementById("p1-peeling").value;
 
   // คัน
@@ -363,6 +441,29 @@ function savePage1(e) {
     document.getElementById("p1-swelling-no")?.checked ? "ไม่บวม" : "",
   ].filter(Boolean);
 
+  // ขุย/แห้ง/ลอก
+  const scaleList = [
+    document.getElementById("p1-scale-scale")?.checked ? "ขุย" : "",
+    document.getElementById("p1-scale-dry")?.checked ? "แห้ง" : "",
+    document.getElementById("p1-scale-peel")?.checked ? "ลอก" : "",
+    document.getElementById("p1-scale-none")?.checked ? "ไม่พบ" : "",
+  ].filter(Boolean);
+  const scaleOther = document.getElementById("p1-scale-other")?.value.trim();
+  if (scaleOther && !scaleList.includes("ไม่พบ")) {
+    scaleList.push("อื่นๆ: " + scaleOther);
+  }
+
+  // ตุ่มหนอง
+  let pustule = "";
+  const pusYes = document.getElementById("p1-pustule-yes")?.checked;
+  const pusNo  = document.getElementById("p1-pustule-no")?.checked;
+  const pusDet = document.getElementById("p1-pustule-detail")?.value || "";
+  if (pusYes) {
+    pustule = pusDet ? "พบ: " + pusDet : "พบ";
+  } else if (pusNo) {
+    pustule = "ไม่พบ";
+  }
+
   const location = document.getElementById("p1-location").value;
   const distribution = document.getElementById("p1-distribution").value;
 
@@ -374,20 +475,17 @@ function savePage1(e) {
     document.getElementById("p1-exu-none")?.checked ? "ไม่มี" : "",
     document.getElementById("p1-exu-other-toggle")?.checked
       ? (document.getElementById("p1-exu-other")?.value || "อื่นๆ")
-      : "",
+      : ""
   ].filter(Boolean);
 
-  // ระยะเวลาที่เริ่มมีอาการ
+  // onset
   const onsetSel2 = document.getElementById("p1-onset");
   const onsetOther2 = document.getElementById("p1-onset-other");
   let onset = "";
   if (onsetSel2) {
-    onset = onsetSel2.value === "other"
-      ? (onsetOther2 ? onsetOther2.value : "")
-      : onsetSel2.value;
+    onset = onsetSel2.value === "other" ? (onsetOther2 ? onsetOther2.value : "") : onsetSel2.value;
   }
 
-  // เก็บรวม
   if (!window.drugAllergyData) {
     window.drugAllergyData = {};
   }
@@ -410,16 +508,17 @@ function savePage1(e) {
     itch: itchList,
     pain: painList,
     swelling: swellingList,
+    scale: scaleList,
+    pustule: pustule,
     location,
     distribution,
     exudate: exudateList,
     onset,
   };
 
-  // เซฟ
+  // save
   localStorage.setItem("drugAllergyData", JSON.stringify(window.drugAllergyData));
 
-  // แจ้งผล
   const st = document.getElementById("p1-status");
   const btn = document.getElementById("p1-save");
   if (st) st.textContent = "บันทึกแล้ว ✔";
