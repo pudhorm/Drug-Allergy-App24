@@ -6,9 +6,10 @@ function initPage1() {
   if (!root) return;
 
   // HTML ของหน้า 1
-  root.innerHTML = `
-    <div class="page-card">
-      <!-- ส่วนที่ 1 -->
+ root.innerHTML = `
+  <div class="page-card">
+    <!-- ส่วนที่ 1 -->
+    <div class="section-box section-1">
       <div class="section-title">
         <span>🧑‍⚕️</span>
         <span>ส่วนที่ 1 ข้อมูลผู้ป่วย</span>
@@ -39,9 +40,11 @@ function initPage1() {
           <textarea id="p1-allergy-history" rows="2" class="form-textarea"></textarea>
         </div>
       </div>
+    </div>
 
-      <!-- ส่วนที่ 2 -->
-      <div class="section-title" style="margin-top:1.25rem;">
+    <!-- ส่วนที่ 2 -->
+    <div class="section-box section-2">
+      <div class="section-title">
         <span>🩹</span>
         <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
       </div>
@@ -119,24 +122,33 @@ function initPage1() {
         <div class="form-label">น้ำเหลือง/สะเก็ด (ระบุ)</div>
         <input id="p1-exudate" type="text" class="form-input" placeholder="เช่น มีน้ำเหลืองเล็กน้อย / มีสะเก็ดแห้ง">
       </div>
+    </div>
 
-     <!-- ส่วนที่ 3 -->
-<div class="section-title" style="margin-top:1.35rem;">
-  <span>⏱️</span>
-  <span>ส่วนที่ 3 ระยะเวลาที่เริ่มมีอาการ</span>
-</div>
+    <!-- ส่วนที่ 3 -->
+    <div class="section-box section-3">
+      <div class="section-title">
+        <span>⏱️</span>
+        <span>ส่วนที่ 3 ระยะเวลาที่เริ่มมีอาการ</span>
+      </div>
+      <div class="form-field" style="max-width:280px;">
+        <div class="form-label">เลือกช่วงเวลา</div>
+        <select id="p1-onset" class="form-select">
+          <option value="">-- เลือก --</option>
+          <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
+          <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
+          <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
+          <option value="1–7 วัน">1–7 วัน</option>
+          <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
+        </select>
+      </div>
+    </div>
 
-<div class="form-field" style="max-width:280px;">
-  <div class="form-label">เลือกช่วงเวลา</div>
-  <select id="p1-onset" class="form-select">
-    <option value="">-- เลือก --</option>
-    <option value="ภายใน 1 ชั่วโมง">ภายใน 1 ชั่วโมง</option>
-    <option value="1–6 ชั่วโมง">1–6 ชั่วโมง</option>
-    <option value="6–24 ชั่วโมง">6–24 ชั่วโมง</option>
-    <option value="1–7 วัน">1–7 วัน</option>
-    <option value="1–6 สัปดาห์">1–6 สัปดาห์</option>
-  </select>
-</div>
+    <div style="margin-top:1.2rem;">
+      <button id="p1-save" class="primary-btn">บันทึกหน้า 1</button>
+      <span id="p1-status" class="save-status"></span>
+    </div>
+  </div>
+`;
 
 
       <div style="margin-top:1.2rem;">
