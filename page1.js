@@ -144,7 +144,10 @@ function savePage1() {
   const peeling = document.getElementById("p1-peeling").value;
   const itchNode = document.querySelector("input[name='p1-itch']:checked");
   const itch = itchNode ? itchNode.value : "";
-  const pain = document.getElementById("p1-pain").checked ? "มีอาการปวด/แสบ/เจ็บ" : "";
+  const painPain = document.getElementById("p1-pain-pain")?.checked ? "ปวด" : "";
+  const painBurn = document.getElementById("p1-pain-burn")?.checked ? "แสบ" : "";
+  const painSore = document.getElementById("p1-pain-sore")?.checked ? "เจ็บ" : "";
+  const painList = [painPain, painBurn, painSore].filter(Boolean);
   const swellingNode = document.querySelector("input[name='p1-swelling']:checked");
   const swelling = swellingNode ? swellingNode.value : "";
   const location = document.getElementById("p1-location").value;
@@ -168,19 +171,20 @@ function savePage1() {
 
   // ผิวหนัง
   window.drugAllergyData.skin = {
-    ...(window.drugAllergyData.skin || {}),
-    rashShape: rashShapeValues,
-    rashColor: rashColorValues,
-    blister: blisterValues,
-    peeling: peeling,
-    itch: itch,
-    pain: pain,
-    swelling: swelling,
-    location: location,
-    distribution: distribution,
-    exudate: exudate,
-    onset: onset
-  };
+  ...(window.drugAllergyData.skin || {}),
+  rashShape: rashShapeValues,
+  rashColor: rashColorValues,
+  blister: blisterValues,
+  peeling: peeling,
+  itch: itch,
+  swelling: swelling,
+  location: location,
+  distribution: distribution,
+  exudate: exudate,
+  onset: onset,
+  // ✅ เพิ่มบรรทัดนี้
+  pain: painList
+};
 
   const st = document.getElementById("p1-status");
   if (st) st.textContent = "บันทึกแล้ว ✔";
