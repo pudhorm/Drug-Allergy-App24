@@ -6,7 +6,7 @@ body {
   color: #111827;
 }
 
-/* HEADER: ม่วงไล่สี + ฟองอากาศ + ไอคอนยา */
+/* ================== HEADER ================== */
 header {
   background: linear-gradient(90deg, #7c3aed, #ec4899);
   color: #fff;
@@ -17,29 +17,34 @@ header {
   display: flex;
   align-items: center;
 }
+
 .header-inner {
   position: relative;
   z-index: 5;
 }
+
 .header-title-line {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: .7rem;
 }
+
 .header-pill {
   font-size: 2.15rem;
   line-height: 1;
 }
+
 header h1 {
   margin: 0;
   font-size: 2.25rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -.01em;
 }
+
 header p {
-  margin: 0.35rem 0 0;
+  margin: .35rem 0 0;
   font-size: 1.02rem;
-  opacity: 0.9;
+  opacity: .9;
 }
 
 /* ฟองอากาศ */
@@ -49,103 +54,43 @@ header p {
   pointer-events: none;
   z-index: 1;
 }
+
 .bubble {
   position: absolute;
   border-radius: 9999px;
   opacity: 0.42;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.08));
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.08));
   animation: bubble-up 6.3s linear infinite;
 }
+
 .bubble.white {
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 255, 255, 0.9),
-    rgba(255, 255, 255, 0)
-  );
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0));
 }
 .bubble.pink {
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 179, 215, 0.6),
-    rgba(255, 179, 215, 0)
-  );
+  background: radial-gradient(circle at 30% 30%, rgba(255,179,215,0.6), rgba(255,179,215,0));
 }
 .bubble.purple {
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(201, 178, 255, 0.55),
-    rgba(201, 178, 255, 0)
-  );
+  background: radial-gradient(circle at 30% 30%, rgba(201,178,255,0.5), rgba(201,178,255,0));
 }
 .bubble.blue {
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(173, 214, 255, 0.55),
-    rgba(173, 214, 255, 0)
-  );
+  background: radial-gradient(circle at 30% 30%, rgba(173,214,255,0.55), rgba(173,214,255,0));
 }
-.bubble.b1 {
-  width: 58px;
-  height: 58px;
-  left: 4%;
-  bottom: -65px;
-  animation-duration: 5.5s;
-}
-.bubble.b2 {
-  width: 42px;
-  height: 42px;
-  left: 19%;
-  bottom: -52px;
-  animation-duration: 6.1s;
-  animation-delay: 0.4s;
-}
-.bubble.b3 {
-  width: 70px;
-  height: 70px;
-  left: 38%;
-  bottom: -78px;
-  opacity: 0.35;
-  animation-duration: 6.8s;
-  animation-delay: 0.8s;
-}
-.bubble.b4 {
-  width: 48px;
-  height: 48px;
-  right: 18%;
-  bottom: -58px;
-  animation-duration: 5.9s;
-  animation-delay: 0.2s;
-}
-.bubble.b5 {
-  width: 36px;
-  height: 36px;
-  right: 6%;
-  bottom: -45px;
-  animation-duration: 5.4s;
-  animation-delay: 1s;
-}
-.bubble.b6 {
-  width: 80px;
-  height: 80px;
-  left: 70%;
-  bottom: -90px;
-  opacity: 0.32;
-  animation-duration: 6.5s;
-}
+
+.bubble.b1 { width: 58px; height: 58px; left: 4%;  bottom: -65px; animation-duration: 5.5s; }
+.bubble.b2 { width: 42px; height: 42px; left: 19%; bottom: -52px; animation-duration: 6.1s; animation-delay: .4s; }
+.bubble.b3 { width: 70px; height: 70px; left: 38%; bottom: -78px; opacity: .35; animation-duration: 6.8s; animation-delay: .8s; }
+.bubble.b4 { width: 48px; height: 48px; right: 18%; bottom: -58px; animation-duration: 5.9s; animation-delay: .2s; }
+.bubble.b5 { width: 36px; height: 36px; right: 6%;  bottom: -45px; animation-duration: 5.4s; animation-delay: 1s; }
+.bubble.b6 { width: 80px; height: 80px; left: 70%; bottom: -90px; opacity: .32; animation-duration: 6.5s; }
+
 @keyframes bubble-up {
-  0% {
-    transform: translateY(0) translateX(0);
-  }
-  35% {
-    transform: translateY(-40px) translateX(4px);
-  }
-  70% {
-    transform: translateY(-85px) translateX(-4px);
-  }
-  100% {
-    transform: translateY(-130px) translateX(2px);
-  }
+  0%   { transform: translateY(0) translateX(0); }
+  35%  { transform: translateY(-40px) translateX(4px); }
+  70%  { transform: translateY(-85px) translateX(-4px); }
+  100% { transform: translateY(-130px) translateX(2px); }
 }
+
+/* จอเล็ก */
 @media (max-width: 600px) {
   header {
     min-height: 115px;
@@ -162,19 +107,19 @@ header p {
   }
 }
 
-/* แท็บ 6 หน้า */
+/* ================== TABS ================== */
 .tabs {
   display: flex;
-  gap: 0.6rem;
+  gap: .6rem;
   background: #fff;
-  padding: 0.6rem 1.2rem;
+  padding: .6rem 1.2rem;
   border-bottom: 1px solid #e5e7eb;
 }
 .tabs button {
   background: #eef2ff;
   border: 0;
-  padding: 0.4rem 0.9rem;
-  border-radius: 0.65rem;
+  padding: .4rem .9rem;
+  border-radius: .65rem;
   cursor: pointer;
   font-weight: 500;
   color: #4b5563;
@@ -184,7 +129,7 @@ header p {
   color: #fff;
 }
 
-/* ตัวหน้าแต่ละหน้า */
+/* ================== PAGE LAYOUT ================== */
 .page {
   display: none;
   padding: 1.5rem 1.2rem 2.5rem;
@@ -193,57 +138,87 @@ header p {
   display: block;
 }
 
-/* ========================= */
-/* สไตล์ของหน้า 1           */
-/* ========================= */
-
+/* กล่องหลักของหน้า 1 */
 .page-card {
   max-width: 980px;
+  background: #ffffff;
   margin: 0 auto;
+  padding: 1.2rem 1.5rem 1.5rem;
+  border-radius: .85rem;
+  box-shadow: 0 3px 16px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(124, 58, 237, .08);
 }
 
+/* กรอบส่วนย่อย */
 .section-box {
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 0.85rem;
+  border-radius: .85rem;
+  padding: 1rem 1rem 1.1rem;
   margin-bottom: 1rem;
   background: #fff;
-  padding: 1rem 1rem 1.1rem;
 }
 
+/* ส่วนที่ 1 สีเขียวมิ้น */
 .section-box.section-1 {
   background: #e8fff7;
   border-color: #8ff1cf;
 }
 
+/* ส่วนที่ 2 สีชมพูอ่อน */
 .section-box.section-2 {
   background: #fff1f7;
   border-color: #ffb7d6;
 }
 
+/* ส่วนที่ 3 สีฟ้าอ่อน */
 .section-box.section-3 {
   background: #eef5ff;
   border-color: #b4cafc;
 }
 
-.section-box.section-4 {
-  background: #fffbe6;
-  border: 1px dashed #fbbf24;
-}
-
+/* หัวข้อในกรอบ */
 .section-title {
   display: flex;
-  gap: 0.5rem;
+  gap: .5rem;
   align-items: center;
   font-weight: 700;
   font-size: 1.05rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: .75rem;
 }
 
-/* layout 2 คอลัมน์ */
+/* ฟิลด์ฟอร์ม */
+.form-field { display: block; }
+.form-label {
+  font-size: .85rem;
+  font-weight: 500;
+  margin-bottom: .25rem;
+}
+
+/* ให้ input/textarea ไม่ทะลุกล่อง */
+.section-box .form-input,
+.section-box .form-select,
+.section-box .form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: .5rem;
+  padding: .4rem .6rem;
+  font-size: .9rem;
+  background: #fff;
+}
+.section-box .form-input:focus,
+.section-box .form-select:focus,
+.section-box .form-textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .12);
+}
+
+/* สองคอลัมน์ */
 .form-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem 1.25rem;
+  gap: .75rem 1.25rem;
 }
 @media (max-width: 720px) {
   .form-grid-2 {
@@ -251,96 +226,36 @@ header p {
   }
 }
 
-.form-label {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  display: block;
-}
-.form-input,
-.form-select,
-.form-textarea {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.9rem;
-  background: #fff;
-}
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
-}
-
+/* checkbox กลุ่ม */
 .check-group {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.35rem 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: .35rem .75rem;
+  margin-bottom: .75rem;
 }
 .check-inline {
   display: flex;
-  gap: 0.35rem;
+  gap: .35rem;
   align-items: center;
-  font-size: 0.9rem;
-}
-.check-2col {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
-  gap: 0.35rem 0.75rem;
-}
-@media (max-width: 540px) {
-  .check-2col {
-    grid-template-columns: 1fr;
-  }
+  font-size: .9rem;
 }
 
-/* ปุ่ม */
+/* ปุ่มบันทึก */
 .primary-btn {
   background: #7c3aed;
   color: #fff;
   border: 0;
-  padding: 0.45rem 0.9rem;
-  border-radius: 0.5rem;
+  padding: .45rem .9rem;
+  border-radius: .5rem;
   font-weight: 500;
   cursor: pointer;
 }
-.secondary-btn {
-  background: #e2e8f0;
-  color: #0f172a;
-  border: 0;
-  padding: 0.45rem 0.9rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
+.primary-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
 }
 .save-status {
+  margin-left: .5rem;
+  font-size: .8rem;
   color: #16a34a;
-  font-size: 0.8rem;
-}
-
-/* อัปโหลดรูป */
-.upload-box {
-  border: 2px dashed #f59e0b;
-  border-radius: 1rem;
-  background: rgba(255, 237, 213, 0.35);
-  padding: 1.4rem 1rem 1.3rem;
-  text-align: center;
-}
-.upload-btn {
-  background: #f97316;
-  color: #fff;
-  border: none;
-  padding: 0.45rem 0.9rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-}
-.img-preview {
-  margin-top: 0.6rem;
-  max-width: 240px;
-  border-radius: 0.75rem;
-  border: 2px solid #f59e0b;
 }
