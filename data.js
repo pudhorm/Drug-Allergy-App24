@@ -1,5 +1,5 @@
 // data.js
-// ศูนย์รวมข้อมูลของทุกหน้า
+// ศูนย์รวมข้อมูลกลาง
 window.drugAllergyData = {
   page1: {
     name: "",
@@ -13,6 +13,7 @@ window.drugAllergyData = {
     skinDetach: "",
     onset: ""
   },
+  // กันที่ไว้ก่อนสำหรับหน้า 2-3
   page2: {
     resp: { dyspnea: false, wheeze: false },
     cvs: { lowBP: "", tachy: false },
@@ -33,6 +34,7 @@ window.drugAllergyData = {
 
 const STORAGE_KEY = "drug_allergy_app_v1";
 
+// โหลดข้อมูลเก่า (ถ้ามี)
 (function () {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -41,7 +43,7 @@ const STORAGE_KEY = "drug_allergy_app_v1";
       window.drugAllergyData = Object.assign(window.drugAllergyData, parsed);
     }
   } catch (err) {
-    console.warn("โหลดข้อมูลเก่าไม่ได้ ใช้ค่าเริ่มต้นแทน");
+    console.warn("โหลดข้อมูลไม่ได้ ใช้ค่าเริ่มต้นแทน");
   }
 })();
 
@@ -49,7 +51,7 @@ window.saveDrugAllergyData = function () {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(window.drugAllergyData));
 };
 
-// ฟังก์ชันประเมินอัตโนมัติ (ตอนนี้ยังเบาๆ ก่อน)
+// ประเมินอัตโนมัติ (ตอนนี้เอาจากหน้า 1 ก่อน)
 window.evaluateDrugAllergy = function () {
   const d = window.drugAllergyData;
   const p1 = d.page1;
