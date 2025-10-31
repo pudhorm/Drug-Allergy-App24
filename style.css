@@ -250,3 +250,10 @@ header p {
     grid-template-columns: 1fr;
   }
 }
+
+.check-2col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: .35rem .75rem;
+}
+
