@@ -1,8 +1,44 @@
+// data.js
+// ตัวแปรกลางของแอพ — ทุกหน้าต้องเขียน/อ่านจากตัวนี้เท่านั้น
 window.drugAllergyData = {
-  patient: {},
-  skin: {},
-  otherSystems: {},
-  labs: {},
-  naranjo: {},
-  timeline: {}
+  // หน้า 1: ข้อมูลผู้ป่วย + ผิวหนัง
+  patient: {
+    name: "",
+    hn: "",
+    age: "",
+    weight: "",
+    underlying: "",
+    drugAllergyHistory: ""
+  },
+  skin: {
+    rashShape: [],    // ตุ่มนูน, ปื้นนูน, วงกลม 3 ชั้น ...
+    rashColor: [],    // แดง, ม่วง, เหลือง ...
+    blister: [],      // ตุ่มน้ำเล็ก/กลาง/ใหญ่
+    peeling: "",      // ผิวหลุดลอกไม่เกิน 10% / >30% ฯลฯ
+    itch: "",
+    pain: "",
+    swelling: "",
+    onset: "",        // ระยะเวลาที่เริ่มมีอาการจากหน้า 1
+    photo: null       // ไว้เก็บรูปถ่ายทีหลัง
+  },
+
+  // หน้า 2: ระบบอื่นๆ
+  otherSystems: {
+    // จะเติมตอนทำหน้า 2
+  },
+
+  // หน้า 3: Lab
+  labs: {
+    // จะเติม CBC / LFT / RFT ทีหลัง
+  },
+
+  // หน้า 4: Naranjo
+  naranjo: {
+    // จะเก็บคะแนนไว้ตรงนี้
+  },
+
+  // หน้า 5: Timeline
+  timeline: {
+    // จะเก็บวันที่ให้ยา / วันที่เริ่มผื่น / วันที่หยุดยา
+  }
 };
