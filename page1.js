@@ -76,8 +76,11 @@ function initPage1() {
       <label><input type="radio" name="p1-itch" value="ไม่คัน"> ไม่คัน</label>
 
       <!-- 6) ปวด/แสบ/เจ็บ -->
-      <p style="margin-top:1rem;"><strong>ปวด/แสบ/เจ็บ</strong></p>
-      <label><input type="checkbox" id="p1-pain"> มีอาการปวด/แสบ/เจ็บ</label>
+     <p style="margin-top:1rem;"><strong>ปวด / แสบ / เจ็บ</strong> (เลือกได้หลายข้อ)</p>
+     <label><input type="checkbox" id="p1-pain-pain"> ปวด</label>
+     <label><input type="checkbox" id="p1-pain-burn"> แสบ</label>
+     <label><input type="checkbox" id="p1-pain-sore"> เจ็บ</label>
+
 
       <!-- 7) บวม -->
       <p style="margin-top:1rem;"><strong>บวม</strong></p>
