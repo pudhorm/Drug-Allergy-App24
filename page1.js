@@ -1,154 +1,86 @@
 // page1.js
-document.addEventListener("DOMContentLoaded", initPage1);
+window.renderPage1 = function () {
+  const d = window.drugAllergyData.page1;
+  const el = document.getElementById("page1");
 
-function initPage1() {
-  const root = document.getElementById("page1-root");
-  if (!root) return;
+  el.innerHTML = `
+    <h2>หน้า 1: ระบบผิวหนัง / ข้อมูลผู้ป่วย</h2>
+    <div class="card">
+      <h3>ข้อมูลผู้ป่วย</h3>
+      <label>ชื่อ-สกุล
+        <input type="text" id="p1_name" value="${d.name || ""}">
+      </label>
+      <label>HN
+        <input type="text" id="p1_hn" value="${d.hn || ""}">
+      </label>
+      <label>อายุ
+        <input type="number" id="p1_age" value="${d.age || ""}">
+      </label>
+      <label>น้ำหนัก (กก.)
+        <input type="number" id="p1_weight" value="${d.weight || ""}">
+      </label>
+      <label>โรคประจำตัว
+        <input type="text" id="p1_underlying" value="${d.underlying || ""}">
+      </label>
+      <label>ประวัติการแพ้ยาเดิม
+        <textarea id="p1_allergy_history">${d.drugAllergyHistory || ""}</textarea>
+      </label>
+    </div>
 
-  root.innerHTML = `
-    <div class="page-card">
-      <!-- ส่วนที่ 1 ข้อมูลผู้ป่วย -->
-      <div class="section-box section-1">
-        <div class="section-title">
-          <span>🧑‍⚕️</span>
-          <span>ส่วนที่ 1 ข้อมูลผู้ป่วย</span>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-field" style="grid-column:1 / -1;">
-            <label class="form-label">ชื่อ-สกุล</label>
-            <input id="p1-name" class="form-input" placeholder="เช่น นางสาวกนกพร ตัวอย่าง" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">HN</label>
-            <input id="p1-hn" class="form-input" placeholder="เช่น 123456" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">อายุ</label>
-            <select id="p1-age-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="ทารก / เด็กเล็ก (< 1 ปี)">ทารก / เด็กเล็ก (&lt; 1 ปี)</option>
-              <option value="1–5 ปี">1–5 ปี</option>
-              <option value="6–12 ปี">6–12 ปี</option>
-              <option value="13–18 ปี">13–18 ปี</option>
-              <option value="19–40 ปี">19–40 ปี</option>
-              <option value="41–60 ปี">41–60 ปี</option>
-              <option value="มากกว่า 60 ปี">มากกว่า 60 ปี</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-age-other" class="form-input" placeholder="ระบุอายุ (ปี)" style="display:none; margin-top:.4rem;" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">น้ำหนัก (กก.)</label>
-            <select id="p1-weight-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="< 10 กก.">&lt; 10 กก.</option>
-              <option value="10–20 กก.">10–20 กก.</option>
-              <option value="21–40 กก.">21–40 กก.</option>
-              <option value="41–60 กก.">41–60 กก.</option>
-              <option value="61–80 กก.">61–80 กก.</option>
-              <option value="81–100 กก.">81–100 กก.</option>
-              <option value="มากกว่า 100 กก.">มากกว่า 100 กก.</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-weight-other" type="number" min="0" step="0.1" class="form-input" placeholder="เช่น 54.5" style="display:none; margin-top:.4rem;" />
-          </div>
-          <div class="form-field" style="grid-column:1 / -1;">
-            <label class="form-label">โรคประจำตัว</label>
-            <select id="p1-underlying-select" class="form-select">
-              <option value="">-- เลือก --</option>
-              <option value="ไม่มีโรคประจำตัว">ไม่มีโรคประจำตัว</option>
-              <option value="เบาหวาน (DM)">เบาหวาน (DM)</option>
-              <option value="ความดันโลหิตสูง (HT)">ความดันโลหิตสูง (HT)</option>
-              <option value="โรคไตเรื้อรัง (CKD)">โรคไตเรื้อรัง (CKD)</option>
-              <option value="หอบหืด / COPD">หอบหืด / COPD</option>
-              <option value="โรคหัวใจ">โรคหัวใจ</option>
-              <option value="other">อื่นๆ ระบุ…</option>
-            </select>
-            <input id="p1-underlying-other" class="form-input" placeholder="ระบุโรคประจำตัว" style="display:none; margin-top:.4rem;" />
-          </div>
-          <div class="form-field" style="grid-column:1 / -1;">
-            <label class="form-label">ประวัติการแพ้ยา (เคยแพ้มาก่อน)</label>
-            <textarea id="p1-allergy-history" class="form-textarea" rows="2" placeholder="เช่น แพ้ amoxicillin ผื่นขึ้น, แพ้ NSAIDs บวม"></textarea>
-          </div>
-        </div>
-      </div>
+    <div class="card">
+      <h3>อาการผิวหนัง</h3>
+      <label>รูปร่างผื่น
+        <select id="p1_rash_shape">
+          <option value="">-- เลือก --</option>
+          <option value="mp" ${d.rashShape === "mp" ? "selected" : ""}>Maculopapular / MP rash</option>
+          <option value="urticaria" ${d.rashShape === "urticaria" ? "selected" : ""}>ลมพิษ / urticaria</option>
+          <option value="bullous" ${d.rashShape === "bullous" ? "selected" : ""}>ตุ่มน้ำ / bullous</option>
+          <option value="target" ${d.rashShape === "target" ? "selected" : ""}>Target-like / EM</option>
+        </select>
+      </label>
+      <label>สีผื่น
+        <input type="text" id="p1_rash_color" value="${d.rashColor || ""}">
+      </label>
+      <label>ผิวหนังหลุดลอก
+        <select id="p1_skin_detach">
+          <option value="">-- เลือก --</option>
+          <option value="none" ${d.skinDetach === "none" ? "selected" : ""}>ไม่มี</option>
+          <option value="lt10" ${d.skinDetach === "lt10" ? "selected" : ""}>มี แต่ไม่เกิน 10%</option>
+          <option value="gt30" ${d.skinDetach === "gt30" ? "selected" : ""}>มากกว่า 30% (ระวัง SJS/TEN)</option>
+        </select>
+      </label>
+      <label>ระยะเวลาหลังได้ยา → เริ่มมีผื่น
+        <select id="p1_onset">
+          <option value="">-- เลือก --</option>
+          <option value="within1h" ${d.onset === "within1h" ? "selected" : ""}>ภายใน 1 ชม.</option>
+          <option value="1to6h" ${d.onset === "1to6h" ? "selected" : ""}>1–6 ชม.</option>
+          <option value="6to24h" ${d.onset === "6to24h" ? "selected" : ""}>6–24 ชม.</option>
+          <option value="1to7d" ${d.onset === "1to7d" ? "selected" : ""}>1–7 วัน</option>
+          <option value="8to21d" ${d.onset === "8to21d" ? "selected" : ""}>8–21 วัน</option>
+          <option value="gt21d" ${d.onset === "gt21d" ? "selected" : ""}>มากกว่า 21 วัน</option>
+        </select>
+      </label>
+    </div>
 
-      <!-- ส่วนที่ 2 ผิวหนัง -->
-      <div class="section-box section-2">
-        <div class="section-title">
-          <span>🩹</span>
-          <span>ส่วนที่ 2 ประเมินผื่นผิวหนัง</span>
-        </div>
+    <button class="btn-primary" id="p1_save">บันทึกหน้า 1</button>
+    <p class="small-note">* เมื่อบันทึกแล้ว ระบบจะประเมินอัตโนมัติทันทีจากหน้า 1–3</p>
+  `;
 
-        <!-- รูปร่างผื่น -->
-        <label class="form-label">รูปร่างผื่น</label>
-        <div class="check-2col">
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มนูน"> ตุ่มนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ปื้นนูน"> ปื้นนูน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลม 3 ชั้น"> วงกลม 3 ชั้น</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบหยัก"> ขอบหยัก</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบไม่ชัดเจน"> ขอบไม่ชัดเจน</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จ้ำเลือด"> จ้ำเลือด</label>
+  document.getElementById("p1_save").addEventListener("click", () => {
+    const g = window.drugAllergyData;
+    g.page1.name = document.getElementById("p1_name").value;
+    g.page1.hn = document.getElementById("p1_hn").value;
+    g.page1.age = document.getElementById("p1_age").value;
+    g.page1.weight = document.getElementById("p1_weight").value;
+    g.page1.underlying = document.getElementById("p1_underlying").value;
+    g.page1.drugAllergyHistory = document.getElementById("p1_allergy_history").value;
+    g.page1.rashShape = document.getElementById("p1_rash_shape").value;
+    g.page1.rashColor = document.getElementById("p1_rash_color").value;
+    g.page1.skinDetach = document.getElementById("p1_skin_detach").value;
+    g.page1.onset = document.getElementById("p1_onset").value;
 
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ตุ่มแบนราบ"> ตุ่มแบนราบ</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงกลมชั้นเดียว"> วงกลมชั้นเดียว</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="วงรี"> วงรี</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="ขอบเรียบ"> ขอบเรียบ</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashShape" value="จุดเล็ก"> จุดเล็ก</label>
-        </div>
-        <input id="p1-rashShape-other" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-bottom:1rem;">
-
-        <!-- สีผื่น -->
-        <label class="form-label">สีผื่น</label>
-        <div class="check-2col">
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดง"> แดง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="แดงไหม้"> แดงไหม้</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ใส"> ใส</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เหลือง"> เหลือง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ดำ"> ดำ</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ซีด"> ซีด</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="ม่วง"> ม่วง</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="มันเงา"> มันเงา</label>
-          <label class="check-inline"><input type="checkbox" name="p1-rashColor" value="เทา"> เทา</label>
-        </div>
-        <input id="p1-rashColor-other" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-bottom:1rem;">
-
-        <!-- ขุย/แห้ง/ลอก -->
-        <label class="form-label">ขุย/แห้ง/ลอก</label>
-        <div class="check-group" style="max-width:360px;">
-          <label class="check-inline"><input type="checkbox" id="p1-scale" value="ขุย"> ขุย</label>
-          <label class="check-inline"><input type="checkbox" id="p1-dry" value="แห้ง"> แห้ง</label>
-          <label class="check-inline"><input type="checkbox" id="p1-peel" value="ลอก"> ลอก</label>
-          <label class="check-inline"><input type="checkbox" id="p1-scale-none" value="ไม่พบ"> ไม่พบ</label>
-        </div>
-        <input id="p1-scale-other" class="form-input" placeholder="อื่นๆ ระบุ..." style="margin-bottom:1rem;">
-
-        <!-- ตุ่มหนอง -->
-        <label class="form-label">ตุ่มหนอง</label>
-        <div class="check-group" style="max-width:240px;">
-          <label class="check-inline"><input type="checkbox" id="p1-pustule-yes" value="พบ"> พบ</label>
-          <label class="check-inline"><input type="checkbox" id="p1-pustule-no" value="ไม่พบ"> ไม่พบ</label>
-        </div>
-
-        <!-- ผิวหนังหลุดลอก -->
-        <div class="form-field" style="margin-top:.75rem; max-width:280px;">
-          <label class="form-label">ผิวหนังหลุดลอก</label>
-          <select id="p1-peeling" class="form-select">
-            <option value="">-- เลือก --</option>
-            <option value="ผิวหนังหลุดลอกตรงกลางผื่น">ผิวหนังหลุดลอกตรงกลางผื่น</option>
-            <option value="ไม่เกิน 10% BSA">ไม่เกิน 10% BSA</option>
-            <option value="เกิน 30% BSA">เกิน 30% BSA</option>
-          </select>
-        </div>
-
-        <!-- คัน -->
-        <label class="form-label" style="margin-top:1rem;">อาการคัน</label>
-        <div class="check-group" style="max-width:320px;">
-          <label class="check-inline"><input type="checkbox" id="p1-itch-much"> คันมาก</label>
-          <label class="check-inline"><input type="checkbox" id="p1-itch-little"> คันน้อย</label>
-          <label class="check-inline"><input type="checkbox" id="p1-itch-none"> ไม่คัน</label>
-        </div>
-
-        <!-- ปวด / แสบ / เจ็บ -->
-        <label class="form-label" style="margin-top:1rem;">ปวด / แสบ / เจ็บ</label>
-        <div class="check-group" style="max-width:
+    // ประเมินใหม่ทันที
+    window.evaluateDrugAllergy();
+    alert("บันทึกหน้า 1 แล้ว");
+  });
+};
