@@ -197,52 +197,44 @@
       </div>
       <input id="color_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashColorsOther || ""}">
     </div>
-
-    <!-- 1.3 ตุ่มน้ำ -->
+    
+   <!-- 1.3 ตุ่มน้ำ -->
     <div class="p1-block">
-      <h4>1.3 ตุ่มน้ำ</h4>
-      <div class="p1-col">
-        ${cb("blister_small", "ตุ่มน้ำขนาดเล็ก", d.blisters?.small)}
-        ${cb("blister_medium", "ตุ่มน้ำขนาดกลาง", d.blisters?.medium)}
-        ${cb("blister_large", "ตุ่มน้ำขนาดใหญ่", d.blisters?.large)}
-      </div>
-      <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
-    </div>
+  <h4>1.3 ตุ่มน้ำ</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+  <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
+</div>
+
 
     <!-- 1.4 ผิวหนังหลุดลอก -->
-    <div class="p1-block">
-      <h4>1.4 ผิวหนังหลุดลอก</h4>
-      <div class="p1-col">
-        ${cb("detach_center", "ผิวหนังหลุดลอกตรงกลางผื่น", d.skinDetach?.center)}
-        ${cb("detach_lt10", "ผิวหนังหลุดลอกไม่เกิน 10% ของ BSA", d.skinDetach?.lt10)}
-        ${cb("detach_gt30", "ผิวหนังหลุดลอกเกิน 30% ของ BSA", d.skinDetach?.gt30)}
-        ${cb("detach_none", "ไม่พบ", d.skinDetach?.none)}
-      </div>
-      <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
-    </div>
+   <div class="p1-block">
+  <h4>1.4 ผิวหนังหลุดลอก</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+  <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
+</div>
 
     <!-- 1.5 ขุย/แห้ง/ลอก -->
     <div class="p1-block">
-      <h4>1.5 ขุย/แห้ง/ลอก</h4>
-      <div class="p1-col">
-        ${cb("scale_scale", "ขุย", d.scales?.scale)}
-        ${cb("scale_dry", "แห้ง", d.scales?.dry)}
-        ${cb("scale_peel", "ลอก", d.scales?.peel)}
-        ${cb("scale_none", "ไม่พบ", d.scales?.none)}
-      </div>
-      <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
-    </div>
+  <h4>1.5 ขุย/แห้ง/ลอก</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+  <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
+</div>
+
 
     <!-- 1.6 น้ำเหลือง/สะเก็ด -->
-    <div class="p1-block">
-      <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
-      <div class="p1-col">
-        ${cb("ex_serous", "น้ำเหลือง", d.exudate?.serous)}
-        ${cb("ex_crust", "สะเก็ด", d.exudate?.crust)}
-        ${cb("ex_none", "ไม่พบ", d.exudate?.none)}
-      </div>
-      <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
-    </div>
+   <div class="p1-block">
+  <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+  <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
+</div>
 
     <!-- 1.7 คัน -->
     <div class="p1-block">
@@ -259,33 +251,29 @@
 
     <!-- 1.8 ปวด/แสบ/เจ็บ -->
     <div class="p1-block">
-      <h4>1.8 ปวด / แสบ / เจ็บ</h4>
-      <div class="p1-col">
-        ${cb("pain_pain", "ปวด", d.pain?.pain)}
-        ${cb("pain_burn", "แสบ", d.pain?.burn)}
-        ${cb("pain_sore", "เจ็บ", d.pain?.sore)}
-        ${cb("pain_none", "ไม่พบ", d.pain?.none)}
-      </div>
-    </div>
+  <h4>1.8 ปวด / แสบ / เจ็บ</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+</div>
+
 
     <!-- 1.9 บวม -->
     <div class="p1-block">
-      <h4>1.9 บวม</h4>
-      <div class="p1-col">
-        ${cb("sw_has", "บวม", d.swelling?.has)}
-        ${cb("sw_none", "ไม่บวม", d.swelling?.none)}
-      </div>
-    </div>
+  <h4>1.9 บวม</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+</div>
 
     <!-- 1.10 ตุ่มหนอง -->
     <div class="p1-block">
-      <h4>1.10 ตุ่มหนอง</h4>
-      <div class="p1-col">
-        ${cb("pus_has", "พบ", d.pustule?.has)}
-        ${cb("pus_none", "ไม่พบ", d.pustule?.none)}
-      </div>
-      <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
-    </div>
+  <h4>1.10 ตุ่มหนอง</h4>
+  <div class="p1-col p1-col-2col">
+    ...
+  </div>
+  <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
+</div>
 
     <!-- 1.21 ตำแหน่ง / การกระจายตัว -->
     <div class="p1-block">
