@@ -129,7 +129,7 @@ body {
   display: block;
 }
 
-/* ====== หน้้า 1 โครงรวม ====== */
+/* ====== หน้า 1 โครงรวม ====== */
 .p1-wrapper {
   background: linear-gradient(135deg, #ffe3d0 0%, #eef5ff 50%, #ffffff 100%);
   border: 1px solid rgba(255, 255, 255, .4);
@@ -243,17 +243,40 @@ body {
   font-weight: 700;
 }
 
-.p1-two-cols {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: .5rem .9rem;
-  margin-bottom: .5rem;
+/* base สำหรับคอลัมน์ในหัวข้อย่อย */
+.p1-col {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
 }
 
-/* แถว checkbox ในหัวข้อย่อย (1.3–1.10) ให้ชิดซ้าย */
+/* ทำให้รายการบางกลุ่มเป็น 2 คอลัมน์ (ใช้คู่กับ page1.js ที่กำหนด .p1-col-2col) */
+.p1-col.p1-col-2col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .4rem .9rem;
+  align-items: flex-start;
+  justify-items: start;
+}
+
+/* checkbox ให้ชิดซ้าย */
+.p1-col.p1-col-2col .p1-chk {
+  justify-content: flex-start;
+}
+
+/* layout สองคอลัมน์ที่ใช้ที่อื่น */
+.p1-two-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: .4rem .9rem;
+  align-items: flex-start;
+  justify-items: start;
+}
+
+/* แถว checkbox ให้ชิดซ้าย */
 .p1-chk {
   display: flex;
-  align-items: flex-start;   /* <-- ให้ตัวหนังสือเริ่มจากด้านบน */
+  align-items: flex-start;
   gap: .55rem;
   font-size: .88rem;
   text-align: left;
@@ -261,25 +284,7 @@ body {
 .p1-chk input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  margin-top: 3px;           /* ดันกล่องลงนิดให้ตรงกับตัวหนังสือ */
-  accent-color: #6366f1;
-  cursor: pointer;
-}
-
-/* grid ของรายการหลายอันให้ชิดซ้าย ไม่ต้องแผ่เต็มจนดูห่าง */
-.p1-two-cols {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: .4rem .9rem;
-  align-items: flex-start;
-  justify-items: start;      /* <-- บังคับให้กล่องอยู่ซ้ายในแต่ละช่อง */
-}
-
-
-}
-.p1-chk input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  margin-top: 3px;
   accent-color: #6366f1;
   cursor: pointer;
 }
@@ -287,6 +292,7 @@ body {
   cursor: pointer;
 }
 
+/* input อื่นๆ */
 .p1-other {
   width: 100%;
   margin-top: .35rem;
@@ -349,14 +355,13 @@ body {
 }
 
 /* ====== ปุ่มด้านล่าง ====== */
-/* ปุ่มล่างของหน้า 1 */
 .p1-actions {
-  position: static;           /* <-- สำคัญ: ไม่ลอยแล้ว */
+  position: static;           /* ไม่ลอยจอแล้ว */
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   margin-top: 1.5rem;
-  margin-bottom: 1.5rem;       /* เผื่อช่องว่างใต้ปุ่ม */
+  margin-bottom: 1.5rem;
 }
 @media (max-width: 900px) {
   .p1-actions {
@@ -364,7 +369,6 @@ body {
     align-items: stretch;
   }
 }
-
 
 .btn-primary {
   background: linear-gradient(125deg, #2563eb 0%, #7c3aed 80%);
@@ -409,10 +413,6 @@ body {
 
 /* ====== Responsive ====== */
 @media (max-width: 900px) {
-  .p1-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
   .tabs {
     gap: .6rem;
   }
@@ -434,4 +434,3 @@ body {
   width: 100%;
   outline: none;
 }
-
