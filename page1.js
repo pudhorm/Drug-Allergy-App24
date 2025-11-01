@@ -354,7 +354,7 @@
       renderPage1();
     });
 
-    // ปุ่มบันทึก
+       // ปุ่มบันทึก
     document.getElementById("p1_save").addEventListener("click", () => {
       const store = window.drugAllergyData.page1;
 
@@ -365,7 +365,7 @@
       const ageSel = document.getElementById("p1_age_sel").value;
       store.ageSel = ageSel;
       store.ageOther = document.getElementById("p1_age_other").value;
-      store.age = ageSel === "other" ? store.ageOther : ageSel;
+      store.age = (ageSel === "other") ? store.ageOther : ageSel;
 
       store.weight = document.getElementById("p1_weight").value;
       store.underlying = document.getElementById("p1_underlying").value;
@@ -387,7 +387,7 @@
         other: document.getElementById("blister_other").value
       };
 
-      // ----- 1.4 ผิวหลุดลอก -----
+      // ----- 1.4 ผิวหนังหลุดลอก -----
       store.skinDetach = {
         center: document.getElementById("detach_center").checked,
         lt10: document.getElementById("detach_lt10").checked,
@@ -421,7 +421,7 @@
         none: document.getElementById("itch_none").checked
       };
 
-      // ----- 1.8 ปวด -----
+      // ----- 1.8 ปวด/แสบ/เจ็บ -----
       store.pain = {
         pain: document.getElementById("pain_pain").checked,
         burn: document.getElementById("pain_burn").checked,
@@ -451,18 +451,17 @@
       store.onset = document.getElementById("p1_onset").value;
       store.onsetOther = document.getElementById("p1_onset_other").value;
 
-      // ประเมินรวม
       if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
       alert("บันทึกหน้า 1 แล้ว");
 
-      // ไปหน้า 2
+      // เปลี่ยนไปหน้า 2
       const btn2 = document.querySelector('.tabs button[data-target="page2"]');
       if (btn2) btn2.click();
     });
-  }
+  } // <- จบฟังก์ชัน renderPage1
 
-  // export ให้ index.html เรียกได้
+  // ให้ index.html เรียกได้
   window.renderPage1 = renderPage1;
-})();
+})(); // <- ปิด IIFE ให้ครบ
