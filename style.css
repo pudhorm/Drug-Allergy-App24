@@ -1293,3 +1293,98 @@ body {
     background: #fff;
   }
 }
+/* ==== หน้า 5 – ปรับสวยให้กลับมา ==== */
+.p5-wrapper {
+  background: linear-gradient(140deg, #fff9d9 0%, #ffe5ff 45%, #ffffff 85%);
+  border-radius: 1.4rem;
+  padding: 1.3rem 1.4rem 1.4rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 35px rgba(246, 97, 157, 0.08);
+}
+
+.tl-section {
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(15,23,42,.03);
+  border-radius: 1.1rem;
+  margin-bottom: 1rem;
+  padding: 1.05rem 1rem 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+.tl-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tl-card {
+  background: rgba(255,255,255,.95);
+  border: 1px solid rgba(15,23,42,.03);
+  border-radius: .9rem;
+  padding: .9rem .9rem 1.2rem;
+  margin-bottom: .7rem;
+  box-shadow: 0 9px 16px rgba(15,23,42,.02);
+}
+
+.tl-input {
+  width: 100%;
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: .6rem;
+  padding: .35rem .5rem;
+  font-size: .85rem;
+  background: #fff;
+}
+
+.tl-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px dashed rgba(15,23,42,.06);
+  border-radius: 1rem;
+  background: radial-gradient(circle at top, rgba(255,255,255,1) 0%, rgba(255,255,255,.4) 60%);
+  min-height: 135px;
+}
+.tl-scroll.hidden {
+  display: none;
+}
+
+.tl-tick {
+  font-size: .82rem;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.tl-ylabel {
+  font-weight: 700;
+  color: #115e59;
+}
+
+.tl-bar.drug { background: #0ea5e9; color: #111; }
+.tl-bar.adr { background: #ef4444; color: #111; }
+
+.tl-bottom-actions {
+  position: static;     /* ไม่ลอยแล้ว */
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-top: 1.1rem;
+}
+.tl-bottom-actions button {
+  width: 100%;
+  border-radius: 1.2rem;
+  font-size: .9rem;
+}
+
+@media (max-width: 900px) {
+  .tl-scroll { max-width: 100%; }
+}
+
+/* print ให้กว้างเต็ม */
+@media print {
+  .topbar, .tabs { display: none !important; }
+  body { background: #fff; }
+  #page5 { margin: 0; padding: 0; }
+  .tl-scroll { overflow: visible !important; }
+  .tl-bottom-actions { display: none !important; }
+}
