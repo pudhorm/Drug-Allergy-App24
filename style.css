@@ -487,3 +487,80 @@ body {
 .p1-section-onset .p1-sec-title {
   color: #a21caf;
 }
+
+/* ====== หน้า 2 ระบบอื่นๆ ====== */
+.p2-wrapper {
+  background: linear-gradient(140deg, #e0f2fe 0%, #fef3c7 40%, #ffffff 100%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 1.6rem;
+  padding: 1.4rem 1.6rem 5rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.04);
+}
+
+.p2-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 1.1rem;
+}
+
+.p2-section {
+  background: rgba(255, 255, 255, .75);
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 1.1rem;
+  padding: 1rem 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.p2-sec-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  color: #0f766e;
+  margin: 0 0 .7rem;
+}
+.p2-sec-title.red { color: #b91c1c; }
+.p2-sec-title.orange { color: #c05621; }
+.p2-sec-title.teal { color: #115e59; }
+.p2-sec-title.brown { color: #92400e; }
+.p2-sec-title.indigo { color: #3730a3; }
+.p2-sec-title.violet { color: #7c3aed; }
+
+.p2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .6rem 1rem;
+}
+
+.p2-chk {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9rem;
+}
+.p2-chk input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+}
+
+.p2-detail {
+  border: 1px solid rgba(148, 163, 184, .4);
+  border-radius: .7rem;
+  padding: .4rem .6rem;
+  font-size: .85rem;
+  background: #fff;
+}
+
+.p2-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+@media (max-width: 800px) {
+  .p2-actions {
+    flex-direction: column-reverse;
+  }
+}
