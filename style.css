@@ -1097,3 +1097,199 @@ body {
   .tl-scroll{overflow:visible}
   .tl-canvas, .tl-ticks{transform:scale(.92);transform-origin:top left}
 }
+/* =========================
+   PAGE 5 — TIMELINE (fix)
+   ========================= */
+
+/* กล่องหลักของหน้า 5 ให้มีพาสเทลและขอบโค้ง */
+#page5 .p5-wrapper {
+  background: radial-gradient(circle at 0% 0%, #fff7ff 0%, #fef9e7 55%, #ffffff 95%);
+  border: 1px solid rgba(248, 113, 113, 0.05);
+  border-radius: 1.4rem;
+  box-shadow: 0 14px 35px rgba(148, 163, 184, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+/* เลเยอร์กลิตเตอร์วิบวับ */
+#page5 .p5-glitter-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.9) 0, rgba(255,255,255,0) 35%),
+    radial-gradient(circle, rgba(255,219,241,.75) 0, rgba(255,219,241,0) 50%),
+    radial-gradient(circle, rgba(254,240,138,.6) 0, rgba(254,240,138,0) 40%);
+  background-size: 260px 260px, 240px 240px, 180px 180px;
+  mix-blend-mode: screen;
+  animation: p5sparkle 11s linear infinite;
+  opacity: .7;
+}
+@keyframes p5sparkle {
+  0%   { background-position: 0 0, 60px 60px, 140px 10px; opacity:.8; }
+  50%  { background-position: 140px 120px, 0 80px, 20px 70px; opacity:.35; }
+  100% { background-position: 0 0, 60px 60px, 140px 10px; opacity:.8; }
+}
+
+/* การ์ดส่วนยากับ ADR */
+#page5 .tl-section {
+  background: rgba(255,255,255,.9);
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 1.1rem;
+  padding: 1rem 1rem 1.1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, .03);
+  position: relative;
+  z-index: 3;
+}
+
+/* การ์ดแต่ละรายการ */
+#page5 .tl-card {
+  background: rgba(255,255,255,1);
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 1rem;
+  padding: 0.75rem 0.9rem 1rem;
+  margin-bottom: .65rem;
+  box-shadow: 0 10px 16px rgba(148,163,184,.03);
+}
+
+/* หัวข้อ “ยา / ADR / Visual Timeline” */
+#page5 .tl-head h2 {
+  font-size: 1.08rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ปุ่มบนขวา 2 อัน (เพิ่มยา, เพิ่ม ADR) */
+#page5 #tl-add-drug {
+  background: #16a34a;
+  border: none;
+  color: #fff;
+  border-radius: .9rem;
+  padding: .5rem 1.05rem;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(22,163,74,.25);
+  cursor: pointer;
+}
+#page5 #tl-add-adr {
+  background: #ef4444;
+  border: none;
+  color: #fff;
+  border-radius: .9rem;
+  padding: .5rem 1.05rem;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(239,68,68,.25);
+  cursor: pointer;
+}
+
+/* ปุ่มสร้าง Timeline ใต้ ADR */
+#page5 #tl-build {
+  border-radius: .75rem;
+  gap: .4rem;
+  box-shadow: 0 12px 20px rgba(37,99,235,.25);
+}
+
+/* พื้นที่เลื่อน timeline */
+#page5 .tl-scroll {
+  background: linear-gradient(180deg,#ffffff 0%, rgba(255,255,255,.95) 100%);
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .75rem .8rem 1.1rem;
+  white-space: nowrap;
+}
+#page5 .tl-scroll::-webkit-scrollbar {
+  height: 9px;
+}
+#page5 .tl-scroll::-webkit-scrollbar-track {
+  background: rgba(148,163,184,.12);
+  border-radius: 999px;
+}
+#page5 .tl-scroll::-webkit-scrollbar-thumb {
+  background: rgba(79,70,229,.65);
+  border-radius: 999px;
+}
+
+/* แกน X */
+#page5 .tl-ticks {
+  position: relative;
+  height: 30px;
+  margin-bottom: 6px;
+}
+#page5 .tl-tick {
+  position: absolute;
+  top: 0;
+  height: 30px;
+  line-height: 30px;
+  font-size: .83rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+/* แถว timeline และป้าย */
+#page5 .tl-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 6px;
+  align-items: center;
+  height: 54px;
+  position: relative;
+}
+#page5 .tl-ylabel {
+  font-weight: 700;
+  color: #0f766e;
+  white-space: nowrap;
+}
+#page5 .tl-ylabel.is-adr {
+  color: #be123c;
+}
+
+/* แถบยา / ADR */
+#page5 .tl-bar {
+  position: absolute;
+  top: 7px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #111;
+  padding: 0 .7rem;
+}
+#page5 .tl-bar.drug {
+  background: #0ea5e9;
+  box-shadow: 0 10px 20px rgba(14,165,233,.38);
+}
+#page5 .tl-bar.adr {
+  background: #ef4444;
+  box-shadow: 0 10px 20px rgba(239,68,68,.35);
+}
+
+/* ปุ่มล่างให้ชิดก้นกล่อง ไม่ลอยกลางจอ */
+#page5 .tl-bottom-actions {
+  position: static;
+  margin-top: 1.3rem;
+  background: transparent;
+}
+#page5 .tl-bottom-actions .btn-green-solid,
+#page5 .tl-bottom-actions .btn-blue-solid,
+#page5 .tl-bottom-actions .btn-red-solid {
+  width: 100%;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 14px 20px rgba(15,23,42,.08);
+}
+
+/* ตอนพิมพ์ให้ลดเงาออก */
+@media print {
+  #page5 .p5-wrapper {
+    box-shadow: none;
+    background: #fff;
+  }
+  #page5 .tl-section {
+    box-shadow: none;
+    background: #fff;
+  }
+}
