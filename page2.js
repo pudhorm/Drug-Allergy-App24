@@ -3,12 +3,12 @@
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // ---------- สีหลักของส่วนที่ 1 ----------
+  // สีหลักของส่วนที่ 1 (ให้เหมือนช่อง "ความผิดปกติทางตา")
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
   const COMMON_BORDER = "rgba(59, 130, 246, .5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
-  // ---------- ส่วนที่ 1: อาการระบบอื่นๆ ----------
+  // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -77,7 +77,7 @@
     },
     {
       key: "eye",
-      title: "5. ความผิดปกติทางตา", // เปลี่ยนชื่อแล้ว
+      title: "5. ความผิดปกติทางตา",   // เปลี่ยนชื่อแล้ว
       emoji: "👁️",
       bg: COMMON_BG,
       border: COMMON_BORDER,
@@ -128,7 +128,7 @@
     }
   ];
 
-  // ---------- ส่วนที่ 2 ----------
+  // ส่วนที่ 2: อวัยวะที่ผิดปกติ
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
     "ม้ามโต",
@@ -144,11 +144,12 @@
   function renderPage2() {
     const root = document.getElementById("page2");
     if (!root) return;
+
     const d = window.drugAllergyData.page2;
 
     root.innerHTML = `
-      <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 4.5rem;box-shadow:0 12px 28px rgba(148,163,184,.12);position:relative;">
-        
+      <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 1.7rem;box-shadow:0 12px 28px rgba(148,163,184,.12);position:relative;">
+
         <!-- ส่วนที่ 1 -->
         <section class="p2-section" style="background:rgba(239,246,255,.95);border:1px solid rgba(59,130,246,.25);border-radius:1.05rem;padding:1rem 1rem 1.1rem;margin-bottom:1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#1d4ed8;margin:0 0 1rem;">
@@ -191,7 +192,7 @@
         </section>
 
         <!-- ส่วนที่ 2 -->
-        <section class="p2-section" style="background:rgba(248,250,252,.95);border:1px solid rgba(148,163,184,.45);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
+        <section class="p2-section" style="background:rgba(248,250,252,1);border:1px solid rgba(148,163,184,.45);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#111827;margin:0 0 1rem;">
             <span>🫀</span>
             <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
@@ -204,7 +205,7 @@
               const checked = saved?.checked ? "checked" : "";
               const detailVal = saved?.detail || "";
               return `
-                <label for="${id}" style="display:flex;gap:.6rem;align-items:flex-start;background:#fff;border:1px solid rgba(148,163,184,.35);border-radius:.7rem;padding:.45rem .55rem .55rem;">
+                <label for="${id}" style="display:flex;gap:.6rem;align-items:flex-start;background:#ffffff;border:1px solid rgba(148,163,184,.35);border-radius:.7rem;padding:.45rem .55rem .55rem;">
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
                     <div style="font-size:.86rem;color:#1f2937;">${org}</div>
@@ -216,19 +217,19 @@
           </div>
         </section>
 
-        <!-- ปุ่มลอยด้านล่าง -->
-        <div class="p2-actions" style="position:fixed;left:1.3rem;right:1.3rem;bottom:1.1rem;display:flex;flex-direction:column;gap:.65rem;z-index:90;max-width:1180px;margin:0 auto;">
-          <button id="p2_save" style="background:linear-gradient(120deg,#2563eb 0%,#7c3aed 50%,#9333ea 100%);color:#fff;border:none;border-radius:1.2rem;padding:.8rem 1.2rem;font-size:1rem;font-weight:600;box-shadow:0 18px 30px rgba(79,70,229,.35);cursor:pointer;">
+        <!-- ปุ่มด้านล่าง (ปกติ ไม่ลอย) -->
+        <div class="p2-actions" style="margin-top:1.1rem;display:flex;flex-direction:column;gap:.6rem;">
+          <button id="p2_save" style="background:linear-gradient(120deg,#2563eb 0%,#7c3aed 50%,#9333ea 100%);color:#fff;border:none;border-radius:1rem;padding:.8rem 1.2rem;font-size:1rem;font-weight:600;box-shadow:0 8px 20px rgba(79,70,229,.25);cursor:pointer;">
             บันทึกข้อมูลและไปหน้า 3
           </button>
-          <button id="p2_clear" style="background:#ef4444;color:#fff;border:none;border-radius:1.2rem;padding:.8rem 1.2rem;font-size:.95rem;font-weight:600;box-shadow:0 14px 25px rgba(248,113,113,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;">
+          <button id="p2_clear" style="background:#ef4444;color:#fff;border:none;border-radius:1rem;padding:.7rem 1.2rem;font-size:.93rem;font-weight:600;box-shadow:0 6px 14px rgba(248,113,113,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.35rem;">
             🗑️ ล้างข้อมูลหน้านี้
           </button>
         </div>
       </div>
     `;
 
-    // ---------- events ส่วนที่ 1 ----------
+    // ผูก event ส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -245,7 +246,7 @@
       });
     });
 
-    // ---------- events ส่วนที่ 2 ----------
+    // ผูก event ส่วนที่ 2
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
       const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
@@ -258,17 +259,16 @@
       input.addEventListener("input", savePage2);
     });
 
-    // ---------- ปุ่มล้าง ----------
+    // ปุ่มล้าง
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage2();
     });
 
-    // ---------- ปุ่มบันทึกและไปหน้า 3 ----------
+    // ปุ่มบันทึกและไปหน้า 3
     document.getElementById("p2_save").addEventListener("click", () => {
       savePage2();
-      // ไปหน้า 3
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
     });
@@ -300,9 +300,7 @@
       const organObj = {};
       ORGANS.forEach((org, idx) => {
         const cb = document.getElementById(`org_${idx}`);
-        const input = root.querySelector(
-          `.p2-org-detail[data-org="${org}"]`
-        );
+        const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
         if (!cb || !input) return;
         if (cb.checked || input.value.trim() !== "") {
           organObj[org] = {
