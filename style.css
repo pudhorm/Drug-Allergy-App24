@@ -1864,3 +1864,18 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1));
   padding-top: .9rem;
 }
+/* ===== ปรับความสูง timeline ไม่ให้บาร์ไปทับ scrollbar ===== */
+#p5_tlScroll {
+  padding-bottom: 2.6rem;
+}
+
+#p5_tlCanvas {
+  min-height: 180px; /* เดิม 130px มันต่ำไป */
+}
+
+/* ปุ่มลบที่อยู่ข้างปุ่มเขียว/แดงให้จิ๋วลง */
+.tl-head-actions .tl-del-btn-all {
+  font-size: .7rem;
+  padding: .32rem .55rem .28rem;
+  border-radius: .5rem;
+}
