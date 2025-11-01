@@ -5,7 +5,6 @@
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
   // ---------------- กลุ่มอาการตามระบบ (ส่วนที่ 1) ----------------
-  // เพิ่มสีรายระบบไว้ในอ็อบเจ็กต์แต่ละอันเลย
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -14,8 +13,8 @@
       bg: "linear-gradient(90deg, rgba(254, 242, 242, 0.95), rgba(254, 226, 226, 1))",
       border: "rgba(248, 113, 113, .4)",
       inputBorder: "rgba(248,113,113,.5)",
+      // ลบ "เจ็บคอ" แล้ว
       items: [
-        // ลบ "เจ็บคอ" ออกแล้ว
         "หายใจมีเสียงวี๊ด",
         "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)",
         "ไอ",
@@ -145,7 +144,6 @@
 
     const d = window.drugAllergyData.page2;
 
-    // ชั้นนอกสุด (คงโทนชมพู แต่มืดขึ้นนิด)
     root.innerHTML = `
       <div class="p2-wrapper" style="
         background: radial-gradient(circle at top, #ffd5da 0%, #ffccd3 35%, #ffeef1 90%);
@@ -182,7 +180,12 @@
                   <span>${group.emoji}</span>
                   <span>${group.title}</span>
                 </h3>
-                <div class="p2-list" style="display:flex;flex-direction:column;gap:.45rem;">
+                <!-- เปลี่ยน list เป็นแนวนอน + wrap -->
+                <div class="p2-list" style="
+                  display:flex;
+                  flex-wrap:wrap;
+                  gap:.55rem;
+                ">
                   ${group.items
                     .map((txt, idx) => {
                       const id = `${group.key}_${idx}`;
@@ -197,6 +200,8 @@
                           border: 1px solid rgba(255,255,255,.2);
                           border-radius:.7rem;
                           padding:.45rem .55rem .55rem;
+                          width: calc(50% - .35rem);
+                          min-width: 270px;
                         ">
                           <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
                           <div style="flex:1 1 auto;">
@@ -231,7 +236,7 @@
             <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
           </h2>
 
-          <div style="display:flex;flex-direction:column;gap:.5rem;">
+          <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
             ${ORGANS.map((org, idx) => {
               const id = `org_${idx}`;
               const saved = d.organs && d.organs[org];
@@ -246,6 +251,8 @@
                   border: 1px solid rgba(236,72,153,.12);
                   border-radius:.7rem;
                   padding:.45rem .55rem .55rem;
+                  width: calc(50% - .35rem);
+                  min-width: 270px;
                 ">
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
