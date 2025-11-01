@@ -1,4 +1,4 @@
-// ===== drawTimeline เวอร์ชันตรงสเปค =====
+// ===== drawTimeline เวอร์ชันตรงสเปค ตรงวันเป๊ะ =====
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");   // แถววันที่ด้านบน
   const drugLane = document.getElementById("p5DrugLane"); // ช่องวาดแถบยา
@@ -7,7 +7,6 @@ function drawTimeline() {
   if (!dateRow || !drugLane || !adrLane) return;
 
   // ----- 1) ดึงข้อมูลจากศูนย์กลาง -----
-  // รองรับได้ 2 แบบ: แบบใหม่ (page5.drugLines) และของเก่าที่คุณเคยใช้ (timelineDrugs)
   const store = window.drugAllergyData || {};
   const drugs =
     (store.page5 && Array.isArray(store.page5.drugLines) && store.page5.drugLines) ||
@@ -26,65 +25,68 @@ function drawTimeline() {
 
   // ----- 2) helper จัดการวันที่ -----
   const MS_DAY = 24 * 60 * 60 * 1000;
-  // รับได้ทั้ง "dd/mm/yyyy" และ "yyyy-mm-dd" และ "yyyy-mm-dd HH:mm"
+
+  // รับได้ทั้ง "dd/mm/yyyy", "yyyy-mm-dd", "yyyy-mm-dd HH:mm"
   function parseDate(str) {
     if (!str) return null;
-    // ตัดเวลาออกถ้ามี
     const pure = String(str).trim().split(" ")[0];
-    // 1) dd/mm/yyyy
+
+    // dd/mm/yyyy
     if (pure.includes("/")) {
       const [d, m, y] = pure.split("/").map(Number);
       if (!d || !m || !y) return null;
       return new Date(y, m - 1, d);
     }
-    // 2) yyyy-mm-dd
+
+    // yyyy-mm-dd
     if (pure.includes("-")) {
       const [y, m, d] = pure.split("-").map(Number);
       if (!y || !m || !d) return null;
       return new Date(y, m - 1, d);
     }
+
     return null;
   }
+
   function addDays(date, n) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
   }
 
-  // วันนี้ตามเครื่อง (ซึ่งคุณอยู่ไทยก็จะเป็นปฏิทินไทยอยู่แล้ว)
+  // วันนี้ (ปัดเวลาออก)
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // ----- 3) หา minDate และ maxDate (ปลายต้องเป็น "วันนี้") -----
+  // ----- 3) หา minDate (วันแรกสุดที่เจอ) -----
   let minDate = null;
 
-  // ดูจากยา
+  // จากยา
   drugs.forEach((d) => {
-    // ของคุณบางตัวชื่อ field อาจเป็น drugName / name / ชื่ออื่น
     const s = parseDate(d.startDate || d.start || d.giveDate);
     if (s) {
       if (!minDate || s < minDate) minDate = s;
     }
   });
 
-  // ดูจาก ADR
+  // จาก ADR
   adrs.forEach((a) => {
-    // ในรูปคุณตั้งชื่อเป็นวันที่เกิด / วันเริ่มอาการ
     const s = parseDate(a.startDate || a.eventDate || a.symptomDate);
     if (s) {
       if (!minDate || s < minDate) minDate = s;
     }
   });
 
-  // ถ้าไม่เจอเลย ก็ใช้วันนี้
+  // ถ้าไม่เจอเลย ให้เริ่มวันนี้
   if (!minDate) {
     minDate = today;
   }
 
-  // ปลายสุด = วันนี้ (ห้ามหยุดก่อน)
+  // ปลายสุดบังคับเป็น "วันนี้" เสมอ
   const maxDate = today;
 
-  // ----- 4) คำนวณจำนวนวันและวาดแกน X -----
-  const DAY_W = 120; // ต้องตรงกับใน style.css ของคุณ
-  const totalDays = Math.floor((maxDate.getTime() - minDate.getTime()) / MS_DAY) + 1;
+  // ----- 4) วาดแกน X -----
+  const DAY_W = 120;              // ต้องตรงกับ style.css
+  const totalDays =
+    Math.floor((maxDate.getTime() - minDate.getTime()) / MS_DAY) + 1;
 
   dateRow.innerHTML = "";
   for (let i = 0; i < totalDays; i++) {
@@ -99,80 +101,84 @@ function drawTimeline() {
     dateRow.appendChild(cell);
   }
 
-  // ----- 5) เตรียมเลน -----
+  // ----- 5) เคลียร์เลน -----
   drugLane.innerHTML = "";
   adrLane.innerHTML = "";
 
-  // helper: วันที่ → ระยะทางซ้าย (px) จากวันแรก
-  function dateToLeftPx(date) {
-    const diffDay = Math.floor((date.getTime() - minDate.getTime()) / MS_DAY);
-    return diffDay * DAY_W;
+  // ===== helper แปลงวันที่ → index → px =====
+  // วันที่ → index (0 = วันแรกบนแกน)
+  function dateToIndex(date) {
+    return Math.floor((date.getTime() - minDate.getTime()) / MS_DAY);
+  }
+  // index → px
+  function indexToLeftPx(idx) {
+    return idx * DAY_W;
+  }
+  // startIndex, endIndex → width
+  function calcWidthFromIndex(startIdx, endIdx) {
+    // เช่น เริ่ม 0 จบ 0 → กิน 1 ช่อง = 1 * DAY_W
+    const daysCount = endIdx - startIdx + 1;
+    return daysCount * DAY_W;
   }
 
-  // helper: วันที่เริ่ม + วันที่จบ → ความกว้าง
-  function calcWidthPx(startDate, endDate) {
-    const diffDay = Math.floor((endDate.getTime() - startDate.getTime()) / MS_DAY);
-    // +1 เพราะถ้าเริ่ม = จบ ต้องกิน 1 ช่องเต็ม
-    return (diffDay + 1) * DAY_W - 12; // -12 ให้ปลายไม่ล้ำเกินกรอบ
-  }
-
-  // ----- 6) วาดแถบ "ยา" ให้ปลายหยุดตรงวันหยุด ถ้าไม่มีวันหยุดให้ไปวันนี้ -----
+  // ----- 6) วาด "ยา" ให้ตรงเป๊ะ -----
   drugs.forEach((d, idx) => {
-    const start = parseDate(d.startDate || d.start || d.giveDate);
-    if (!start) return; // ไม่มีวันเริ่มก็วาดไม่ได้
+    const startDate = parseDate(d.startDate || d.start || d.giveDate);
+    if (!startDate) return;
 
-    // ถ้ามีวันหยุด → ใช้วันนั้นเลย
-    const end = d.stopDate || d.endDate || d.stop;
-    const endDateRaw = end ? parseDate(end) : null;
+    // ถ้ามีวันหยุดให้ใช้วันนั้น, ถ้าไม่มีให้ใช้วันนี้
+    const rawEnd = d.stopDate || d.endDate || d.stop;
+    let endDate = rawEnd ? parseDate(rawEnd) : maxDate;
+    if (!endDate) endDate = maxDate;
 
-    // ถ้าไม่มีวันหยุด → ongoing → วันนี้
-    let endDate = endDateRaw ? endDateRaw : maxDate;
+    // ถ้าวันจบน้อยกว่าวันเริ่ม → บังคับเท่าวันเริ่ม
+    if (endDate < startDate) endDate = startDate;
 
-    // ถ้า user กรอกวันหยุดน้อยกว่าวันเริ่ม → บังคับเท่าวันเริ่ม
-    if (endDate < start) endDate = start;
+    const startIdx = dateToIndex(startDate);
+    const endIdx   = dateToIndex(endDate);
 
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-drug";
     bar.textContent = d.drugName || d.name || `ยาตัวที่ ${idx + 1}`;
+    bar.title = `${bar.textContent}\nเริ่ม: ${startDate.toLocaleDateString("th-TH")}  ${
+      rawEnd ? "หยุด: " + endDate.toLocaleDateString("th-TH") : "(ongoing)"
+    }`;
 
-    // จัดตำแหน่ง
-    const left = dateToLeftPx(start);
-    const width = calcWidthPx(start, endDate);
-
-    bar.style.left = left + "px";
-    bar.style.width = width + "px";
+    bar.style.left = indexToLeftPx(startIdx) + "px";
+    bar.style.width = calcWidthFromIndex(startIdx, endIdx) + "px";
 
     drugLane.appendChild(bar);
   });
 
-  // ----- 7) วาดแถบ "ADR" แบบเดียวกัน -----
+  // ----- 7) วาด "ADR" ให้ตรงเป๊ะ -----
   adrs.forEach((a, idx) => {
-    // บางคนเก็บว่า startDate, บางคนเก็บ eventDate
-    const start = parseDate(a.startDate || a.eventDate || a.symptomDate);
-    if (!start) return;
+    const startDate = parseDate(a.startDate || a.eventDate || a.symptomDate);
+    if (!startDate) return;
 
-    const end = a.endDate || a.resolveDate;
-    const endDateRaw = end ? parseDate(end) : null;
-    let endDate = endDateRaw ? endDateRaw : maxDate;
-    if (endDate < start) endDate = start;
+    const rawEnd = a.endDate || a.resolveDate;
+    let endDate = rawEnd ? parseDate(rawEnd) : maxDate;
+    if (!endDate) endDate = maxDate;
+    if (endDate < startDate) endDate = startDate;
+
+    const startIdx = dateToIndex(startDate);
+    const endIdx   = dateToIndex(endDate);
 
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-adr";
     bar.textContent = a.symptom || a.name || `ADR ${idx + 1}`;
+    bar.title = `${bar.textContent}\nเริ่ม: ${startDate.toLocaleDateString("th-TH")}  ${
+      rawEnd ? "หาย: " + endDate.toLocaleDateString("th-TH") : "(ongoing)"
+    }`;
 
-    const left = dateToLeftPx(start);
-    const width = calcWidthPx(start, endDate);
-
-    bar.style.left = left + "px";
-    bar.style.width = width + "px";
+    bar.style.left = indexToLeftPx(startIdx) + "px";
+    bar.style.width = calcWidthFromIndex(startIdx, endIdx) + "px";
 
     adrLane.appendChild(bar);
   });
 
-  // ----- 8) เลื่อนให้เห็นด้านขวาถ้ามันยาว -----
+  // ----- 8) ให้ scroll เห็นวันล่าสุด -----
   const scrollWrap = document.getElementById("p5TimelineScroll");
   if (scrollWrap) {
-    // เลื่อนมาด้านขวานิดหน่อยให้เห็นวันนี้
     scrollWrap.scrollLeft = scrollWrap.scrollWidth;
   }
 }
