@@ -1388,3 +1388,279 @@ body {
   .tl-scroll { overflow: visible !important; }
   .tl-bottom-actions { display: none !important; }
 }
+/* ===== รีสโตร์หน้าตา "หน้า 5 Timeline" แบบพาสเทลวิบวับ ===== */
+#page5 {
+  position: relative;
+}
+
+/* กล่องรวมของหน้า 5 */
+#page5 .p5-wrapper {
+  background: radial-gradient(circle at top, #fff9d5 0%, #ffe7f6 35%, #f1edff 75%);
+  border: 1px solid rgba(255, 171, 184, 0.16);
+  border-radius: 1.6rem;
+  padding: 1.4rem 1.4rem 5.8rem;
+  box-shadow: 0 18px 45px rgba(243, 159, 190, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+/* เลเยอร์กลิตเตอร์วิบวับ */
+#page5 .p5-glitter-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.75) 0, rgba(255,255,255,0) 42%),
+    radial-gradient(circle, rgba(255,255,255,.35) 0, rgba(255,255,255,0) 45%),
+    radial-gradient(circle, rgba(255,230,245,.55) 0, rgba(255,230,245,0) 55%);
+  background-size: 210px 210px, 150px 150px, 260px 260px;
+  mix-blend-mode: screen;
+  animation: p5sparkle 10s linear infinite;
+  opacity: .75;
+  z-index: 0;
+}
+@keyframes p5sparkle {
+  0%   { background-position: 0 0, 90px 120px, 40px 250px; opacity:.7; }
+  50%  { background-position: 140px 100px, 30px 40px, 120px 200px; opacity:.35; }
+  100% { background-position: 0 0, 90px 120px, 40px 250px; opacity:.7; }
+}
+
+/* ส่วนหัวแต่ละบล็อก (ยา / ADR / Visual timeline) */
+#page5 .tl-section {
+  background: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 1.1rem;
+  padding: 1.05rem 1.05rem 1.2rem;
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.02);
+  backdrop-filter: blur(3px);
+  margin-bottom: 1.1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* แถบหัวเรื่อง + ปุ่มเพิ่ม */
+#page5 .tl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .6rem;
+}
+#page5 .tl-head h2,
+#page5 .tl-head h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #1f2a4d;
+}
+
+/* ปุ่มเพิ่มยา / เพิ่ม ADR แบบสีเดียว */
+#page5 .btn-add-drug {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: .9rem;
+  padding: .55rem 1.1rem .65rem;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(22, 163, 74, .35);
+  cursor: pointer;
+}
+#page5 .btn-add-adr {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: .9rem;
+  padding: .55rem 1.1rem .65rem;
+  font-weight: 700;
+  box-shadow: 0 10px 25px rgba(239,68,68,.35);
+  cursor: pointer;
+}
+
+/* การ์ดรายละเอียดแต่ละรายการ (ยา/ADR) */
+#page5 .tl-card {
+  background: rgba(248, 250, 252, .9);
+  border: 1px solid rgba(148, 163, 184, .45);
+  border-radius: .9rem;
+  padding: .75rem .75rem .9rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: .65rem .85rem;
+  margin-bottom: .55rem;
+}
+#page5 .tl-card label {
+  font-size: .8rem;
+  color: #0f172a;
+  font-weight: 600;
+  display: block;
+  margin-bottom: .35rem;
+}
+#page5 .tl-card input[type="text"],
+#page5 .tl-card input[type="date"],
+#page5 .tl-card input[type="time"] {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, .45);
+  border-radius: .6rem;
+  padding: .35rem .45rem;
+  font-size: .85rem;
+  background: #fff;
+}
+#page5 .tl-card input[type="text"]:focus,
+#page5 .tl-card input[type="date"]:focus,
+#page5 .tl-card input[type="time"]:focus {
+  outline: none;
+  border: 1px solid rgba(59,130,246,.6);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+
+/* ปุ่มลบเล็กในการ์ด */
+#page5 .tl-card .tl-del {
+  position: static;
+  justify-self: flex-end;
+  background: rgba(248,113,113,.15);
+  color: #b91c1c;
+  border: none;
+  border-radius: .6rem;
+  padding: .45rem .9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* กล่อง Visual timeline */
+#page5 .visual-box {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, .25);
+  border-radius: 1.1rem;
+  padding: 1rem 1.1rem 1rem;
+  box-shadow: 0 8px 16px rgba(15,23,42,.02);
+  position: relative;
+  z-index: 1;
+}
+#page5 .visual-box h3 {
+  margin: 0 0 .7rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* กล่องที่เลื่อนแกน X ได้ */
+#page5 .tl-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: linear-gradient(180deg,#fff,#fff7f7);
+  border: 1px dashed rgba(148,163,184,.25);
+  border-radius: 1rem;
+  padding: 14px 10px 12px;
+}
+
+/* แกน X และ timeline ข้างใน */
+#page5 .tl-ticks {
+  position: relative;
+  height: 28px;
+  margin-bottom: 12px;
+}
+#page5 .tl-tick {
+  position: absolute;
+  top: 0;
+  font-size: .78rem;
+  color: #0f172a;
+}
+#page5 .tl-canvas {
+  position: relative;
+  min-height: 120px;
+}
+#page5 .tl-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 50px;
+  margin-bottom: 12px;
+}
+#page5 .tl-ylabel {
+  font-weight: 700;
+  color: #0f766e;
+}
+#page5 .tl-ylabel.adr {
+  color: #b91c1c;
+}
+
+/* แถบ timeline */
+#page5 .tl-track {
+  position: relative;
+  height: 40px;
+}
+#page5 .tl-bar {
+  position: absolute;
+  inset-block: 6px auto;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+  padding: 0 12px;
+}
+#page5 .tl-bar.drug {
+  background: #0ea5e9;
+  box-shadow: 0 10px 24px rgba(14,165,233,.24);
+}
+#page5 .tl-bar.adr {
+  background: #ef4444;
+  box-shadow: 0 10px 24px rgba(239,68,68,.24);
+}
+
+/* ปุ่ม 3 อันด้านล่างให้ “อยู่กับที่” และเต็มความกว้าง */
+#page5 .tl-bottom-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(241, 235, 255, 0), rgba(241, 235, 255, 1));
+  padding: 10px 0 14px;
+  z-index: 5;
+}
+#page5 .tl-bottom-actions button {
+  width: 100%;
+  border: none;
+  border-radius: 1rem;
+  padding: .7rem 1rem .8rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(15,23,42,.12);
+}
+#page5 .tl-bottom-actions .btn-print {
+  background: #16a34a;
+  color: #fff;
+}
+#page5 .tl-bottom-actions .btn-save-next {
+  background: #4f46e5;
+  color: #fff;
+}
+#page5 .tl-bottom-actions .btn-clear {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ปรับตอนพิมพ์ */
+@media print {
+  #page5 .tl-bottom-actions,
+  #page5 .btn-add-drug,
+  #page5 .btn-add-adr,
+  .tabs,
+  .topbar {
+    display: none !important;
+  }
+  #page5 .p5-wrapper {
+    background: #fff;
+    box-shadow: none;
+    padding: 0;
+  }
+  #page5 .tl-scroll {
+    overflow: visible;
+  }
+}
