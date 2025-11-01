@@ -11,7 +11,7 @@
       title: "1. ระบบหายใจ",
       emoji: "🫁",
       items: [
-        "เจ็บคอ",
+        // ลบ "เจ็บคอ" ออกแล้ว
         "หายใจมีเสียงวี๊ด",
         "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)",
         "ไอ",
@@ -225,7 +225,8 @@
     });
 
     function savePage2() {
-      const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
+      const store = (window.drugAllergyData.page2 =
+        window.drugAllergyData.page2 || {});
 
       // บันทึกกลุ่มอาการ
       FEATURE_GROUPS.forEach(group => {
@@ -250,7 +251,9 @@
       const organObj = {};
       ORGANS.forEach((org, idx) => {
         const cb = document.getElementById(`org_${idx}`);
-        const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
+        const input = root.querySelector(
+          `.p2-org-detail[data-org="${org}"]`
+        );
         if (!cb || !input) return;
         if (cb.checked || input.value.trim() !== "") {
           organObj[org] = {
