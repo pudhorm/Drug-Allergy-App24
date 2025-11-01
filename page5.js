@@ -1,169 +1,124 @@
-// ====================== page5.js (เวอร์ชันกันล้ม) ======================
+// page5.js — เวอร์ชันกันล้ม 100%
+// ไม่แตะหน้า 1-4 นะ ใช้แค่ตัวแปรกลาง window.drugAllergyData ที่มีอยู่
+
 (function () {
   const STORAGE_KEY = "drug_allergy_app_v1";
 
-  // --- 1) ให้มีโครง page5 เสมอ ---
+  // ---------- A. ให้แน่ใจว่ามีโครง page5 เสมอ ----------
   function ensurePage5() {
-    if (!window.drugAllergyData) {
+    if (typeof window.drugAllergyData !== "object" || !window.drugAllergyData) {
       window.drugAllergyData = {};
     }
-    if (!window.drugAllergyData.page5) {
-      window.drugAllergyData.page5 = {
-        drugLines: [],
-        adrLines: []
-      };
+
+    if (typeof window.drugAllergyData.page5 !== "object" || !window.drugAllergyData.page5) {
+      window.drugAllergyData.page5 = {};
     }
+
     const p5 = window.drugAllergyData.page5;
-    if (!Array.isArray(p5.drugLines)) p5.drugLines = [];
-    if (!Array.isArray(p5.adrLines)) p5.adrLines = [];
+
+    if (!Array.isArray(p5.drugLines)) {
+      p5.drugLines = [];
+    }
+    if (!Array.isArray(p5.adrLines)) {
+      p5.adrLines = [];
+    }
+
     return p5;
   }
 
-  // --- 2) เซฟกลับ localStorage ถ้ามี key นี้อยู่แล้ว ---
   function saveStore() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(window.drugAllergyData));
-    } catch (err) {
-      console.warn("save fail", err);
+    } catch (e) {
+      console.warn("save fail", e);
     }
   }
 
-  // --- 3) helper สร้างการ์ดยา/การ์ด ADR (สร้างเฉพาะตอนมีกล่องให้ใส่) ---
-  function buildDrugCard(line, idx) {
-    const card = document.createElement("div");
-    card.className = "p5-drug-card";
-    card.innerHTML = `
-      <div class="p5-field">
-        <label>ยาตัวที่ ${idx + 1}</label>
-        <input type="text" value="${line.drugName || ""}" data-role="drugName" data-index="${idx}" placeholder="ระบุชื่อยา" />
-      </div>
-      <div class="p5-field">
-        <label>เริ่มให้ยา</label>
-        <input type="date" value="${line.startDate || ""}" data-role="drugStartDate" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>เวลา</label>
-        <input type="time" value="${line.startTime || ""}" data-role="drugStartTime" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>หยุดยา</label>
-        <input type="date" value="${line.stopDate || ""}" data-role="drugStopDate" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>เวลา</label>
-        <input type="time" value="${line.stopTime || ""}" data-role="drugStopTime" data-index="${idx}" />
-      </div>
-    `;
-    return card;
-  }
-
-  function buildAdrCard(line, idx) {
-    const card = document.createElement("div");
-    card.className = "p5-adr-card";
-    card.innerHTML = `
-      <div class="p5-field">
-        <label>ADR ${idx + 1} (อาการ)</label>
-        <input type="text" value="${line.symptom || ""}" data-role="adrSymptom" data-index="${idx}" placeholder="เช่น ผื่น, หอบ, ความดันต่ำ" />
-      </div>
-      <div class="p5-field">
-        <label>วันที่เกิด</label>
-        <input type="date" value="${line.startDate || ""}" data-role="adrStartDate" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>เวลาที่เกิด</label>
-        <input type="time" value="${line.startTime || ""}" data-role="adrStartTime" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>วันที่หาย/สิ้นสุด</label>
-        <input type="date" value="${line.endDate || ""}" data-role="adrEndDate" data-index="${idx}" />
-      </div>
-      <div class="p5-field">
-        <label>เวลาที่หาย</label>
-        <input type="time" value="${line.endTime || ""}" data-role="adrEndTime" data-index="${idx}" />
-      </div>
-    `;
-    return card;
-  }
-
-  // --- 4) ฟังก์ชันหลักไว้เรียกจากปุ่มแท็บ ---
+  // ---------- B. render หลัก ----------
   window.renderPage5 = function () {
     const p5 = ensurePage5();
 
-    // ตำแหน่งใช้วาดฟอร์ม (ถ้าไม่มี ก็ไม่ต้องวาด แต่อย่างน้อยไม่ error)
-    const drugWrap =
+    // กล่องที่ใช้วางการ์ดยา/ADR (ถ้าไม่มี จะไม่พัง)
+    const drugBox =
       document.getElementById("p5DrugCards") ||
       document.getElementById("p5DrugArea") ||
       document.getElementById("p5DrugList");
-    const adrWrap =
+    const adrBox =
       document.getElementById("p5AdrCards") ||
       document.getElementById("p5AdrArea") ||
       document.getElementById("p5AdrList");
 
-    // ----- วาดส่วนยา -----
-    if (drugWrap) {
-      drugWrap.innerHTML = "";
-      p5.drugLines.forEach((line, idx) => {
-        drugWrap.appendChild(buildDrugCard(line, idx));
+    // ----- วาดฝั่งยา -----
+    if (drugBox) {
+      drugBox.innerHTML = "";
+
+      p5.drugLines.forEach(function (line, idx) {
+        const card = document.createElement("div");
+        card.className = "p5-drug-card";
+        card.innerHTML = `
+          <div class="p5-field">
+            <label>ยาตัวที่ ${idx + 1}</label>
+            <input type="text" data-role="drugName" data-index="${idx}" value="${line.drugName || ""}" placeholder="ระบุชื่อยา" />
+          </div>
+          <div class="p5-field">
+            <label>เริ่มให้ยา</label>
+            <input type="date" data-role="drugStartDate" data-index="${idx}" value="${line.startDate || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>เวลา</label>
+            <input type="time" data-role="drugStartTime" data-index="${idx}" value="${line.startTime || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>หยุดยา</label>
+            <input type="date" data-role="drugStopDate" data-index="${idx}" value="${line.stopDate || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>เวลา</label>
+            <input type="time" data-role="drugStopTime" data-index="${idx}" value="${line.stopTime || ""}" />
+          </div>
+        `;
+        drugBox.appendChild(card);
       });
     }
 
-    // ----- วาดส่วน ADR -----
-    if (adrWrap) {
-      adrWrap.innerHTML = "";
-      p5.adrLines.forEach((line, idx) => {
-        adrWrap.appendChild(buildAdrCard(line, idx));
+    // ----- วาดฝั่ง ADR -----
+    if (adrBox) {
+      adrBox.innerHTML = "";
+
+      p5.adrLines.forEach(function (line, idx) {
+        const card = document.createElement("div");
+        card.className = "p5-adr-card";
+        card.innerHTML = `
+          <div class="p5-field">
+            <label>ADR ${idx + 1} (อาการ)</label>
+            <input type="text" data-role="adrSymptom" data-index="${idx}" value="${line.symptom || ""}" placeholder="เช่น ผื่น, หอบ, BP drop" />
+          </div>
+          <div class="p5-field">
+            <label>วันที่เกิด</label>
+            <input type="date" data-role="adrStartDate" data-index="${idx}" value="${line.startDate || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>เวลาที่เกิด</label>
+            <input type="time" data-role="adrStartTime" data-index="${idx}" value="${line.startTime || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>วันที่หาย/สิ้นสุด</label>
+            <input type="date" data-role="adrEndDate" data-index="${idx}" value="${line.endDate || ""}" />
+          </div>
+          <div class="p5-field">
+            <label>เวลาที่หาย</label>
+            <input type="time" data-role="adrEndTime" data-index="${idx}" value="${line.endTime || ""}" />
+          </div>
+        `;
+        adrBox.appendChild(card);
       });
     }
 
-    // ผูก event แบบ delegate เบาๆ (กันล้ม)
-    const page5 = document.getElementById("page5");
-    if (page5 && !page5.__p5Bound) {
-      page5.addEventListener("input", function (ev) {
-        const t = ev.target;
-        const role = t.getAttribute("data-role");
-        const index = Number(t.getAttribute("data-index"));
-        if (!role || Number.isNaN(index)) return;
-
-        const p5data = ensurePage5();
-
-        // update ฝั่งยา
-        if (role.startsWith("drug")) {
-          const line = p5data.drugLines[index];
-          if (!line) return;
-          switch (role) {
-            case "drugName": line.drugName = t.value; break;
-            case "drugStartDate": line.startDate = t.value; break;
-            case "drugStartTime": line.startTime = t.value; break;
-            case "drugStopDate": line.stopDate = t.value; break;
-            case "drugStopTime": line.stopTime = t.value; break;
-          }
-        }
-
-        // update ฝั่ง ADR
-        if (role.startsWith("adr")) {
-          const line = p5data.adrLines[index];
-          if (!line) return;
-          switch (role) {
-            case "adrSymptom": line.symptom = t.value; break;
-            case "adrStartDate": line.startDate = t.value; break;
-            case "adrStartTime": line.startTime = t.value; break;
-            case "adrEndDate": line.endDate = t.value; break;
-            case "adrEndTime": line.endTime = t.value; break;
-          }
-        }
-
-        saveStore();
-        // หลังเปลี่ยนค่าให้วาด timeline ใหม่ทันที
-        drawTimeline();
-      });
-      page5.__p5Bound = true;
-    }
-
-    // เรียกวาดเส้น timeline เลย
-    drawTimeline();
+    // วาด timeline ด้านล่าง
+    drawTimelineSafe();
   };
 
-  // --- 5) ปุ่มเพิ่มยา / เพิ่ม ADR ---
+  // ---------- C. ปุ่มเพิ่ม ----------
   window.p5AddDrug = function () {
     const p5 = ensurePage5();
     p5.drugLines.push({
@@ -190,37 +145,68 @@
     window.renderPage5();
   };
 
-  // ถ้าปุ่มบนหน้า HTML ตั้ง id แบบนี้ จะผูกให้เลย
+  // ---------- D. event เดียวจับทุก input ของหน้า 5 ----------
   window.addEventListener("DOMContentLoaded", function () {
+    const page5 = document.getElementById("page5");
+    if (page5 && !page5.__binded) {
+      page5.addEventListener("input", function (ev) {
+        const el = ev.target;
+        const role = el.getAttribute("data-role");
+        const index = Number(el.getAttribute("data-index"));
+        if (!role || Number.isNaN(index)) return;
+
+        const p5 = ensurePage5();
+
+        // ฝั่งยา
+        if (role.indexOf("drug") === 0) {
+          const line = p5.drugLines[index];
+          if (!line) return;
+          if (role === "drugName") line.drugName = el.value;
+          if (role === "drugStartDate") line.startDate = el.value;
+          if (role === "drugStartTime") line.startTime = el.value;
+          if (role === "drugStopDate") line.stopDate = el.value;
+          if (role === "drugStopTime") line.stopTime = el.value;
+        }
+
+        // ฝั่ง ADR
+        if (role.indexOf("adr") === 0) {
+          const line = p5.adrLines[index];
+          if (!line) return;
+          if (role === "adrSymptom") line.symptom = el.value;
+          if (role === "adrStartDate") line.startDate = el.value;
+          if (role === "adrStartTime") line.startTime = el.value;
+          if (role === "adrEndDate") line.endDate = el.value;
+          if (role === "adrEndTime") line.endTime = el.value;
+        }
+
+        saveStore();
+        drawTimelineSafe();
+      });
+
+      page5.__binded = true;
+    }
+
+    // ผูกปุ่มเพิ่มถ้ามีอยู่ในหน้า
     const addDrugBtn = document.getElementById("p5AddDrugBtn");
     const addAdrBtn = document.getElementById("p5AddAdrBtn");
     if (addDrugBtn) addDrugBtn.addEventListener("click", window.p5AddDrug);
     if (addAdrBtn) addAdrBtn.addEventListener("click", window.p5AddAdr);
-
-    // แสดงหน้า 5 รอบแรก
-    // (ถ้าเปิดหน้านี้จากแท็บอื่นทีหลัง ก็แค่เรียก window.renderPage5(); อีกที)
-    window.renderPage5();
   });
 
-  // ====================== drawTimeline เวอร์ชันตรงสเปค ======================
-  // (อันเดียวกับที่คุณส่งมา ผมแค่ย้ายเข้ามาในไฟล์เดียวกัน)
-  function drawTimeline() {
-    const dateRow = document.getElementById("p5DateRow");   // แถววันที่ด้านบน
-    const drugLane = document.getElementById("p5DrugLane"); // ช่องวาดแถบยา
-    const adrLane  = document.getElementById("p5AdrLane");  // ช่องวาดแถบ ADR
+  // ---------- E. drawTimeline แบบกันล้ม ----------
+  function drawTimelineSafe() {
+    const dateRow = document.getElementById("p5DateRow");
+    const drugLane = document.getElementById("p5DrugLane");
+    const adrLane = document.getElementById("p5AdrLane");
 
     if (!dateRow || !drugLane || !adrLane) return;
 
-    // ----- 1) ดึงข้อมูลจากศูนย์กลาง -----
     const store = window.drugAllergyData || {};
-    const drugs =
-      (store.page5 && Array.isArray(store.page5.drugLines) && store.page5.drugLines) ||
-      (Array.isArray(store.timelineDrugs) ? store.timelineDrugs : []);
-    const adrs =
-      (store.page5 && Array.isArray(store.page5.adrLines) && store.page5.adrLines) ||
-      (Array.isArray(store.timelineAdrs) ? store.timelineAdrs : []);
+    const p5 = store.page5 || {};
+    const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
+    const adrs = Array.isArray(p5.adrLines) ? p5.adrLines : [];
 
-    // ถ้าไม่มีข้อมูลเลยให้ล้างจอแล้วจบ
+    // ถ้าไม่มีข้อมูลเลย ล้างแล้วจบ
     if (!drugs.length && !adrs.length) {
       dateRow.innerHTML = "";
       drugLane.innerHTML = "";
@@ -229,6 +215,7 @@
     }
 
     const MS_DAY = 24 * 60 * 60 * 1000;
+
     function parseDate(str) {
       if (!str) return null;
       const pure = String(str).trim().split(" ")[0];
@@ -244,38 +231,36 @@
       }
       return null;
     }
-    function addDays(date, n) {
-      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
+
+    function addDays(d, n) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
     }
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // ----- 3) หา minDate และ maxDate (ปลายต้องเป็น "วันนี้") -----
+    // หา minDate
     let minDate = null;
-
-    drugs.forEach((d) => {
-      const s = parseDate(d.startDate || d.start || d.giveDate);
+    drugs.forEach(function (d) {
+      const s = parseDate(d.startDate);
       if (s) {
         if (!minDate || s < minDate) minDate = s;
       }
     });
-    adrs.forEach((a) => {
-      const s = parseDate(a.startDate || a.eventDate || a.symptomDate);
+    adrs.forEach(function (a) {
+      const s = parseDate(a.startDate);
       if (s) {
         if (!minDate || s < minDate) minDate = s;
       }
     });
+    if (!minDate) minDate = today;
 
-    if (!minDate) {
-      minDate = today;
-    }
-
+    // max = วันนี้
     const maxDate = today;
 
-    // ----- 4) คำนวณจำนวนวันและวาดแกน X -----
-    const DAY_W = 120; // ต้องตรงกับใน CSS
-    const totalDays = Math.floor((maxDate.getTime() - minDate.getTime()) / MS_DAY) + 1;
+    // วาดแกน X
+    const DAY_W = 120;
+    const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
 
     dateRow.innerHTML = "";
     for (let i = 0; i < totalDays; i++) {
@@ -290,65 +275,49 @@
       dateRow.appendChild(cell);
     }
 
+    // ล้างเลน
     drugLane.innerHTML = "";
     adrLane.innerHTML = "";
 
     function dateToLeftPx(date) {
-      const diffDay = Math.floor((date.getTime() - minDate.getTime()) / MS_DAY);
-      return diffDay * DAY_W;
+      const diff = Math.floor((date - minDate) / MS_DAY);
+      return diff * DAY_W;
     }
-    function calcWidthPx(startDate, endDate) {
-      const diffDay = Math.floor((endDate.getTime() - startDate.getTime()) / MS_DAY);
-      return (diffDay + 1) * DAY_W - 12;
+    function widthPx(start, end) {
+      const diff = Math.floor((end - start) / MS_DAY);
+      return (diff + 1) * DAY_W - 12;
     }
 
-    // ----- 6) วาดแถบ "ยา" -----
-    drugs.forEach((d, idx) => {
-      const start = parseDate(d.startDate || d.start || d.giveDate);
-      if (!start) return;
-
-      const end = d.stopDate || d.endDate || d.stop;
-      const endDateRaw = end ? parseDate(end) : null;
-      let endDate = endDateRaw ? endDateRaw : maxDate;
-      if (endDate < start) endDate = start;
+    // วาดยา
+    drugs.forEach(function (d, idx) {
+      const s = parseDate(d.startDate);
+      if (!s) return;
+      const e = d.stopDate ? parseDate(d.stopDate) : maxDate;
+      const end = e && e >= s ? e : s;
 
       const bar = document.createElement("div");
       bar.className = "p5-bar p5-bar-drug";
-      bar.textContent = d.drugName || d.name || `ยาตัวที่ ${idx + 1}`;
-
-      const left = dateToLeftPx(start);
-      const width = calcWidthPx(start, endDate);
-
-      bar.style.left = left + "px";
-      bar.style.width = width + "px";
-
+      bar.textContent = d.drugName || `ยาตัวที่ ${idx + 1}`;
+      bar.style.left = dateToLeftPx(s) + "px";
+      bar.style.width = widthPx(s, end) + "px";
       drugLane.appendChild(bar);
     });
 
-    // ----- 7) วาดแถบ "ADR" -----
-    adrs.forEach((a, idx) => {
-      const start = parseDate(a.startDate || a.eventDate || a.symptomDate);
-      if (!start) return;
-
-      const end = a.endDate || a.resolveDate;
-      const endDateRaw = end ? parseDate(end) : null;
-      let endDate = endDateRaw ? endDateRaw : maxDate;
-      if (endDate < start) endDate = start;
+    // วาด ADR
+    adrs.forEach(function (a, idx) {
+      const s = parseDate(a.startDate);
+      if (!s) return;
+      const e = a.endDate ? parseDate(a.endDate) : maxDate;
+      const end = e && e >= s ? e : s;
 
       const bar = document.createElement("div");
       bar.className = "p5-bar p5-bar-adr";
-      bar.textContent = a.symptom || a.name || `ADR ${idx + 1}`;
-
-      const left = dateToLeftPx(start);
-      const width = calcWidthPx(start, endDate);
-
-      bar.style.left = left + "px";
-      bar.style.width = width + "px";
-
+      bar.textContent = a.symptom || `ADR ${idx + 1}`;
+      bar.style.left = dateToLeftPx(s) + "px";
+      bar.style.width = widthPx(s, end) + "px";
       adrLane.appendChild(bar);
     });
 
-    // ----- 8) เลื่อนให้เห็นด้านขวา (วันนี้) -----
     const scrollWrap = document.getElementById("p5TimelineScroll");
     if (scrollWrap) {
       scrollWrap.scrollLeft = scrollWrap.scrollWidth;
