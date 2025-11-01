@@ -196,51 +196,106 @@
       <input id="color_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashColorsOther || ""}">
     </div>
     
-    <!-- 1.3 ตุ่มน้ำ -->
+     <!-- 1.3 ตุ่มน้ำ -->
     <div class="p1-block">
       <h4>1.3 ตุ่มน้ำ</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("blister_small", "ตุ่มน้ำขนาดเล็ก", d.blisters?.small)}
-        ${cb("blister_medium", "ตุ่มน้ำขนาดกลาง", d.blisters?.medium)}
-        ${cb("blister_large", "ตุ่มน้ำขนาดใหญ่", d.blisters?.large)}
+        <label class="p1-chk">
+          <input type="checkbox" id="blister_small" ${d.blisters?.small ? "checked" : ""}>
+          <span>ตุ่มน้ำขนาดเล็ก</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="blister_medium" ${d.blisters?.medium ? "checked" : ""}>
+          <span>ตุ่มน้ำขนาดกลาง</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="blister_large" ${d.blisters?.large ? "checked" : ""}>
+          <span>ตุ่มน้ำขนาดใหญ่</span>
+        </label>
       </div>
-      <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
+      <input id="blister_other"
+             class="p1-other"
+             placeholder="อื่นๆ ระบุ..."
+             value="${d.blisters?.other || ""}">
     </div>
 
     <!-- 1.4 ผิวหนังหลุดลอก -->
     <div class="p1-block">
       <h4>1.4 ผิวหนังหลุดลอก</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("detach_center", "ผิวหนังหลุดลอกตรงกลางผื่น", d.skinDetach?.center)}
-        ${cb("detach_lt10", "ผิวหนังหลุดลอกไม่เกิน 10% ของ BSA", d.skinDetach?.lt10)}
-        ${cb("detach_gt30", "ผิวหนังหลุดลอกเกิน 30% ของ BSA", d.skinDetach?.gt30)}
-        ${cb("detach_none", "ไม่พบ", d.skinDetach?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="detach_center" ${d.skinDetach?.center ? "checked" : ""}>
+          <span>ผิวหนังหลุดลอกตรงกลางผื่น</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="detach_lt10" ${d.skinDetach?.lt10 ? "checked" : ""}>
+          <span>ผิวหนังหลุดลอกไม่เกิน 10% ของ BSA</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="detach_gt30" ${d.skinDetach?.gt30 ? "checked" : ""}>
+          <span>ผิวหนังหลุดลอกเกิน 30% ของ BSA</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="detach_none" ${d.skinDetach?.none ? "checked" : ""}>
+          <span>ไม่พบ</span>
+        </label>
       </div>
-      <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
+      <input id="detach_other"
+             class="p1-other"
+             placeholder="อื่นๆ ระบุ..."
+             value="${d.skinDetach?.other || ""}">
     </div>
 
     <!-- 1.5 ขุย/แห้ง/ลอก -->
     <div class="p1-block">
       <h4>1.5 ขุย/แห้ง/ลอก</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("scale_scale", "ขุย", d.scales?.scale)}
-        ${cb("scale_dry", "แห้ง", d.scales?.dry)}
-        ${cb("scale_peel", "ลอก", d.scales?.peel)}
-        ${cb("scale_none", "ไม่พบ", d.scales?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="scale_scale" ${d.scales?.scale ? "checked" : ""}>
+          <span>ขุย</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="scale_dry" ${d.scales?.dry ? "checked" : ""}>
+          <span>แห้ง</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="scale_peel" ${d.scales?.peel ? "checked" : ""}>
+          <span>ลอก</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="scale_none" ${d.scales?.none ? "checked" : ""}>
+          <span>ไม่พบ</span>
+        </label>
       </div>
-      <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
+      <input id="scale_other"
+             class="p1-other"
+             placeholder="อื่นๆ ระบุ..."
+             value="${d.scales?.other || ""}">
     </div>
 
-    <!-- 1.6 น้ำเหลือง/สะเก็ด -->
+    <!-- 1.6 น้ำเหลือง / สะเก็ด -->
     <div class="p1-block">
       <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("ex_serous", "น้ำเหลือง", d.exudate?.serous)}
-        ${cb("ex_crust", "สะเก็ด", d.exudate?.crust)}
-        ${cb("ex_none", "ไม่พบ", d.exudate?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="ex_serous" ${d.exudate?.serous ? "checked" : ""}>
+          <span>น้ำเหลือง</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="ex_crust" ${d.exudate?.crust ? "checked" : ""}>
+          <span>สะเก็ด</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="ex_none" ${d.exudate?.none ? "checked" : ""}>
+          <span>ไม่พบ</span>
+        </label>
       </div>
-      <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
+      <input id="ex_other"
+             class="p1-other"
+             placeholder="อื่นๆ ระบุ..."
+             value="${d.exudate?.other || ""}">
     </div>
+
 
     <!-- 1.7 คัน -->
     <div class="p1-block">
@@ -255,14 +310,27 @@
       </div>
     </div>
 
-    <!-- 1.8 ปวด/แสบ/เจ็บ -->
+    
+    <!-- 1.8 ปวด / แสบ / เจ็บ -->
     <div class="p1-block">
       <h4>1.8 ปวด / แสบ / เจ็บ</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("pain_pain", "ปวด", d.pain?.pain)}
-        ${cb("pain_burn", "แสบ", d.pain?.burn)}
-        ${cb("pain_sore", "เจ็บ", d.pain?.sore)}
-        ${cb("pain_none", "ไม่พบ", d.pain?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="pain_pain" ${d.pain?.pain ? "checked" : ""}>
+          <span>ปวด</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="pain_burn" ${d.pain?.burn ? "checked" : ""}>
+          <span>แสบ</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="pain_sore" ${d.pain?.sore ? "checked" : ""}>
+          <span>เจ็บ</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="pain_none" ${d.pain?.none ? "checked" : ""}>
+          <span>ไม่พบ</span>
+        </label>
       </div>
     </div>
 
@@ -270,8 +338,14 @@
     <div class="p1-block">
       <h4>1.9 บวม</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("sw_has", "บวม", d.swelling?.has)}
-        ${cb("sw_none", "ไม่บวม", d.swelling?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="sw_has" ${d.swelling?.has ? "checked" : ""}>
+          <span>บวม</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="sw_none" ${d.swelling?.none ? "checked" : ""}>
+          <span>ไม่บวม</span>
+        </label>
       </div>
     </div>
 
@@ -279,12 +353,20 @@
     <div class="p1-block">
       <h4>1.10 ตุ่มหนอง</h4>
       <div class="p1-col p1-col-2col">
-        ${cb("pus_has", "พบ", d.pustule?.has)}
-        ${cb("pus_none", "ไม่พบ", d.pustule?.none)}
+        <label class="p1-chk">
+          <input type="checkbox" id="pus_has" ${d.pustule?.has ? "checked" : ""}>
+          <span>พบ</span>
+        </label>
+        <label class="p1-chk">
+          <input type="checkbox" id="pus_none" ${d.pustule?.none ? "checked" : ""}>
+          <span>ไม่พบ</span>
+        </label>
       </div>
-      <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
+      <input id="pus_detail"
+             class="p1-other"
+             placeholder="รายละเอียด..."
+             value="${d.pustule?.detail || ""}">
     </div>
-
     <!-- 1.21 ตำแหน่ง / การกระจายตัว -->
     <div class="p1-block">
       <h4>1.21 ตำแหน่งที่พบ / การกระจายตัว</h4>
