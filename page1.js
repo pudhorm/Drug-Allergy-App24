@@ -43,7 +43,7 @@
     "หลัง"
   ];
 
-   // สร้าง option อายุ 0-120 ปี + อื่นๆ
+  // ===== สร้าง option อายุ 0-120 ปี + อื่นๆ =====
   function buildAgeOptions(selected) {
     const out = [];
     for (let i = 0; i <= 120; i++) {
@@ -58,7 +58,7 @@
     return out.join("");
   }
 
-  // สร้าง option น้ำหนัก 1-200 กก. + อื่นๆ
+  // ===== สร้าง option น้ำหนัก 1-200 กก. + อื่นๆ =====
   function buildWeightOptions(selected) {
     const out = [];
     for (let i = 1; i <= 200; i++) {
@@ -73,7 +73,7 @@
     return out.join("");
   }
 
-  // สร้าง option โรคประจำตัว + อื่นๆ
+  // ===== สร้าง option โรคประจำตัว + อื่นๆ =====
   function buildUnderlyingOptions(selected) {
     const base = [
       "ไม่มีโรคประจำตัว",
@@ -93,12 +93,9 @@
       .join("");
   }
 
-
   // ----- ตัวช่วยทำ checkbox -----
   function cb(id, label, checked) {
-    return (
-      `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked ? "checked" : ""}><span>${label}</span></label>`
-    );
+    return `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked ? "checked" : ""}><span>${label}</span></label>`;
   }
 
   // ========================== render ==========================
@@ -142,33 +139,34 @@
                placeholder="ระบุอายุ (ปี)"
                value="${d.ageOther || ""}">
       </label>
-        <!-- น้ำหนัก: เลื่อนหาได้ -->
-        <label>น้ำหนัก (กก.)
-          <select id="p1_weight_sel">
-            <option value="">เลือก...</option>
-            ${buildWeightOptions(d.weightSel ?? d.weight ?? "")}
-          </select>
-          <input
-            id="p1_weight_other"
-            class="p1-other"
-            style="margin-top:.4rem; ${(d.weightSel === "other" || d.weight === "other") ? "" : "display:none"}"
-            placeholder="ระบุน้ำหนัก (กก.)"
-            value="${d.weightOther || ""}">
-        </label>
 
-        <!-- โรคประจำตัว: เลื่อนหาได้ -->
-        <label class="p1-col-2">โรคประจำตัว
-          <select id="p1_under_sel">
-            <option value="">เลือก...</option>
-            ${buildUnderlyingOptions(d.underSel ?? d.underlying ?? "")}
-          </select>
-          <input
-            id="p1_under_other"
-            class="p1-other"
-            style="margin-top:.4rem; ${(d.underSel === "other" || d.underlying === "other") ? "" : "display:none"}"
-            placeholder="ระบุโรคประจำตัวอื่นๆ"
-            value="${d.underOther || ""}">
-        </label>
+      <!-- น้ำหนัก: เลื่อนหาได้ -->
+      <label>น้ำหนัก (กก.)
+        <select id="p1_weight_sel">
+          <option value="">เลือก...</option>
+          ${buildWeightOptions(d.weightSel ?? d.weight ?? "")}
+        </select>
+        <input
+          id="p1_weight_other"
+          class="p1-other"
+          style="margin-top:.4rem; ${(d.weightSel === "other" || d.weight === "other") ? "" : "display:none"}"
+          placeholder="ระบุน้ำหนัก (กก.)"
+          value="${d.weightOther || ""}">
+      </label>
+
+      <!-- โรคประจำตัว: เลื่อนหาได้ -->
+      <label class="p1-col-2">โรคประจำตัว
+        <select id="p1_under_sel">
+          <option value="">เลือก...</option>
+          ${buildUnderlyingOptions(d.underSel ?? d.underlying ?? "")}
+        </select>
+        <input
+          id="p1_under_other"
+          class="p1-other"
+          style="margin-top:.4rem; ${(d.underSel === "other" || d.underlying === "other") ? "" : "display:none"}"
+          placeholder="ระบุโรคประจำตัวอื่นๆ"
+          value="${d.underOther || ""}">
+      </label>
 
       <label class="p1-col-2">ประวัติการแพ้ยา (เดิม)
         <textarea id="p1_history">${d.drugAllergyHistory || ""}</textarea>
@@ -198,43 +196,51 @@
       <input id="color_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashColorsOther || ""}">
     </div>
     
-   <!-- 1.3 ตุ่มน้ำ -->
+    <!-- 1.3 ตุ่มน้ำ -->
     <div class="p1-block">
-  <h4>1.3 ตุ่มน้ำ</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-  <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
-</div>
-
+      <h4>1.3 ตุ่มน้ำ</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("blister_small", "ตุ่มน้ำขนาดเล็ก", d.blisters?.small)}
+        ${cb("blister_medium", "ตุ่มน้ำขนาดกลาง", d.blisters?.medium)}
+        ${cb("blister_large", "ตุ่มน้ำขนาดใหญ่", d.blisters?.large)}
+      </div>
+      <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
+    </div>
 
     <!-- 1.4 ผิวหนังหลุดลอก -->
-   <div class="p1-block">
-  <h4>1.4 ผิวหนังหลุดลอก</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-  <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
-</div>
+    <div class="p1-block">
+      <h4>1.4 ผิวหนังหลุดลอก</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("detach_center", "ผิวหนังหลุดลอกตรงกลางผื่น", d.skinDetach?.center)}
+        ${cb("detach_lt10", "ผิวหนังหลุดลอกไม่เกิน 10% ของ BSA", d.skinDetach?.lt10)}
+        ${cb("detach_gt30", "ผิวหนังหลุดลอกเกิน 30% ของ BSA", d.skinDetach?.gt30)}
+        ${cb("detach_none", "ไม่พบ", d.skinDetach?.none)}
+      </div>
+      <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
+    </div>
 
     <!-- 1.5 ขุย/แห้ง/ลอก -->
     <div class="p1-block">
-  <h4>1.5 ขุย/แห้ง/ลอก</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-  <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
-</div>
-
+      <h4>1.5 ขุย/แห้ง/ลอก</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("scale_scale", "ขุย", d.scales?.scale)}
+        ${cb("scale_dry", "แห้ง", d.scales?.dry)}
+        ${cb("scale_peel", "ลอก", d.scales?.peel)}
+        ${cb("scale_none", "ไม่พบ", d.scales?.none)}
+      </div>
+      <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
+    </div>
 
     <!-- 1.6 น้ำเหลือง/สะเก็ด -->
-   <div class="p1-block">
-  <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-  <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
-</div>
+    <div class="p1-block">
+      <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("ex_serous", "น้ำเหลือง", d.exudate?.serous)}
+        ${cb("ex_crust", "สะเก็ด", d.exudate?.crust)}
+        ${cb("ex_none", "ไม่พบ", d.exudate?.none)}
+      </div>
+      <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
+    </div>
 
     <!-- 1.7 คัน -->
     <div class="p1-block">
@@ -251,29 +257,33 @@
 
     <!-- 1.8 ปวด/แสบ/เจ็บ -->
     <div class="p1-block">
-  <h4>1.8 ปวด / แสบ / เจ็บ</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-</div>
-
+      <h4>1.8 ปวด / แสบ / เจ็บ</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("pain_pain", "ปวด", d.pain?.pain)}
+        ${cb("pain_burn", "แสบ", d.pain?.burn)}
+        ${cb("pain_sore", "เจ็บ", d.pain?.sore)}
+        ${cb("pain_none", "ไม่พบ", d.pain?.none)}
+      </div>
+    </div>
 
     <!-- 1.9 บวม -->
     <div class="p1-block">
-  <h4>1.9 บวม</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-</div>
+      <h4>1.9 บวม</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("sw_has", "บวม", d.swelling?.has)}
+        ${cb("sw_none", "ไม่บวม", d.swelling?.none)}
+      </div>
+    </div>
 
     <!-- 1.10 ตุ่มหนอง -->
     <div class="p1-block">
-  <h4>1.10 ตุ่มหนอง</h4>
-  <div class="p1-col p1-col-2col">
-    ...
-  </div>
-  <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
-</div>
+      <h4>1.10 ตุ่มหนอง</h4>
+      <div class="p1-col p1-col-2col">
+        ${cb("pus_has", "พบ", d.pustule?.has)}
+        ${cb("pus_none", "ไม่พบ", d.pustule?.none)}
+      </div>
+      <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
+    </div>
 
     <!-- 1.21 ตำแหน่ง / การกระจายตัว -->
     <div class="p1-block">
@@ -289,7 +299,7 @@
           <option value="อื่นๆ" ${d.distribution === "อื่นๆ" ? "selected" : ""}>อื่นๆ</option>
         </select>
       </label>
-      <input id="p1_distribution_other" class="p1-other" placeholder="ถ้าเลือกอื่นๆ ระบุ..." value="${d.distributionOther || ""}">
+      <input id="p1_distribution_other" class="p1-other" placeholder="ถ้าเลือกอื่นๆ ระบุ..." value="${d.distributionOther || ""}" style="${d.distribution === "อื่นๆ" ? "" : "display:none"}">
     </div>
   </section>
 
@@ -339,7 +349,7 @@
 
     // ================== ผูก event ==================
 
-      // อายุ: โชว์/ซ่อนช่องอื่นๆ
+    // อายุ: โชว์/ซ่อนช่องอื่นๆ
     const ageSelEl = document.getElementById("p1_age_sel");
     const ageOtherEl = document.getElementById("p1_age_other");
     ageSelEl.addEventListener("change", () => {
@@ -360,6 +370,12 @@
       underOtherEl.style.display = underSelEl.value === "other" ? "block" : "none";
     });
 
+    // การกระจายตัว: โชว์/ซ่อนช่องอื่นๆ
+    const distSel = document.getElementById("p1_distribution");
+    const distOther = document.getElementById("p1_distribution_other");
+    distSel.addEventListener("change", () => {
+      distOther.style.display = distSel.value === "อื่นๆ" ? "block" : "none";
+    });
 
     // onset อื่นๆ
     const onsetSel = document.getElementById("p1_onset");
@@ -412,7 +428,7 @@
       renderPage1();
     });
 
-       // ปุ่มบันทึก
+    // ปุ่มบันทึก
     document.getElementById("p1_save").addEventListener("click", () => {
       const store = window.drugAllergyData.page1;
 
@@ -425,7 +441,7 @@
       store.ageOther = document.getElementById("p1_age_other").value;
       store.age = (ageSel === "other") ? store.ageOther : ageSel;
 
-            // น้ำหนักแบบเลือก
+      // น้ำหนักแบบเลือก
       const weightSel = document.getElementById("p1_weight_sel").value;
       store.weightSel = weightSel;
       store.weightOther = document.getElementById("p1_weight_other").value;
