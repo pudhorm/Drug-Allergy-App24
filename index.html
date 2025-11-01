@@ -7,13 +7,11 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-
 <body>
   <header class="topbar">
-  <h1>ระบบประเมินการแพ้ยา</h1>
-  <p class="hospital-badge">โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
-</header>
-
+    <h1>ระบบประเมินการแพ้ยา</h1>
+    <p class="hospital-badge">โรงพยาบาลพระอาจารย์ฝั้น อาจาโร</p>
+  </header>
 
   <!-- เมนูเลือกหน้า -->
   <nav class="tabs">
@@ -34,10 +32,11 @@
     <section id="page6" class="page"></section>
   </main>
 
-   <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
+  <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
   <script src="data.js"></script>
   <script src="page1.js"></script>
-  <script src="page2.js"></script>  <!-- << ต้องอยู่ตรงนี้ ก่อนสคริปต์หลัก -->
+  <script src="page2.js"></script>
+  <script src="page3.js"></script> <!-- ← เพิ่มให้โหลดหน้า 3 -->
 
   <script>
     // แค่สลับหน้าแบบง่ายๆ
@@ -46,6 +45,7 @@
 
     // ให้รู้ว่าเราวาดหน้าไหนไปแล้วบ้าง
     let page2Rendered = false;
+    let page3Rendered = false;  // ← ของหน้า 3
 
     tabBtns.forEach(btn => {
       btn.addEventListener("click", () => {
@@ -55,16 +55,21 @@
         tabBtns.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
 
-
         // ซ่อน/โชว์หน้า
         pages.forEach(p => p.classList.remove("visible"));
         const targetPage = document.getElementById(target);
         if (targetPage) targetPage.classList.add("visible");
 
-        // ถ้ากดหน้า 2 ให้เรนเดอร์หน้า 2 แค่ครั้งแรก
+        // หน้า 2 เรนเดอร์ครั้งแรกตอนกด
         if (target === "page2" && window.renderPage2 && !page2Rendered) {
           window.renderPage2();
           page2Rendered = true;
+        }
+
+        // หน้า 3 เรนเดอร์ครั้งแรกตอนกด
+        if (target === "page3" && window.renderPage3 && !page3Rendered) {
+          window.renderPage3();
+          page3Rendered = true;
         }
       });
     });
