@@ -1,70 +1,86 @@
 // page5.js
 (function () {
-  // จำนวน ms ต่อ 1 วัน
+  // ============ utils วันที่ ============
   const MS_DAY = 24 * 60 * 60 * 1000;
 
-  // แปลง yyyy-mm-dd เป็น Date แบบไม่โดน timezone ลบ 1 วัน
-  function parseLocalDate(str) {
+  // แปลง string → {y,m,d} รองรับ "2025-11-24" กับ "24/11/2025"
+  function parseYMD(str) {
     if (!str) return null;
-    // กันเคส placeholder ที่ browser แปล
-    if (str === "วว/ดด/ปปปป") return null;
-    const parts = str.split("-");
-    if (parts.length !== 3) return null;
-    const y = Number(parts[0]);
-    const m = Number(parts[1]) - 1;
-    const d = Number(parts[2]);
-    // คืนเป็น date local เลย
-    return new Date(y, m, d);
+
+    // แบบ yyyy-mm-dd (ค่ามาตรฐานของ input type="date")
+    if (str.includes("-")) {
+      const [y, m, d] = str.split("-").map((x) => +x);
+      if (!y || !m || !d) return null;
+      return { y, m, d };
+    }
+
+    // แบบ dd/mm/yyyy (บาง browser/locale แสดงงี้)
+    if (str.includes("/")) {
+      const [d, m, y] = str.split("/").map((x) => +x);
+      if (!y || !m || !d) return null;
+      return { y, m, d };
+    }
+
+    return null;
   }
 
-  // คืนวันนี้แบบ local (ตัดเวลาออก)
-  function getTodayLocal() {
+  // วันนี้แบบไทย/local → {y,m,d}
+  function todayYMD() {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
   }
 
-  // เพิ่มวัน
-  function addDays(date, n) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + n);
-    return d;
+  // เอา {y,m,d} → timestamp UTC (เพื่อคำนวณระยะวันไม่ให้เลื่อน)
+  function ymdToUTC(ymd) {
+    return Date.UTC(ymd.y, ymd.m - 1, ymd.d);
   }
 
-  // แสดงวันที่แบบไทยสั้น
-  function formatThaiShort(date) {
+  // จำนวนวันระหว่าง a → b รวมวันแรก
+  function diffDays(a, b) {
+    const da = ymdToUTC(a);
+    const db = ymdToUTC(b);
+    return Math.floor((db - da) / MS_DAY);
+  }
+
+  function formatISO(ymd) {
+    return (
+      ymd.y +
+      "-" +
+      String(ymd.m).padStart(2, "0") +
+      "-" +
+      String(ymd.d).padStart(2, "0")
+    );
+  }
+
+  function addDaysYMD(ymd, n) {
+    const base = new Date(ymd.y, ymd.m - 1, ymd.d);
+    base.setDate(base.getDate() + n);
+    return { y: base.getFullYear(), m: base.getMonth() + 1, d: base.getDate() };
+  }
+
+  function formatThaiShort(ymd) {
     const mths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-    return `${date.getDate()} ${mths[date.getMonth()]}`;
+    return `${ymd.d} ${mths[ymd.m - 1]}`;
   }
 
-  // แสดง yyyy-mm-dd
-  function formatISO(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
-
-  // สร้างบรรทัดยา 1 แถว
+  // ============ สร้างแถวกรอกข้อมูล ============
   function makeDrugRowHTML(i) {
     return `
       <div class="tl-card tl-bg-soft tl-drug-row" data-idx="${i}">
-        <div class="tl-head">
-          <h3 style="margin:0;font-size:1rem;color:#0f172a;">ชื่อยา</h3>
-        </div>
-        <div class="tl-grid2">
-          <label>
+        <div class="tl-grid2" style="align-items:flex-end;">
+          <label style="grid-column:1 / -1;">
+            <span style="display:block;font-weight:600;margin-bottom:.35rem;">ชื่อยา</span>
             <input type="text" class="tl-drug-name" placeholder="ระบุชื่อยา" style="width:100%;" />
           </label>
-          <span></span>
           <label>
-            เริ่มให้ยา
+            <span>เริ่มให้ยา</span>
             <div class="tl-inline">
               <input type="date" class="tl-drug-start" />
               <input type="time" class="tl-drug-start-time" />
             </div>
           </label>
           <label>
-            หยุดยา
+            <span>หยุดยา</span>
             <div class="tl-inline">
               <input type="date" class="tl-drug-end" />
               <input type="time" class="tl-drug-end-time" />
@@ -76,27 +92,23 @@
     `;
   }
 
-  // สร้างบรรทัด ADR 1 แถว
   function makeAdrRowHTML(i) {
     return `
       <div class="tl-card tl-bg-soft-red tl-adr-row" data-idx="${i}">
-        <div class="tl-head">
-          <h3 style="margin:0;font-size:1rem;color:#be123c;">อาการ</h3>
-        </div>
-        <div class="tl-grid2">
-          <label>
+        <div class="tl-grid2" style="align-items:flex-end;">
+          <label style="grid-column:1 / -1;">
+            <span style="display:block;font-weight:600;margin-bottom:.35rem;">อาการ</span>
             <input type="text" class="tl-adr-name" placeholder="ระบุอาการ เช่น ผื่น, คัน, บวม" style="width:100%;" />
           </label>
-          <span></span>
           <label>
-            วันที่เกิด
+            <span>วันที่เกิด</span>
             <div class="tl-inline">
               <input type="date" class="tl-adr-start" />
               <input type="time" class="tl-adr-start-time" />
             </div>
           </label>
           <label>
-            วันที่หาย
+            <span>วันที่หาย</span>
             <div class="tl-inline">
               <input type="date" class="tl-adr-end" />
               <input type="time" class="tl-adr-end-time" />
@@ -108,10 +120,10 @@
     `;
   }
 
-  // เรนเดอร์หน้า 5
+  // ============ render หน้า 5 ============
   window.renderPage5 = function () {
     const page = document.getElementById("page5");
-    // โครงหลักของหน้า 5 (เหมือนแบบที่คุณชอบ)
+
     page.innerHTML = `
       <div class="p5-wrapper" style="background:linear-gradient(180deg,#fff7e5 0%,#fdeaff 40%,#ffffff 100%);border-radius:1.5rem;padding:1.4rem 1.4rem 1.4rem;box-shadow:0 18px 45px rgba(236,72,153,.08);position:relative;overflow:hidden;">
         <div class="p5-glitter-layer"></div>
@@ -137,19 +149,19 @@
           </div>
         </div>
 
-        <!-- VISUAL TIMELINE -->
+        <!-- Timeline -->
         <div id="tlTimelineBox" style="background:rgba(255,255,255,.9);border:1px solid rgba(148,163,184,.18);border-radius:1.3rem;padding:1.1rem 1.1rem 1.4rem;margin-bottom:1.2rem;">
           <h2 style="margin:0 0 .8rem 0;color:#0f172a;">Visual Timeline</h2>
           <div id="tlScroll" class="tl-scroll" style="overflow-x:auto;overflow-y:hidden;border:1px dashed rgba(0,0,0,.05);border-radius:1.1rem;background:linear-gradient(180deg,#fff,#fff5ff);">
-            <div id="tlInner" style="position:relative;min-height:140px;">
-              <div id="tlTicks" class="tl-ticks" style="position:relative;height:30px;margin-left:180px;"></div>
+            <div id="tlInner" style="position:relative;min-height:150px;">
+              <div id="tlTicks" style="position:relative;height:30px;margin-left:180px;"></div>
               <div id="tlRows" style="position:relative;margin-top:6px;"></div>
             </div>
           </div>
         </div>
 
-        <!-- ปุ่มท้ายหน้า -->
-        <div class="tl-bottom-actions" style="display:flex;flex-direction:column;gap:10px;">
+        <!-- ปุ่มท้าย -->
+        <div class="tl-bottom-actions" style="display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,1));padding-top:6px;">
           <button type="button" id="btnPrint" class="btn-green-solid" style="background:#16a34a;">🖨 Print / PDF</button>
           <button type="button" id="btnGo6" class="btn-purple-solid" style="background:#4f46e5;">บันทึกข้อมูลและไปหน้า 6</button>
           <button type="button" id="btnClearPage5" class="btn-red-solid" style="background:#ef4444;">🗑 ล้างข้อมูลหน้านี้</button>
@@ -157,6 +169,7 @@
       </div>
     `;
 
+    // ===== อ้างอิง DOM =====
     const drugsBox = page.querySelector("#tlDrugs");
     const adrsBox = page.querySelector("#tlADRs");
     const btnAddDrug = page.querySelector("#btnAddDrug");
@@ -168,132 +181,126 @@
     const tlRows = page.querySelector("#tlRows");
     const tlInner = page.querySelector("#tlInner");
 
-    // --- สร้างแถวเริ่มต้น ---
+    // ===== เพิ่มแถวเริ่มต้น =====
     function addDrugRow() {
-      const idx = drugsBox.querySelectorAll(".tl-drug-row").length + 1;
-      const wrap = document.createElement("div");
-      wrap.innerHTML = makeDrugRowHTML(idx);
-      const row = wrap.firstElementChild;
-      // ปุ่มลบ
-      row.querySelector(".tl-del").addEventListener("click", () => {
-        row.remove();
-      });
+      const div = document.createElement("div");
+      div.innerHTML = makeDrugRowHTML(1);
+      const row = div.firstElementChild;
+      row.querySelector(".tl-del").addEventListener("click", () => row.remove());
       drugsBox.appendChild(row);
     }
 
     function addAdrRow() {
-      const idx = adrsBox.querySelectorAll(".tl-adr-row").length + 1;
-      const wrap = document.createElement("div");
-      wrap.innerHTML = makeAdrRowHTML(idx);
-      const row = wrap.firstElementChild;
-      row.querySelector(".tl-del").addEventListener("click", () => {
-        row.remove();
-      });
+      const div = document.createElement("div");
+      div.innerHTML = makeAdrRowHTML(1);
+      const row = div.firstElementChild;
+      row.querySelector(".tl-del").addEventListener("click", () => row.remove());
       adrsBox.appendChild(row);
     }
+
+    addDrugRow();
+    addAdrRow();
 
     btnAddDrug.addEventListener("click", addDrugRow);
     btnAddADR.addEventListener("click", addAdrRow);
 
-    // เริ่มด้วย 1 แถวต่อฝั่งเหมือนเดิม
-    addDrugRow();
-    addAdrRow();
-
-    // --- ฟังก์ชันวาด timeline ---
+    // ===== วาด timeline =====
     btnBuild.addEventListener("click", buildTimeline);
 
     function buildTimeline() {
-      const today = getTodayLocal();
-
+      const today = todayYMD();
       const items = [];
 
-      // เก็บยาก่อน
-      page.querySelectorAll(".tl-drug-row").forEach((row, i) => {
-        const name = row.querySelector(".tl-drug-name").value.trim() || `ยาตัวที่ ${i + 1}`;
-        const startStr = row.querySelector(".tl-drug-start").value;
-        const endStr = row.querySelector(".tl-drug-end").value;
-        const startDate = parseLocalDate(startStr);
-        if (!startDate) return; // ถ้าไม่กรอกวันเริ่ม ไม่ต้องเอา
-        const endDate = endStr ? parseLocalDate(endStr) : today;
+      // เก็บยา
+      page.querySelectorAll(".tl-drug-row").forEach((row, idx) => {
+        const name = row.querySelector(".tl-drug-name").value.trim() || `ยาตัวที่ ${idx + 1}`;
+        const sStr = row.querySelector(".tl-drug-start").value;
+        const eStr = row.querySelector(".tl-drug-end").value;
+
+        const sYMD = parseYMD(sStr);
+        if (!sYMD) return; // ไม่กรอกวันเริ่ม → ไม่เอา
+
+        let eYMD = eStr ? parseYMD(eStr) : null;
+        if (!eYMD) eYMD = today;            // ไม่กรอก → ongoing ถึงวันนี้
+        if (ymdToUTC(eYMD) < ymdToUTC(sYMD)) eYMD = sYMD; // ป้องกันกรอกวันสิ้นสุดก่อนวันเริ่ม
+
         items.push({
           type: "drug",
           name,
-          start: startDate,
-          end: endDate
+          start: sYMD,
+          end: eYMD
         });
       });
 
       // เก็บ ADR
-      page.querySelectorAll(".tl-adr-row").forEach((row, i) => {
-        const name = row.querySelector(".tl-adr-name").value.trim() || `ADR ${i + 1}`;
-        const startStr = row.querySelector(".tl-adr-start").value;
-        const endStr = row.querySelector(".tl-adr-end").value;
-        const startDate = parseLocalDate(startStr);
-        if (!startDate) return;
-        const endDate = endStr ? parseLocalDate(endStr) : today;
+      page.querySelectorAll(".tl-adr-row").forEach((row, idx) => {
+        const name = row.querySelector(".tl-adr-name").value.trim() || `ADR ${idx + 1}`;
+        const sStr = row.querySelector(".tl-adr-start").value;
+        const eStr = row.querySelector(".tl-adr-end").value;
+        const sYMD = parseYMD(sStr);
+        if (!sYMD) return;
+
+        let eYMD = eStr ? parseYMD(eStr) : null;
+        if (!eYMD) eYMD = today;
+        if (ymdToUTC(eYMD) < ymdToUTC(sYMD)) eYMD = sYMD;
+
         items.push({
           type: "adr",
           name,
-          start: startDate,
-          end: endDate
+          start: sYMD,
+          end: eYMD
         });
       });
 
-      // ถ้าไม่มีข้อมูล
       if (!items.length) {
-        tlTicks.innerHTML = `<p style="padding:12px 0 4px 0;color:#aaa;">ยังไม่มีข้อมูลยาหรือ ADR</p>`;
+        tlTicks.innerHTML = `<p style="padding:10px 0;color:#bbb;">ยังไม่มีข้อมูลยาหรือ ADR</p>`;
         tlRows.innerHTML = "";
         return;
       }
 
-      // หาวันเริ่มที่เล็กที่สุด
-      let minDate = items[0].start;
+      // หา minDate จาก start
+      let minY = items[0].start;
       items.forEach((it) => {
-        if (it.start < minDate) minDate = it.start;
+        if (ymdToUTC(it.start) < ymdToUTC(minY)) minY = it.start;
       });
 
-      // maxDate = วันนี้ กับวันที่สุดท้ายสุดของข้อมูล เอาอันที่ใหญ่กว่า
-      let maxDate = today;
+      // max = วันนี้ กับ end ที่มากที่สุด
+      let maxY = today;
       items.forEach((it) => {
-        if (it.end > maxDate) maxDate = it.end;
+        if (ymdToUTC(it.end) > ymdToUTC(maxY)) maxY = it.end;
       });
 
-      // จำนวนวันทั้งหมด = ตั้งแต่วันแรก -> ถึงวันนี้ (หรือถึงวันสุดท้ายที่กรอก ถ้าเกินวันนี้)
-      const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
+      const totalDays = diffDays(minY, maxY) + 1;
+      const DAY_W = 120;
+      const LABEL_W = 180;
+      const trackWidth = totalDays * DAY_W;
 
-      // ความกว้างต่อวัน
-      const DAY_WIDTH = 120; // px
-      const LABEL_OFFSET = 180; // เผื่อที่ให้ label ฝั่งซ้าย
-      const trackWidth = totalDays * DAY_WIDTH;
+      tlInner.style.width = LABEL_W + trackWidth + 40 + "px";
 
-      // ปรับความกว้าง inner เพื่อให้ scroll ได้
-      tlInner.style.width = LABEL_OFFSET + trackWidth + 40 + "px";
-
-      // วาด tick ด้านบน
+      // วาดแกน X ทุกวัน
       let ticksHTML = "";
-      for (let d = 0; d < totalDays; d++) {
-        const cur = addDays(minDate, d);
-        ticksHTML += `<div class="tl-tick" style="position:absolute;left:${LABEL_OFFSET + d * DAY_WIDTH}px;top:0;height:26px;line-height:26px;font-size:.85rem;color:#0f172a;">${formatThaiShort(cur)}</div>`;
+      for (let i = 0; i < totalDays; i++) {
+        const cur = addDaysYMD(minY, i);
+        ticksHTML += `<div style="position:absolute;left:${LABEL_W + i * DAY_W}px;top:0;height:30px;line-height:30px;font-size:.85rem;color:#0f172a;">${formatThaiShort(cur)}</div>`;
       }
       tlTicks.innerHTML = ticksHTML;
 
       // วาดแต่ละแถว
       let rowsHTML = "";
-      items.forEach((it, idx) => {
-        const startDiff = Math.floor((it.start - minDate) / MS_DAY); // กี่วันจากจุดเริ่ม
-        const endDiff = Math.floor((it.end - minDate) / MS_DAY);
-        const barLeft = startDiff * DAY_WIDTH;
-        const barDays = endDiff - startDiff + 1;
-        const barWidth = Math.max(90, barDays * DAY_WIDTH - 16); // กันหด
+      items.forEach((it) => {
+        const offStart = diffDays(minY, it.start);
+        const offEnd = diffDays(minY, it.end);
+        const barLeft = offStart * DAY_W;
+        const barWidth = Math.max(90, (offEnd - offStart + 1) * DAY_W - 16);
 
         rowsHTML += `
-          <div class="tl-row" style="display:grid;grid-template-columns:180px 1fr;align-items:center;gap:10px;min-height:60px;">
+          <div class="tl-row" style="display:grid;grid-template-columns:${LABEL_W}px 1fr;align-items:center;gap:10px;min-height:60px;">
             <div class="tl-ylabel" style="font-weight:700;color:${it.type === "adr" ? "#b91c1c" : "#0f766e"};">
               ${it.type === "adr" ? "ADR" : "ยา"}: ${it.name}
             </div>
             <div class="tl-track" style="position:relative;height:44px;width:${trackWidth}px;">
               <div class="tl-bar ${it.type === "adr" ? "adr" : "drug"}"
-                style="position:absolute;top:6px;left:${barLeft}px;width:${barWidth}px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;background:${it.type === "adr" ? "#ef4444" : "#0ea5e9"};box-shadow:0 14px 25px rgba(14,165,233,.35);">
+                style="position:absolute;top:6px;left:${barLeft}px;width:${barWidth}px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;background:${it.type === "adr" ? "#ef4444" : "#0ea5e9"};box-shadow:0 10px 18px rgba(14,165,233,.35);">
                 ${it.name} (${formatISO(it.start)})
               </div>
             </div>
@@ -304,28 +311,26 @@
       tlRows.innerHTML = rowsHTML;
     }
 
-    // พิมพ์
+    // print
     btnPrint.addEventListener("click", () => {
       window.print();
     });
 
-    // ล้างหน้า 5
+    // clear
     btnClear.addEventListener("click", () => {
-      // เคลียร์กล่อง
       drugsBox.innerHTML = "";
       adrsBox.innerHTML = "";
       tlTicks.innerHTML = "";
       tlRows.innerHTML = "";
-      // เพิ่มแถวเปล่าใหม่ให้ 1 อันเหมือนตอนเปิดใหม่
       addDrugRow();
       addAdrRow();
     });
 
-    // ปุ่มไปหน้า 6 แค่สลับแท็บ (โครงเดิมของคุณ)
-    const go6 = page.querySelector("#btnGo6");
-    go6.addEventListener("click", () => {
-      const tabBtn = document.querySelector('.tabs button[data-target="page6"]');
-      if (tabBtn) tabBtn.click();
+    // ไปหน้า 6
+    const btnGo6 = page.querySelector("#btnGo6");
+    btnGo6.addEventListener("click", () => {
+      const tab = document.querySelector('.tabs button[data-target="page6"]');
+      if (tab) tab.click();
     });
   };
 })();
