@@ -22,16 +22,6 @@ body {
 }
 
 /* ฟองอากาศลอย */
-.topbar::before,
-.topbar::after {
-  content: "";
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  animation: bubble 6s infinite ease-in-out;
-}
 .topbar::before {
   top: -40px;
   left: 12%;
@@ -40,6 +30,103 @@ body {
   bottom: -50px;
   right: 18%;
   animation-delay: 1.2s;
+}
+/* กลุ่มฟองอากาศเล็กๆ ที่ลอยเร็ว */
+.topbar {
+  position: relative;
+  background: linear-gradient(120deg, #7c3aed 0%, #ec4899 50%, #fb7185 100%);
+  color: #fff;
+  padding: 2.6rem 1.5rem 3.3rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* กล่องห่อฟอง */
+.top-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ฟองทุกอันพื้นฐาน */
+.top-bubbles span {
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+  opacity: .85;
+  animation: float-bubble 5.5s ease-in-out infinite;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.12));
+}
+
+/* ฟองแต่ละอันกำหนดตำแหน่ง + สี + ขนาด */
+.top-bubbles span:nth-child(1) {
+  width: 38px;
+  height: 38px;
+  background: rgba(236, 252, 203, .9);    /* เขียวอ่อน */
+  top: 65%;
+  left: 6%;
+  animation-duration: 4.2s;
+}
+.top-bubbles span:nth-child(2) {
+  width: 28px;
+  height: 28px;
+  background: rgba(221, 239, 253, .9);    /* ฟ้า */
+  top: 15%;
+  left: 18%;
+  animation-duration: 3.6s;
+  animation-delay: .5s;
+}
+.top-bubbles span:nth-child(3) {
+  width: 46px;
+  height: 46px;
+  background: rgba(252, 231, 243, .9);    /* ชมพูอ่อน */
+  top: 70%;
+  right: 15%;
+  animation-duration: 5.2s;
+  animation-delay: .9s;
+}
+.top-bubbles span:nth-child(4) {
+  width: 24px;
+  height: 24px;
+  background: rgba(221, 214, 254, .95);   /* ม่วงอ่อน */
+  top: 25%;
+  right: 30%;
+  animation-duration: 3.4s;
+  animation-delay: 1.2s;
+}
+.top-bubbles span:nth-child(5) {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 247, 237, .9);    /* ส้มจาง */
+  top: 50%;
+  left: 45%;
+  animation-duration: 4.6s;
+  animation-delay: .3s;
+}
+.top-bubbles span:nth-child(6) {
+  width: 22px;
+  height: 22px;
+  background: rgba(240, 253, 250, .95);   /* ฟ้าเขียวจาง */
+  top: 12%;
+  right: 5%;
+  animation-duration: 3.2s;
+  animation-delay: 1.5s;
+}
+
+/* แอนิเมชันให้ลอยขึ้นลงเร็วๆ */
+@keyframes float-bubble {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: .9;
+  }
+  50% {
+    transform: translateY(-18px) translateX(6px);
+    opacity: .6;
+  }
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: .9;
+  }
 }
 
 @keyframes bubble {
