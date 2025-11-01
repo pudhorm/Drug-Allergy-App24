@@ -662,3 +662,63 @@ body {
     flex-direction: column-reverse;
   }
 }
+
+/* ====== หน้า 2 ====== */
+.p2-wrapper {
+  background: #fff;
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 1.4rem;
+  padding: 1.5rem 1.4rem 2rem;
+  box-shadow: 0 10px 25px rgba(15,23,42,.05);
+  background: linear-gradient(180deg, #fff 0%, #fef3f2 100%);
+}
+.p2-section {
+  background: rgba(255,255,255,.7);
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 1.1rem;
+  padding: 1.2rem 1rem 1rem;
+  margin-bottom: 1.1rem;
+}
+.p2-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  color: #7c2d12;
+  margin-bottom: .9rem;
+}
+.p2-title.purple {
+  color: #6d28d9;
+}
+.p2-block {
+  background: #fff;
+  border-radius: .9rem;
+  padding: .6rem .6rem .4rem;
+  border: 1px solid rgba(148,163,184,.08);
+  margin-bottom: .65rem;
+}
+.p2-block h4 {
+  margin: 0 0 .5rem;
+  color: #be123c;
+  font-size: .92rem;
+}
+.p2-row {
+  background: #f8fafc;
+  border-radius: .7rem;
+  padding: .5rem .7rem .6rem;
+  margin-bottom: .5rem;
+}
+.p2-chk {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+}
+.p2-detail {
+  margin-top: .4rem;
+  width: 100%;
+  border: 1px solid rgba(124,58,237,.35);
+  border-radius: .6rem;
+  padding: .4rem .55rem;
+  font-size: .85rem;
+  background: #fff;
+}
