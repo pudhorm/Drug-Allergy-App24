@@ -1023,3 +1023,28 @@ body {
   font-weight: 700;
   color: #7a215f;
 }
+
+/* หน้า 5 กลิตเตอร์วิบวับ */
+.p5-glitter-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.65) 0, rgba(255,255,255,0) 40%),
+    radial-gradient(circle, rgba(255,255,255,.45) 0, rgba(255,255,255,0) 45%);
+  background-size: 220px 220px, 160px 160px;
+  mix-blend-mode: screen;
+  opacity: .6;
+  animation: p5sparkle 9s linear infinite;
+}
+
+@keyframes p5sparkle {
+  0%   { background-position: 0 0, 50px 80px; opacity:.7; }
+  50%  { background-position: 160px 120px, 120px 10px; opacity:.3; }
+  100% { background-position: 0 0, 50px 80px; opacity:.7; }
+}
+
+/* กันไว้ถ้าอยากใช้ container */
+.p5-wrapper {
+  position: relative;
+}
