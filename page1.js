@@ -43,7 +43,7 @@
     "หลัง"
   ];
 
-  // ----- สร้าง option อายุแบบ 0–120 ปี -----
+   // สร้าง option อายุ 0-120 ปี + อื่นๆ
   function buildAgeOptions(selected) {
     const out = [];
     for (let i = 0; i <= 120; i++) {
@@ -57,6 +57,42 @@
     );
     return out.join("");
   }
+
+  // สร้าง option น้ำหนัก 1-200 กก. + อื่นๆ
+  function buildWeightOptions(selected) {
+    const out = [];
+    for (let i = 1; i <= 200; i++) {
+      const v = String(i);
+      out.push(
+        `<option value="${v}" ${selected == v ? "selected" : ""}>${i} กก.</option>`
+      );
+    }
+    out.push(
+      `<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`
+    );
+    return out.join("");
+  }
+
+  // สร้าง option โรคประจำตัว + อื่นๆ
+  function buildUnderlyingOptions(selected) {
+    const base = [
+      "ไม่มีโรคประจำตัว",
+      "เบาหวาน",
+      "ความดันโลหิตสูง",
+      "โรคหัวใจ",
+      "โรคตับ",
+      "โรคไต",
+      "หอบหืด/ภูมิแพ้",
+      "อื่นๆ ระบุ…"
+    ];
+    return base
+      .map(opt => {
+        const val = opt === "อื่นๆ ระบุ…" ? "other" : opt;
+        return `<option value="${val}" ${selected === val ? "selected" : ""}>${opt}</option>`;
+      })
+      .join("");
+  }
+
 
   // ----- ตัวช่วยทำ checkbox -----
   function cb(id, label, checked) {
@@ -106,14 +142,33 @@
                placeholder="ระบุอายุ (ปี)"
                value="${d.ageOther || ""}">
       </label>
+        <!-- น้ำหนัก: เลื่อนหาได้ -->
+        <label>น้ำหนัก (กก.)
+          <select id="p1_weight_sel">
+            <option value="">เลือก...</option>
+            ${buildWeightOptions(d.weightSel ?? d.weight ?? "")}
+          </select>
+          <input
+            id="p1_weight_other"
+            class="p1-other"
+            style="margin-top:.4rem; ${(d.weightSel === "other" || d.weight === "other") ? "" : "display:none"}"
+            placeholder="ระบุน้ำหนัก (กก.)"
+            value="${d.weightOther || ""}">
+        </label>
 
-      <label>น้ำหนัก (กก.)
-        <input type="number" id="p1_weight" value="${d.weight || ""}">
-      </label>
-
-      <label class="p1-col-2">โรคประจำตัว
-        <input id="p1_underlying" value="${d.underlying || ""}">
-      </label>
+        <!-- โรคประจำตัว: เลื่อนหาได้ -->
+        <label class="p1-col-2">โรคประจำตัว
+          <select id="p1_under_sel">
+            <option value="">เลือก...</option>
+            ${buildUnderlyingOptions(d.underSel ?? d.underlying ?? "")}
+          </select>
+          <input
+            id="p1_under_other"
+            class="p1-other"
+            style="margin-top:.4rem; ${(d.underSel === "other" || d.underlying === "other") ? "" : "display:none"}"
+            placeholder="ระบุโรคประจำตัวอื่นๆ"
+            value="${d.underOther || ""}">
+        </label>
 
       <label class="p1-col-2">ประวัติการแพ้ยา (เดิม)
         <textarea id="p1_history">${d.drugAllergyHistory || ""}</textarea>
@@ -296,12 +351,27 @@
 
     // ================== ผูก event ==================
 
-    // อายุ: ถ้าเลือกอื่นๆ ให้โชว์ช่อง
+      // อายุ: โชว์/ซ่อนช่องอื่นๆ
     const ageSelEl = document.getElementById("p1_age_sel");
     const ageOtherEl = document.getElementById("p1_age_other");
     ageSelEl.addEventListener("change", () => {
       ageOtherEl.style.display = ageSelEl.value === "other" ? "block" : "none";
     });
+
+    // น้ำหนัก: โชว์/ซ่อนช่องอื่นๆ
+    const weightSelEl = document.getElementById("p1_weight_sel");
+    const weightOtherEl = document.getElementById("p1_weight_other");
+    weightSelEl.addEventListener("change", () => {
+      weightOtherEl.style.display = weightSelEl.value === "other" ? "block" : "none";
+    });
+
+    // โรคประจำตัว: โชว์/ซ่อนช่องอื่นๆ
+    const underSelEl = document.getElementById("p1_under_sel");
+    const underOtherEl = document.getElementById("p1_under_other");
+    underSelEl.addEventListener("change", () => {
+      underOtherEl.style.display = underSelEl.value === "other" ? "block" : "none";
+    });
+
 
     // onset อื่นๆ
     const onsetSel = document.getElementById("p1_onset");
@@ -367,8 +437,18 @@
       store.ageOther = document.getElementById("p1_age_other").value;
       store.age = (ageSel === "other") ? store.ageOther : ageSel;
 
-      store.weight = document.getElementById("p1_weight").value;
-      store.underlying = document.getElementById("p1_underlying").value;
+            // น้ำหนักแบบเลือก
+      const weightSel = document.getElementById("p1_weight_sel").value;
+      store.weightSel = weightSel;
+      store.weightOther = document.getElementById("p1_weight_other").value;
+      store.weight = (weightSel === "other") ? store.weightOther : weightSel;
+
+      // โรคประจำตัวแบบเลือก
+      const underSel = document.getElementById("p1_under_sel").value;
+      store.underSel = underSel;
+      store.underOther = document.getElementById("p1_under_other").value;
+      store.underlying = (underSel === "other") ? store.underOther : underSel;
+
       store.drugAllergyHistory = document.getElementById("p1_history").value;
 
       // ----- 1.1 รูปร่างผื่น -----
