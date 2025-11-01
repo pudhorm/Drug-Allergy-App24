@@ -5,13 +5,17 @@
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
   // ---------------- กลุ่มอาการตามระบบ (ส่วนที่ 1) ----------------
+  // เพิ่มสีรายระบบไว้ในอ็อบเจ็กต์แต่ละอันเลย
   const FEATURE_GROUPS = [
     {
       key: "resp",
       title: "1. ระบบหายใจ",
       emoji: "🫁",
+      bg: "linear-gradient(90deg, rgba(254, 242, 242, 0.95), rgba(254, 226, 226, 1))",
+      border: "rgba(248, 113, 113, .4)",
+      inputBorder: "rgba(248,113,113,.5)",
       items: [
-        // เอา "เจ็บคอ" ออกแล้ว
+        // ลบ "เจ็บคอ" ออกแล้ว
         "หายใจมีเสียงวี๊ด",
         "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)",
         "ไอ",
@@ -25,6 +29,9 @@
       key: "cv",
       title: "2. ระบบไหลเวียนโลหิต",
       emoji: "❤️",
+      bg: "linear-gradient(90deg, rgba(255, 244, 230, 0.95), rgba(255, 224, 178, 1))",
+      border: "rgba(251, 146, 60, .4)",
+      inputBorder: "rgba(251,146,60,.55)",
       items: [
         "เจ็บหน้าอก",
         "ใจสั่น",
@@ -40,6 +47,9 @@
       key: "gi",
       title: "3. ระบบทางเดินอาหาร",
       emoji: "🍽️",
+      bg: "linear-gradient(90deg, rgba(255, 250, 230, 0.95), rgba(255, 238, 186, 1))",
+      border: "rgba(234, 179, 8, .4)",
+      inputBorder: "rgba(234,179,8,.6)",
       items: [
         "คลื่นไส้/อาเจียน",
         "กลืนลำบาก",
@@ -58,18 +68,27 @@
       key: "msk",
       title: "4. ระบบกระดูกและกล้ามเนื้อ",
       emoji: "🦴",
+      bg: "linear-gradient(90deg, rgba(236, 252, 203, 0.95), rgba(217, 249, 157, 1))",
+      border: "rgba(132, 204, 22, .4)",
+      inputBorder: "rgba(132,204,22,.6)",
       items: ["ปวดข้อ", "ข้ออักเสบ", "ปวดเมื่อยกล้ามเนื้อ", "ไม่พบ"]
     },
     {
       key: "eye",
       title: "5. ระบบการมองเห็น",
       emoji: "👁️",
+      bg: "linear-gradient(90deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 1))",
+      border: "rgba(59, 130, 246, .35)",
+      inputBorder: "rgba(59,130,246,.55)",
       items: ["เยื่อบุตาอักเสบ (ตาแดง)", "แผลที่กระจกตา", "ไม่พบ"]
     },
     {
       key: "gu",
       title: "6. ระบบขับถ่าย",
       emoji: "🚽",
+      bg: "linear-gradient(90deg, rgba(224, 242, 254, 0.95), rgba(186, 230, 253, 1))",
+      border: "rgba(14, 165, 233, .35)",
+      inputBorder: "rgba(14,165,233,.55)",
       items: [
         "ปัสสาวะสีชา/สีดำ",
         "ปวดหลังส่วนเอว",
@@ -82,18 +101,27 @@
       key: "skin_extra",
       title: "7. ระบบผิวหนัง (เพิ่มเติม)",
       emoji: "🧴",
+      bg: "linear-gradient(90deg, rgba(245, 243, 255, 0.98), rgba(221, 214, 254, 1))",
+      border: "rgba(139, 92, 246, .35)",
+      inputBorder: "rgba(139,92,246,.55)",
       items: ["จุดเลือดออก", "ฟกช้ำ", "ปื้น/จ้ำเลือด", "ไม่พบ"]
     },
     {
       key: "ent",
       title: "8. ระบบหู คอ จมูก",
       emoji: "👂",
+      bg: "linear-gradient(90deg, rgba(255, 241, 242, 0.95), rgba(254, 226, 226, 1))",
+      border: "rgba(248, 113, 113, .35)",
+      inputBorder: "rgba(248,113,113,.55)",
       items: ["เจ็บคอ", "เลือดกำเดาไหล", "ทอนซิลอักเสบ", "ไม่พบ"]
     },
     {
       key: "other",
       title: "9. ระบบอื่นๆ",
       emoji: "🧪",
+      bg: "linear-gradient(90deg, rgba(243, 244, 246, 0.95), rgba(229, 231, 235, 1))",
+      border: "rgba(148, 163, 184, .35)",
+      inputBorder: "rgba(148,163,184,.6)",
       items: ["ไข้ Temp > 37.5 °C", "อ่อนเพลีย", "หนาวสั่น", "ไม่พบ"]
     }
   ];
@@ -117,19 +145,19 @@
 
     const d = window.drugAllergyData.page2;
 
-    // ชั้น 1: wrapper เข้มขึ้น
+    // ชั้นนอกสุด (คงโทนชมพู แต่มืดขึ้นนิด)
     root.innerHTML = `
       <div class="p2-wrapper" style="
-        background: radial-gradient(circle at top, #ffe0e4 0%, #ffd1d9 30%, #fff0f2 80%);
-        border: 1px solid rgba(255,92,120,.25);
+        background: radial-gradient(circle at top, #ffd5da 0%, #ffccd3 35%, #ffeef1 90%);
+        border: 1px solid rgba(255,92,120,.3);
         border-radius: 1.4rem;
         padding: 1.3rem 1.4rem 2.4rem;
-        box-shadow: 0 12px 30px rgba(255,120,140,.18);
+        box-shadow: 0 12px 30px rgba(255,120,140,.15);
       ">
         
         <!-- ส่วนที่ 1 -->
         <section class="p2-section" style="
-          background: rgba(255,243,244,0.95);
+          background: rgba(255, 241, 242, 0.95);
           border: 1px solid rgba(190,18,60,.25);
           border-radius: 1.05rem;
           padding: 1.05rem 1rem 1.1rem;
@@ -144,13 +172,13 @@
             const selected = d[group.key] || {};
             return `
               <div class="p2-block" style="
-                background: linear-gradient(90deg, rgba(255, 166, 179, 0.35), rgba(255, 232, 236, 0.95));
-                border: 1px solid rgba(244,63,94,.25);
+                background: ${group.bg};
+                border: 1px solid ${group.border};
                 border-radius: .9rem;
                 padding: .75rem .8rem .4rem;
                 margin-bottom: .65rem;
               ">
-                <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#b91c1c;margin:0 0 .55rem;">
+                <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#7f1d1d;margin:0 0 .55rem;">
                   <span>${group.emoji}</span>
                   <span>${group.title}</span>
                 </h3>
@@ -160,14 +188,13 @@
                       const id = `${group.key}_${idx}`;
                       const checked = selected[txt]?.checked ? "checked" : "";
                       const detailVal = selected[txt]?.detail || "";
-                      // ชั้น 3: รายการเดี่ยวสีไม่ขาวจ๋าแล้ว
                       return `
                         <label for="${id}" style="
                           display:flex;
                           gap:.6rem;
                           align-items:flex-start;
-                          background: rgba(255, 250, 250, 0.95);
-                          border: 1px solid rgba(248,113,113,.15);
+                          background: rgba(255, 255, 255, .88);
+                          border: 1px solid rgba(255,255,255,.2);
                           border-radius:.7rem;
                           padding:.45rem .55rem .55rem;
                         ">
@@ -180,7 +207,7 @@
                                    data-group="${group.key}"
                                    data-text="${txt}"
                                    value="${detailVal}"
-                                   style="margin-top:.35rem;width:100%;border:1px solid rgba(248,113,113,.5);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.65);">
+                                   style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.9);">
                           </div>
                         </label>
                       `;
@@ -194,12 +221,12 @@
 
         <!-- ส่วนที่ 2 -->
         <section class="p2-section" style="
-          background: rgba(254, 226, 255, 0.9);
-          border: 1px solid rgba(217,70,239,.25);
+          background: rgba(250, 232, 255, 0.95);
+          border: 1px solid rgba(217,70,239,.3);
           border-radius: 1.05rem;
           padding: 1.05rem 1rem 1.1rem;
         ">
-          <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#a21caf;margin:0 0 1rem;">
+          <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#86198f;margin:0 0 1rem;">
             <span>🫀</span>
             <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
           </h2>
@@ -215,7 +242,7 @@
                   display:flex;
                   gap:.6rem;
                   align-items:flex-start;
-                  background: rgba(255,247,255,.95);
+                  background: rgba(255, 255, 255, .9);
                   border: 1px solid rgba(236,72,153,.12);
                   border-radius:.7rem;
                   padding:.45rem .55rem .55rem;
@@ -228,7 +255,7 @@
                            class="p2-org-detail"
                            data-org="${org}"
                            value="${detailVal}"
-                           style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.35);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none"};background:rgba(255,255,255,.6);">
+                           style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.45);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none"};background:rgba(255,255,255,.9);">
                   </div>
                 </label>
               `;
