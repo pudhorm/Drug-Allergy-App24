@@ -34,29 +34,38 @@
     <section id="page6" class="page"></section>
   </main>
 
-  <!-- โหลดเฉพาะ 2 ไฟล์ที่เราเขียนเสร็จแล้ว -->
- <script src="data.js"></script>
- <script src="page1.js"></script>
- <script src="page2.js"></script>
-
+   <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
+  <script src="data.js"></script>
+  <script src="page1.js"></script>
+  <script src="page2.js"></script>  <!-- << ต้องอยู่ตรงนี้ ก่อนสคริปต์หลัก -->
 
   <script>
     // แค่สลับหน้าแบบง่ายๆ
     const tabBtns = document.querySelectorAll(".tabs button");
     const pages = document.querySelectorAll(".page");
 
+    // ให้รู้ว่าเราวาดหน้าไหนไปแล้วบ้าง
+    let page2Rendered = false;
+
     tabBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         const target = btn.dataset.target;
 
+        // เปลี่ยนแท็บ
         tabBtns.forEach(b => b.classList.remove("active"));
+        btn.addEventListener
         btn.classList.add("active");
 
+        // ซ่อน/โชว์หน้า
         pages.forEach(p => p.classList.remove("visible"));
         const targetPage = document.getElementById(target);
         if (targetPage) targetPage.classList.add("visible");
 
-        // ตอนนี้เรามีแค่หน้า 1 ถ้าคลิกหน้าอื่นจะยังว่างอยู่ ซึ่งปกติ
+        // ถ้ากดหน้า 2 ให้เรนเดอร์หน้า 2 แค่ครั้งแรก
+        if (target === "page2" && window.renderPage2 && !page2Rendered) {
+          window.renderPage2();
+          page2Rendered = true;
+        }
       });
     });
 
@@ -64,7 +73,6 @@
     if (window.renderPage1) {
       window.renderPage1();
     } else {
-      // กันเหนียว ถ้า page1.js ยังไม่โหลด
       document.getElementById("page1").innerHTML = "<p>โหลดหน้า 1 ไม่ได้</p>";
     }
   </script>
