@@ -1,206 +1,229 @@
 // page3.js
 (function () {
-  // เตรียมที่เก็บข้อมูลรวมของแอพ
+  // เตรียมที่เก็บรวม
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
 
-  // ---------------- กำหนดกลุ่มแลบ ----------------
-  // แต่ละรายการ: label, unit, placeholder, icon อยู่ฝั่ง HTML
+  // โครงข้อมูลแต่ละหมวด lab
   const LAB_SECTIONS = [
     {
       key: "cbc",
       title: "CBC",
       emoji: "🩸",
-      rows: [
-        { name: "WBC", unit: "/µL" },
-        { name: "Absolute eosinophil count (AEC)", unit: "/µL" },
-        { name: "Neutrophil (%)", unit: "%" },
-        { name: "Lymphocyte (%)", unit: "%" },
-        { name: "Atypical lymphocytes (%)", unit: "%" },
-        { name: "Eosinophil (%)", unit: "%" },
-        { name: "Hemoglobin (Hb)", unit: "g/dL" },
-        { name: "Platelet (Plt)", unit: "/µL" }
+      items: [
+        { key: "wbc", label: "WBC", unit: "/µL" },
+        { key: "aec", label: "Absolute eosinophil count (AEC)", unit: "/µL" },
+        { key: "neut", label: "Neutrophil", unit: "%" },
+        { key: "lym", label: "Lymphocyte", unit: "%" },
+        { key: "atyp", label: "Atypical lymphocytes", unit: "%" },
+        { key: "eos", label: "Eosinophil", unit: "%" },
+        { key: "hb", label: "Hemoglobin (Hb)", unit: "g/dL" },
+        { key: "plt", label: "Platelet (Plt)", unit: "/µL" }
       ]
     },
     {
       key: "lft",
       title: "LFT (ตับ)",
       emoji: "💊",
-      rows: [
-        { name: "AST", unit: "U/L" },
-        { name: "ALT", unit: "U/L" },
-        { name: "ALP", unit: "U/L" },
-        { name: "Total Bilirubin", unit: "mg/dL" },
-        { name: "Direct Bilirubin", unit: "mg/dL" }
+      items: [
+        { key: "ast", label: "AST", unit: "U/L" },
+        { key: "alt", label: "ALT", unit: "U/L" },
+        { key: "alp", label: "ALP", unit: "U/L" },
+        { key: "tbili", label: "Total Bilirubin", unit: "mg/dL" },
+        { key: "dbili", label: "Direct Bilirubin", unit: "mg/dL" }
       ]
     },
     {
       key: "rft",
       title: "RFT (ไต)",
-      emoji: "🫧",
-      rows: [
-        { name: "BUN", unit: "mg/dL" },
-        { name: "Creatinine", unit: "mg/dL" },
-        { name: "eGFR", unit: "mL/min/1.73m²" },
-        { name: "UO (Urine output)", unit: "mL/kg/hr" }
+      emoji: "🫗",
+      items: [
+        { key: "bun", label: "BUN", unit: "mg/dL" },
+        { key: "crt", label: "Creatinine", unit: "mg/dL" },
+        { key: "egfr", label: "eGFR", unit: "mL/min/1.73m²" },
+        { key: "uo", label: "UO (Urine output)", unit: "mL/kg/hr" }
       ]
     },
     {
-      key: "electro",
+      key: "electrolyte",
       title: "Electrolytes",
       emoji: "⚡",
-      rows: [
-        { name: "Na", unit: "mmol/L" },
-        { name: "K", unit: "mmol/L" },
-        { name: "Cl", unit: "mmol/L" },
-        { name: "HCO3- (TCO2)", unit: "mmol/L" },
-        { name: "Ca", unit: "mg/dL" },
-        { name: "Mg", unit: "mg/dL" },
-        { name: "Phosphate", unit: "mg/dL" }
+      items: [
+        { key: "na", label: "Na", unit: "mmol/L" },
+        { key: "k", label: "K", unit: "mmol/L" },
+        { key: "cl", label: "Cl", unit: "mmol/L" },
+        { key: "hco3", label: "HCO₃⁻ (TCO₂)", unit: "mmol/L" },
+        { key: "ca", label: "Ca", unit: "mg/dL" },
+        { key: "mg", label: "Mg", unit: "mg/dL" },
+        { key: "phos", label: "Phosphate", unit: "mg/dL" }
       ]
     },
     {
       key: "ua",
       title: "Urinalysis (UA)",
-      emoji: "🧪",
-      rows: [
-        { name: "Protein", unit: "mg/dL / +" },
-        { name: "Blood/RBC", unit: "cells/HPF" },
-        { name: "WBC", unit: "cells/HPF" },
-        { name: "Nitrite", unit: "pos/neg" },
-        { name: "Leukocyte esterase", unit: "pos/neg" },
-        { name: "Specific gravity", unit: "" },
-        { name: "pH", unit: "" },
-        { name: "Glucose", unit: "mg/dL / +" },
-        { name: "Ketone", unit: "+" }
+      emoji: "🧫",
+      items: [
+        { key: "protein", label: "Protein", unit: "mg/dL / +" },
+        { key: "rbc", label: "Blood / RBC", unit: "cells/HPF" },
+        { key: "wbc", label: "WBC", unit: "cells/HPF" },
+        { key: "nitrite", label: "Nitrite", unit: "pos/neg" },
+        { key: "le", label: "Leukocyte esterase", unit: "pos/neg" },
+        { key: "sg", label: "Specific gravity", unit: "" },
+        { key: "ph", label: "pH", unit: "" },
+        { key: "glucose", label: "Glucose", unit: "mg/dL / +" },
+        { key: "ketone", label: "Ketone", unit: "+" }
       ]
     },
     {
       key: "lung",
       title: "ปอด",
       emoji: "🫁",
-      rows: [
-        { name: "SpO2", unit: "%" },
-        { name: "Lung function (sound/CXR)", unit: "" }
+      items: [
+        { key: "spo2", label: "SpO₂", unit: "%" },
+        { key: "lungfx", label: "Lung function (sound / CXR)", unit: "" }
       ]
     },
     {
       key: "heart",
       title: "หัวใจ",
       emoji: "❤️",
-      rows: [
-        { name: "Troponin I", unit: "ng/mL" },
-        { name: "Troponin T", unit: "ng/mL" },
-        { name: "CK-MB", unit: "ng/mL" },
-        { name: "EKG", unit: "" }
+      items: [
+        { key: "trop_i", label: "Troponin I", unit: "ng/mL" },
+        { key: "trop_t", label: "Troponin T", unit: "ng/mL" },
+        { key: "ckmb", label: "CK-MB", unit: "ng/mL" },
+        { key: "ekg", label: "EKG", unit: "ค่า/ผล" }
       ]
     },
     {
       key: "immuno",
       title: "Immunology / Allergy",
       emoji: "🧬",
-      rows: [
-        { name: "IgE", unit: "IU/mL" },
-        { name: "Complement (C3/C4)", unit: "mg/dL" }
+      items: [
+        { key: "ige", label: "IgE", unit: "IU/mL" },
+        { key: "c3c4", label: "Complement (C3/C4)", unit: "mg/dL" }
       ]
     }
   ];
 
-  // -------------- เรนเดอร์หน้า 3 -----------------
   function renderPage3() {
     const root = document.getElementById("page3");
     if (!root) return;
 
-    const store = window.drugAllergyData.page3;
+    const saved = window.drugAllergyData.page3 || {};
 
     root.innerHTML = `
-      <div class="p3-wrapper">
-        <h2 class="p3-title">
-          <span class="icon">🧪</span>
-          หน้า 3 ผลตรวจทางห้องปฏิบัติการ
-        </h2>
+      <div class="p3-wrapper" style="
+        background: radial-gradient(circle at top, #d1fae5 0%, #ecfdf3 45%, #ffffff 85%);
+        border: 1px solid rgba(16, 185, 129, .12);
+        border-radius: 1.4rem;
+        padding: 1.3rem 1.5rem 3.6rem;
+        box-shadow: 0 12px 30px rgba(22, 163, 74, 0.07);
+      ">
+        <h1 style="display:flex;align-items:center;gap:.5rem;font-size:1.45rem;font-weight:700;color:#065f46;margin:0 0 1.1rem;">
+          <span>🧪</span>
+          <span>หน้า 3 ผลตรวจทางห้องปฏิบัติการ</span>
+        </h1>
+        <p style="margin:0 0 1.2rem;color:#065f46;opacity:.8;font-size:.88rem;">
+          เลือกเฉพาะผลที่ตรวจได้ แล้วกรอกค่า / หน่วย / รายละเอียดเพิ่มเติม
+        </p>
 
-        <p class="p3-subtitle">ติ้กเลือกเฉพาะแลบที่มี แล้วกรอกค่า + รายละเอียดเพิ่มเติมได้เลย</p>
-
-        <div class="p3-sections">
-          ${LAB_SECTIONS.map(section => {
-            const savedSec = store[section.key] || {};
+        <div class="p3-grid" style="display:flex;flex-direction:column;gap:1rem;">
+          ${LAB_SECTIONS.map(sec => {
+            const secData = saved[sec.key] || {};
             return `
-              <section class="p3-section">
-                <header class="p3-section-header">
-                  <span class="p3-section-icon">${section.emoji}</span>
-                  <h3>${section.title}</h3>
-                </header>
-                <div class="p3-rows">
-                  ${section.rows
-                    .map((row, idx) => {
-                      const rowId = `${section.key}_${idx}`;
-                      const savedRow = savedSec[row.name] || {};
-                      const checked = savedRow.checked ? "checked" : "";
-                      const value = savedRow.value || "";
-                      const detail = savedRow.detail || "";
-                      return `
-                        <div class="p3-row">
-                          <label class="p3-row-check">
-                            <input type="checkbox"
-                                   id="${rowId}"
-                                   data-sec="${section.key}"
-                                   data-name="${row.name}"
-                                   ${checked}>
-                            <span>${row.name}</span>
-                          </label>
-                          <div class="p3-row-inputs">
-                            <input type="text"
-                                   class="p3-val"
-                                   data-sec="${section.key}"
-                                   data-name="${row.name}"
-                                   value="${value}"
-                                   placeholder="ค่า/ผล">
-                            <span class="p3-unit">${row.unit || ""}</span>
-                            <input type="text"
-                                   class="p3-detail"
-                                   data-sec="${section.key}"
-                                   data-name="${row.name}"
-                                   value="${detail}"
-                                   placeholder="รายละเอียดเพิ่มเติม"
-                                   style="${checked ? "" : "display:none"}">
-                          </div>
-                        </div>
-                      `;
-                    })
-                    .join("")}
+              <div class="p3-card" style="
+                background: rgba(255,255,255,.94);
+                border: 1px solid rgba(5, 150, 105, .12);
+                border-radius: 1.05rem;
+                padding: 1rem 1rem 1.1rem;
+                box-shadow: 0 8px 15px rgba(15,118,110,.03);
+              ">
+                <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;">
+                  <span style="font-size:1.35rem;">${sec.emoji}</span>
+                  <h2 style="font-size:1.05rem;font-weight:700;color:#065f46;margin:0;">${sec.title}</h2>
                 </div>
-              </section>
+                <div class="p3-items" style="display:flex;flex-direction:column;gap:.55rem;">
+                  ${sec.items.map((item, idx) => {
+                    const id = `${sec.key}_${item.key}`;
+                    const row = secData[item.key] || {};
+                    const checked = row.checked ? "checked" : "";
+                    const value = row.value ?? "";
+                    const detail = row.detail ?? "";
+                    return `
+                      <label for="${id}" style="
+                        display:grid;
+                        grid-template-columns: auto 170px 60px 1fr;
+                        gap:.45rem .6rem;
+                        align-items:center;
+                        background: rgba(209, 250, 229, .25);
+                        border: 1px solid rgba(22, 163, 74, .08);
+                        border-radius:.7rem;
+                        padding:.4rem .55rem .55rem;
+                      ">
+                        <div style="display:flex;align-items:center;gap:.45rem;">
+                          <input type="checkbox" id="${id}" data-sec="${sec.key}" data-item="${item.key}" ${checked}
+                            style="width:16px;height:16px;accent-color:#059669;">
+                          <span style="font-size:.86rem;color:#0f172a;">${item.label}</span>
+                        </div>
+                        <input type="text" placeholder="ค่า" value="${value}"
+                          class="p3-val" data-sec="${sec.key}" data-item="${item.key}"
+                          style="width:100%;border:1px solid rgba(16,185,129,.35);border-radius:.55rem;padding:.35rem .45rem;font-size:.8rem;${checked ? "" : "opacity:.35;"}" ${checked ? "" : "disabled"}>
+                        <span style="font-size:.74rem;color:#047857;">${item.unit || ""}</span>
+                        <input type="text" placeholder="รายละเอียดเพิ่มเติม"
+                          class="p3-detail" data-sec="${sec.key}" data-item="${item.key}"
+                          value="${detail}"
+                          style="width:100%;border:1px solid rgba(16,185,129,.15);border-radius:.55rem;padding:.35rem .4rem;font-size:.78rem;${checked ? "" : "display:none;"}">
+                      </label>
+                    `;
+                  }).join("")}
+                </div>
+              </div>
             `;
           }).join("")}
         </div>
 
-        <div class="p3-actions">
-          <button class="btn-primary" id="p3_save">บันทึกข้อมูลและไปหน้า 4</button>
-          <button class="btn-danger" id="p3_clear">🗑️ ล้างข้อมูลหน้านี้</button>
+        <!-- ปุ่มท้ายหน้า -->
+        <div style="display:flex;gap:1rem;margin-top:1.6rem;flex-wrap:wrap;">
+          <button id="p3-save-next" style="
+            background: linear-gradient(120deg,#22c55e 0%,#0f766e 70%);
+            color:#fff;border:none;border-radius:.9rem;
+            padding:.7rem 1.4rem;font-weight:600;cursor:pointer;
+            box-shadow:0 10px 20px rgba(15,118,110,.25);
+          ">บันทึกข้อมูลและไปหน้า 4</button>
+          <button id="p3-clear" style="
+            background:#ef4444;color:#fff;border:none;border-radius:.9rem;
+            padding:.7rem 1.1rem;font-weight:600;cursor:pointer;
+            box-shadow:0 10px 16px rgba(239,68,68,.28);
+          ">ล้างข้อมูลหน้านี้</button>
         </div>
       </div>
     `;
 
-    // ---------- ผูก event ----------
-    LAB_SECTIONS.forEach(section => {
-      section.rows.forEach((row, idx) => {
-        const cb = document.getElementById(`${section.key}_${idx}`);
+    // ผูก event
+    LAB_SECTIONS.forEach(sec => {
+      sec.items.forEach(item => {
+        const cb = root.querySelector(
+          `input[type="checkbox"][data-sec="${sec.key}"][data-item="${item.key}"]`
+        );
         const valInput = root.querySelector(
-          `.p3-val[data-sec="${section.key}"][data-name="${row.name}"]`
+          `.p3-val[data-sec="${sec.key}"][data-item="${item.key}"]`
         );
         const detailInput = root.querySelector(
-          `.p3-detail[data-sec="${section.key}"][data-name="${row.name}"]`
+          `.p3-detail[data-sec="${sec.key}"][data-item="${item.key}"]`
         );
-
         if (!cb || !valInput || !detailInput) return;
 
         cb.addEventListener("change", () => {
           if (cb.checked) {
+            valInput.disabled = false;
+            valInput.style.opacity = "1";
             detailInput.style.display = "block";
           } else {
+            valInput.disabled = true;
+            valInput.style.opacity = ".35";
+            valInput.value = "";
             detailInput.style.display = "none";
-            // detailInput.value = ""; // จะไม่ลบทิ้งทันที เผื่อกดผิด
+            detailInput.value = "";
           }
           savePage3();
         });
@@ -210,57 +233,81 @@
       });
     });
 
-    // ปุ่มล้าง
-    const clearBtn = document.getElementById("p3_clear");
-    clearBtn.addEventListener("click", () => {
-      window.drugAllergyData.page3 = {};
-      renderPage3(); // วาดใหม่ให้สะอาด
-      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-    });
+    // ปุ่ม
+    const btnSaveNext = document.getElementById("p3-save-next");
+    const btnClear = document.getElementById("p3-clear");
 
-    // ปุ่มบันทึก + ไปหน้า 4
-    const saveBtn = document.getElementById("p3_save");
-    saveBtn.addEventListener("click", () => {
-      savePage3();
-      alert("บันทึกหน้า 3 แล้ว");
-      // สลับแท็บไปหน้า 4
-      const btn4 = document.querySelector('.tabs button[data-target="page4"]');
-      if (btn4) btn4.click();
-    });
+    if (btnSaveNext) {
+      btnSaveNext.addEventListener("click", () => {
+        savePage3();
+        // เปลี่ยนแท็บไปหน้า 4
+        const btn4 = document.querySelector('.tabs button[data-target="page4"]');
+        const page4 = document.getElementById("page4");
+        if (btn4 && page4) {
+          document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+          btn4.classList.add("active");
+          document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
+          page4.classList.add("visible");
+        }
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener("click", () => {
+        LAB_SECTIONS.forEach(sec => {
+          sec.items.forEach(item => {
+            const cb = root.querySelector(
+              `input[type="checkbox"][data-sec="${sec.key}"][data-item="${item.key}"]`
+            );
+            const v = root.querySelector(
+              `.p3-val[data-sec="${sec.key}"][data-item="${item.key}"]`
+            );
+            const d = root.querySelector(
+              `.p3-detail[data-sec="${sec.key}"][data-item="${item.key}"]`
+            );
+            if (!cb || !v || !d) return;
+            cb.checked = false;
+            v.value = "";
+            v.disabled = true;
+            v.style.opacity = ".35";
+            d.value = "";
+            d.style.display = "none";
+          });
+        });
+        window.drugAllergyData.page3 = {};
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      });
+    }
   }
 
-  // -------------- ฟังก์ชันเซฟ -----------------
   function savePage3() {
     const root = document.getElementById("page3");
     if (!root) return;
 
-    const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
+    const store = (window.drugAllergyData.page3 = {});
 
-    LAB_SECTIONS.forEach(section => {
+    LAB_SECTIONS.forEach(sec => {
       const secObj = {};
-      section.rows.forEach(row => {
+      sec.items.forEach(item => {
         const cb = root.querySelector(
-          `input[type="checkbox"][data-sec="${section.key}"][data-name="${row.name}"]`
+          `input[type="checkbox"][data-sec="${sec.key}"][data-item="${item.key}"]`
         );
-        const valInput = root.querySelector(
-          `.p3-val[data-sec="${section.key}"][data-name="${row.name}"]`
+        const v = root.querySelector(
+          `.p3-val[data-sec="${sec.key}"][data-item="${item.key}"]`
         );
-        const detailInput = root.querySelector(
-          `.p3-detail[data-sec="${section.key}"][data-name="${row.name}"]`
+        const d = root.querySelector(
+          `.p3-detail[data-sec="${sec.key}"][data-item="${item.key}"]`
         );
-
-        if (!cb || !valInput || !detailInput) return;
-
-        const hasData = cb.checked || valInput.value.trim() !== "" || detailInput.value.trim() !== "";
-        if (hasData) {
-          secObj[row.name] = {
+        if (!cb || !v || !d) return;
+        if (cb.checked || v.value.trim() !== "" || d.value.trim() !== "") {
+          secObj[item.key] = {
             checked: cb.checked,
-            value: valInput.value.trim(),
-            detail: detailInput.value.trim()
+            value: v.value.trim(),
+            detail: d.value.trim()
           };
         }
       });
-      store[section.key] = secObj;
+      store[sec.key] = secObj;
     });
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
