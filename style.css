@@ -423,3 +423,15 @@ body {
     padding: 1.1rem .8rem 5rem;
   }
 }
+
+/* ให้ select ในส่วนข้อมูลผู้ป่วยเหมือนช่องปกติ */
+.p1-section select {
+  border: 1px solid rgba(173, 139, 255, 0.4);
+  border-radius: .8rem;
+  padding: .45rem .7rem;
+  background: #fff;
+  font-size: .9rem;
+  width: 100%;
+  outline: none;
+}
+
