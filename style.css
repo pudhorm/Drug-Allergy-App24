@@ -1879,3 +1879,25 @@ body {
   padding: .32rem .55rem .28rem;
   border-radius: .5rem;
 }
+/* หน้า 5 ปุ่มลบเล็กข้างปุ่มเพิ่ม */
+.p5-mini-del-btn {
+  background: #fee2e2;
+  border: none;
+  color: #b91c1c;
+  font-weight: 600;
+  padding: .35rem .6rem .3rem;
+  border-radius: .6rem;
+  cursor: pointer;
+}
+.p5-mini-del-btn:hover {
+  background: #fecaca;
+}
+
+/* ให้ timeline สูงพอ มองเห็นบาร์ */
+#p5_tlScroll {
+  padding-bottom: 2.6rem;
+}
+#p5_tlCanvas {
+  min-height: 200px;
+}
+
