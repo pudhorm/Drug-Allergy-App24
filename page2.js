@@ -166,62 +166,71 @@
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
 
-          ${FEATURE_GROUPS.map(group => {
-            const selected = d[group.key] || {};
-            return `
-              <div class="p2-block" style="
-                background: ${group.bg};
-                border: 1px solid ${group.border};
-                border-radius: .9rem;
-                padding: .75rem .8rem .4rem;
-                margin-bottom: .65rem;
-              ">
-                <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#7f1d1d;margin:0 0 .55rem;">
-                  <span>${group.emoji}</span>
-                  <span>${group.title}</span>
-                </h3>
-                <!-- เปลี่ยน list เป็นแนวนอน + wrap -->
-                <div class="p2-list" style="
-                  display:flex;
-                  flex-wrap:wrap;
-                  gap:.55rem;
+          <!-- กล่องระบบให้เป็น 2 คอลัมน์ -->
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+            ${FEATURE_GROUPS.map((group, groupIndex) => {
+              // 1-8 -> ครึ่งจอ, 9 -> เต็มจอ
+              const isFull = group.key === "other";
+              return `
+                <div style="
+                  flex: ${isFull ? "0 0 100%" : "0 0 calc(50% - .5rem)"};
+                  min-width: ${isFull ? "100%" : "min(540px,100%)"};
                 ">
-                  ${group.items
-                    .map((txt, idx) => {
-                      const id = `${group.key}_${idx}`;
-                      const checked = selected[txt]?.checked ? "checked" : "";
-                      const detailVal = selected[txt]?.detail || "";
-                      return `
-                        <label for="${id}" style="
-                          display:flex;
-                          gap:.6rem;
-                          align-items:flex-start;
-                          background: rgba(255, 255, 255, .88);
-                          border: 1px solid rgba(255,255,255,.2);
-                          border-radius:.7rem;
-                          padding:.45rem .55rem .55rem;
-                          width: calc(50% - .35rem);
-                          min-width: 270px;
-                        ">
-                          <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
-                          <div style="flex:1 1 auto;">
-                            <div style="font-size:.86rem;color:#1f2937;">${txt}</div>
-                            <input type="text"
-                                   placeholder="รายละเอียด..."
-                                   class="p2-detail"
-                                   data-group="${group.key}"
-                                   data-text="${txt}"
-                                   value="${detailVal}"
-                                   style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.9);">
-                          </div>
-                        </label>
-                      `;
-                    })
-                    .join("")}
+                  <div class="p2-block" style="
+                    background: ${group.bg};
+                    border: 1px solid ${group.border};
+                    border-radius: .9rem;
+                    padding: .75rem .8rem .4rem;
+                  ">
+                    <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#7f1d1d;margin:0 0 .55rem;">
+                      <span>${group.emoji}</span>
+                      <span>${group.title}</span>
+                    </h3>
+                    <!-- ตัวเลือกด้านในให้เรียงซ้าย→ขวา -->
+                    <div class="p2-list" style="
+                      display:flex;
+                      flex-wrap:wrap;
+                      gap:.55rem;
+                    ">
+                      ${group.items
+                        .map((txt, idx) => {
+                          const id = `${group.key}_${idx}`;
+                          const selected = d[group.key] || {};
+                          const checked = selected[txt]?.checked ? "checked" : "";
+                          const detailVal = selected[txt]?.detail || "";
+                          return `
+                            <label for="${id}" style="
+                              display:flex;
+                              gap:.6rem;
+                              align-items:flex-start;
+                              background: rgba(255, 255, 255, .88);
+                              border: 1px solid rgba(255,255,255,.15);
+                              border-radius:.7rem;
+                              padding:.45rem .55rem .55rem;
+                              width: calc(50% - .3rem);
+                              min-width: 230px;
+                            ">
+                              <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
+                              <div style="flex:1 1 auto;">
+                                <div style="font-size:.86rem;color:#1f2937;">${txt}</div>
+                                <input type="text"
+                                       placeholder="รายละเอียด..."
+                                       class="p2-detail"
+                                       data-group="${group.key}"
+                                       data-text="${txt}"
+                                       value="${detailVal}"
+                                       style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.9);">
+                              </div>
+                            </label>
+                          `;
+                        })
+                        .join("")}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            `;
-          }).join("")}
+              `;
+            }).join("")}
+          </div>
         </section>
 
         <!-- ส่วนที่ 2 -->
@@ -252,7 +261,7 @@
                   border-radius:.7rem;
                   padding:.45rem .55rem .55rem;
                   width: calc(50% - .35rem);
-                  min-width: 270px;
+                  min-width: 250px;
                 ">
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
