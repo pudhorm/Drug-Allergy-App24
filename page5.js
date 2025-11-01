@@ -234,82 +234,89 @@
 
       let rowsHTML = "";
 
-      // ---------- วาดยา ----------
-      store.drugs.forEach(d => {
-        if (!d.name && !d.startDate) return;
-        const sdt = parseFlexibleDate(d.startDate);
-        if (!sdt) return;
+    // ---------- วาดยา ----------
+store.drugs.forEach(d => {
+  if (!d.name && !d.startDate) return;
+  const sdt = parseFlexibleDate(d.startDate);
+  if (!sdt) return;
 
-        // ถ้ามีหยุด → หยุดจริง = หยุด - 1 วัน
-        let edt;
-        if (d.stopDate) {
-          const tmpEnd = parseFlexibleDate(d.stopDate);
-          if (tmpEnd) {
-            edt = new Date(tmpEnd.getTime() - DAY_MS);   // 👈 สั้นกว่าวันที่กรอก 1 วัน
-          } else {
-            edt = todayMid;
-          }
-        } else {
-          edt = todayMid;
-        }
+  // 👇 ขยับวันเริ่มให้ถอยไป 1 วัน
+  const sdtShow = new Date(sdt.getTime() - DAY_MS);
 
-        // กันกรณีวันหยุดก่อนวันเริ่ม
-        if (edt < sdt) edt = sdt;
+  let edt;
+  if (d.stopDate) {
+    const tmpEnd = parseFlexibleDate(d.stopDate);
+    if (tmpEnd) {
+      // เดิมเราลบ 1 วันอยู่แล้ว ให้คงไว้
+      edt = new Date(tmpEnd.getTime() - DAY_MS);
+    } else {
+      edt = todayMid;
+    }
+  } else {
+    edt = todayMid;
+  }
 
-        const startIdx = dayDiff(chartStart, sdt);
-        const endIdx   = dayDiff(chartStart, edt);
+  // กันไม่ให้ปลายก่อนต้น
+  if (edt < sdtShow) edt = sdtShow;
 
-        const left  = startIdx * DAY_WIDTH;
-        const width = (endIdx - startIdx + 1) * DAY_WIDTH;
+  const startIdx = dayDiff(chartStart, sdtShow);
+  const endIdx   = dayDiff(chartStart, edt);
 
-        rowsHTML += `
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-            <div style="width:110px;font-weight:600;color:#0f766e;">ยา: ${d.name || "-"}</div>
-            <div style="flex:1;position:relative;height:50px;border-bottom:1px dashed rgba(15,23,42,.05);">
-              <div style="position:absolute;left:${left}px;top:4px;width:${width}px;height:38px;background:#0ea5e9;border-radius:15px;display:flex;align-items:center;justify-content:flex-start;padding-left:12px;box-shadow:0 10px 25px rgba(14,165,233,.28);color:#000;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${d.name || "ยา"} (${d.startDate || ""})${d.stopDate ? "" : " (Ongoing)"}
-              </div>
-            </div>
-          </div>
-        `;
-      });
+  const left  = startIdx * DAY_WIDTH;
+  const width = (endIdx - startIdx + 1) * DAY_WIDTH;
 
-      // ---------- วาด ADR ----------
-      store.adrs.forEach(a => {
-        if (!a.name && !a.onsetDate) return;
-        const sdt = parseFlexibleDate(a.onsetDate);
-        if (!sdt) return;
+  rowsHTML += `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <div style="width:110px;font-weight:600;color:#0f766e;">ยา: ${d.name || "-"}</div>
+      <div style="flex:1;position:relative;height:50px;border-bottom:1px dashed rgba(15,23,42,.05);">
+        <div style="position:absolute;left:${left}px;top:4px;width:${width}px;height:38px;background:#0ea5e9;border-radius:15px;display:flex;align-items:center;justify-content:flex-start;padding-left:12px;box-shadow:0 10px 25px rgba(14,165,233,.28);color:#000;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${d.name || "ยา"} (${d.startDate || ""})${d.stopDate ? "" : " (Ongoing)"}
+        </div>
+      </div>
+    </div>
+  `;
+});
 
-        let edt;
-        if (a.stopDate) {
-          const tmpEnd = parseFlexibleDate(a.stopDate);
-          if (tmpEnd) {
-            edt = new Date(tmpEnd.getTime() - DAY_MS);   // 👈 สั้นกว่าวันที่หาย 1 วัน
-          } else {
-            edt = todayMid;
-          }
-        } else {
-          edt = todayMid;
-        }
+// ---------- วาด ADR ----------
+store.adrs.forEach(a => {
+  if (!a.name && !a.onsetDate) return;
+  const sdt = parseFlexibleDate(a.onsetDate);
+  if (!sdt) return;
 
-        if (edt < sdt) edt = sdt;
+  // 👇 ถอยวันเริ่มแสดงผลไป 1 วัน
+  const sdtShow = new Date(sdt.getTime() - DAY_MS);
 
-        const startIdx = dayDiff(chartStart, sdt);
-        const endIdx   = dayDiff(chartStart, edt);
-        const left  = startIdx * DAY_WIDTH;
-        const width = (endIdx - startIdx + 1) * DAY_WIDTH;
+  let edt;
+  if (a.stopDate) {
+    const tmpEnd = parseFlexibleDate(a.stopDate);
+    if (tmpEnd) {
+      // เดิม: ปลายต้องสั้นกว่าที่กรอก 1 วัน
+      edt = new Date(tmpEnd.getTime() - DAY_MS);
+    } else {
+      edt = todayMid;
+    }
+  } else {
+    edt = todayMid;
+  }
 
-        rowsHTML += `
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-            <div style="width:110px;font-weight:700;color:#b91c1c;">ADR:</div>
-            <div style="flex:1;position:relative;height:50px;border-bottom:1px dashed rgba(15,23,42,.04);">
-              <div style="position:absolute;left:${left}px;top:4px;width:${width}px;height:38px;background:#ef4444;border-radius:15px;display:flex;align-items:center;justify-content:flex-start;padding-left:12px;box-shadow:0 10px 25px rgba(248,113,113,.28);color:#000;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${a.name || "ADR"} (${a.onsetDate || ""})${a.stopDate ? "" : " (Ongoing)"}
-              </div>
-            </div>
-          </div>
-        `;
-      });
+  if (edt < sdtShow) edt = sdtShow;
+
+  const startIdx = dayDiff(chartStart, sdtShow);
+  const endIdx   = dayDiff(chartStart, edt);
+  const left  = startIdx * DAY_WIDTH;
+  const width = (endIdx - startIdx + 1) * DAY_WIDTH;
+
+  rowsHTML += `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <div style="width:110px;font-weight:700;color:#b91c1c;">ADR:</div>
+      <div style="flex:1;position:relative;height:50px;border-bottom:1px dashed rgba(15,23,42,.04);">
+        <div style="position:absolute;left:${left}px;top:4px;width:${width}px;height:38px;background:#ef4444;border-radius:15px;display:flex;align-items:center;justify-content:flex-start;padding-left:12px;box-shadow:0 10px 25px rgba(248,113,113,.28);color:#000;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${a.name || "ADR"} (${a.onsetDate || ""})${a.stopDate ? "" : " (Ongoing)"}
+        </div>
+      </div>
+    </div>
+  `;
+});
 
       divTimeline.innerHTML = `
         <div style="min-width:${totalDays * DAY_WIDTH + 140}px;">
