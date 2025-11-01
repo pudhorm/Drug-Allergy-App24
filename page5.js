@@ -1,36 +1,38 @@
 // page5.js
-// หน้า 5: Timeline ประเมินการแพ้ยา
-// เวอร์ชันนี้แก้ 3 เรื่องหลัก:
-// 1) แกน X เริ่มตรงวันแรกที่ผู้ใช้กรอกจริงๆ (ไม่เลื่อน +1 วันแล้ว)
-// 2) ถ้าไม่กรอกวันหยุดยา / วันหาย -> แถบยาวถึง "วันนี้" (วันที่เปิดแอพ)
-// 3) ปลายแถบซ้าย-ขวา ตรงกับวันที่คำนวณจริง เป๊ะ
-
+// หน้า 5 Timeline — เวอร์ชันปรับปลายซ้าย/ขวา + เวลาไทย + ปุ่มลบเล็ก
 (function () {
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const DAY_WIDTH = 110; // ความกว้าง 1 วันบนแกน X
 
-  // แปลง "24/11/2025" -> Date(2025,10,24)
-  function parseThaiDate(str) {
-    if (!str || str === "วว/ดด/ปปปป") return null;
-    const parts = str.split("/");
-    if (parts.length !== 3) return null;
-    const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10) - 1;
-    const y = parseInt(parts[2], 10);
-    if (Number.isNaN(d) || Number.isNaN(m) || Number.isNaN(y)) return null;
-    const dt = new Date(y, m, d);
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-  }
+  // ฟังก์ชันช่วย
+  const diffDays = (d1, d0) => Math.round((d1.getTime() - d0.getTime()) / DAY_MS);
 
-  // แปลง Date -> 2025-11-29 เอาไว้แปะบนแถบ
-  function formatISO(d) {
+  // แปลง date -> 2025-11-29 (ไว้เขียนบนแถบ)
+  function toISO(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${dd}`;
   }
 
-  // ส่วน HTML หลักของหน้า 5
+  // แสดงวันเวลาปัจจุบันไทย
+  function startNowClock() {
+    const el = document.getElementById("tl-now-clock");
+    if (!el) return;
+    function tick() {
+      const now = new Date();
+      const f = new Intl.DateTimeFormat("th-TH", {
+        dateStyle: "full",
+        timeStyle: "medium",
+        timeZone: "Asia/Bangkok",
+      }).format(now);
+      el.textContent = `📅 ${f}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // ----- สร้างหน้า 5 -----
   function renderPage5() {
     const page = document.getElementById("page5");
     if (!page) return;
@@ -43,9 +45,11 @@
         <div class="tl-section tl-bg-soft" style="margin-bottom:1rem; position:relative;">
           <div class="tl-head">
             <h2 style="margin:0; font-size:1.3rem; color:#0f172a;">ยา</h2>
-            <button id="tl-add-drug" class="btn-green-solid" style="min-width:150px; display:flex; gap:.4rem; justify-content:center; align-items:center;">
-              <span>+ เพิ่มยาตัวใหม่</span>
-            </button>
+            <div style="display:flex; gap:.5rem; align-items:center;">
+              <button id="tl-add-drug" class="btn-green-solid" style="min-width:140px; display:flex; gap:.35rem; align-items:center; justify-content:center;">
+                + เพิ่มยาตัวใหม่
+              </button>
+            </div>
           </div>
           <div id="tl-drug-list" style="display:flex; flex-direction:column; gap:.7rem;"></div>
         </div>
@@ -54,16 +58,18 @@
         <div class="tl-section tl-bg-soft-red" style="margin-bottom:1rem; position:relative;">
           <div class="tl-head">
             <h2 style="margin:0; font-size:1.3rem; color:#991b1b;">ADR (Adverse Drug Reaction)</h2>
-            <button id="tl-add-adr" class="btn-red-solid" style="min-width:150px; display:flex; gap:.4rem; justify-content:center; align-items:center;">
-              <span>+ เพิ่ม ADR</span>
-            </button>
+            <div style="display:flex; gap:.5rem; align-items:center;">
+              <button id="tl-add-adr" class="btn-red-solid" style="min-width:140px; display:flex; gap:.35rem; align-items:center; justify-content:center;">
+                + เพิ่ม ADR
+              </button>
+            </div>
           </div>
           <div id="tl-adr-list" style="display:flex; flex-direction:column; gap:.7rem;"></div>
 
           <!-- ปุ่มสร้าง timeline -->
           <div class="tl-actions-under-adr" style="margin-top:.6rem;">
             <button id="tl-build" class="btn-blue-solid" style="display:flex; gap:.4rem; align-items:center;">
-              <span style="font-size:1.1rem;">▶</span>
+              ▶
               <span>สร้าง Timeline</span>
             </button>
           </div>
@@ -71,6 +77,9 @@
 
         <!-- ผล Timeline -->
         <div class="tl-section" style="position:relative;">
+          <!-- เวลาไทย -->
+          <div id="tl-now-clock" style="margin-bottom:.4rem; font-weight:600; color:#1f2937;"></div>
+
           <h2 style="margin:0 0 .6rem; font-size:1.4rem; color:#111827;">Visual Timeline</h2>
           <div id="tl-scroll" class="tl-scroll hidden" style="min-height:160px;">
             <div id="tl-ticks" class="tl-ticks"></div>
@@ -89,7 +98,7 @@
       </div>
     `;
 
-    // สร้าง 1 ช่องเริ่มต้น
+    // สร้างแถวเริ่มต้น
     addDrugRow();
     addAdrRow();
 
@@ -100,96 +109,89 @@
     document.getElementById("tl-clear").addEventListener("click", clearPage5);
     document.getElementById("tl-print").addEventListener("click", () => window.print());
     document.getElementById("tl-save-next").addEventListener("click", () => {
-      // แค่สลับหน้าไปหน้า 6
       const btn = document.querySelector('.tabs button[data-target="page6"]');
       if (btn) btn.click();
     });
+
+    // นาฬิกาไทย
+    startNowClock();
   }
 
-  // ====== ส่วนสร้าง input ของ "ยา" ======
+  // ----- เพิ่มการ์ดยา -----
   function addDrugRow() {
     const list = document.getElementById("tl-drug-list");
-    const wrap = document.createElement("div");
-    wrap.className = "tl-card";
-    wrap.style.position = "relative";
-    wrap.innerHTML = `
-      <div style="display:flex; gap:1rem; align-items:flex-start;">
-        <div style="flex:1 1 auto;">
+    const card = document.createElement("div");
+    card.className = "tl-card";
+    card.style.position = "relative";
+    card.innerHTML = `
+      <button class="tl-del" style="position:absolute; top:.5rem; right:.5rem; border:none; background:#fee2e2; color:#b91c1c; border-radius:.5rem; padding:.25rem .55rem; font-size:.7rem; cursor:pointer;">ลบ</button>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:.2rem;">
+        <div style="flex:1 1 180px;">
           <label>ชื่อยา</label>
-          <input type="text" class="tl-drug-name" placeholder="ระบุชื่อยา" style="width:100%; border:1px solid rgba(15,23,42,.1); border-radius:.8rem; padding:.35rem .55rem;" />
-        </div>
-        <div style="width:92px; align-self:stretch; background:rgba(248,113,113,.12); border-radius:.8rem; display:flex; justify-content:center; align-items:center;">
-          <button class="tl-del" style="border:none; background:transparent; font-weight:700; color:#b91c1c; cursor:pointer;">ลบ</button>
+          <input type="text" class="tl-drug-name" placeholder="ระบุชื่อยา" style="width:100%; border:1px solid rgba(15,23,42,.08); border-radius:.7rem; padding:.35rem .55rem;" />
         </div>
       </div>
       <div style="display:flex; gap:1rem; margin-top:.6rem; flex-wrap:wrap;">
         <div>
           <label>เริ่มให้ยา</label><br/>
-          <input type="date" class="tl-drug-start" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="date" class="tl-drug-start" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>เวลา</label><br/>
-          <input type="time" class="tl-drug-start-time" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="time" class="tl-drug-start-time" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>หยุดยา</label><br/>
-          <input type="date" class="tl-drug-end" placeholder="วว/ดด/ปปปป" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="date" class="tl-drug-end" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>เวลา</label><br/>
-          <input type="time" class="tl-drug-end-time" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="time" class="tl-drug-end-time" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
       </div>
     `;
-    // ปุ่มลบ
-    wrap.querySelector(".tl-del").addEventListener("click", () => {
-      wrap.remove();
-    });
-    list.appendChild(wrap);
+    card.querySelector(".tl-del").addEventListener("click", () => card.remove());
+    list.appendChild(card);
   }
 
-  // ====== ส่วนสร้าง input ของ "ADR" ======
+  // ----- เพิ่มการ์ด ADR -----
   function addAdrRow() {
     const list = document.getElementById("tl-adr-list");
-    const wrap = document.createElement("div");
-    wrap.className = "tl-card";
-    wrap.style.position = "relative";
-    wrap.innerHTML = `
-      <div style="display:flex; gap:1rem; align-items:flex-start;">
-        <div style="flex:1 1 auto;">
+    const card = document.createElement("div");
+    card.className = "tl-card";
+    card.style.position = "relative";
+    card.innerHTML = `
+      <button class="tl-del" style="position:absolute; top:.5rem; right:.5rem; border:none; background:#fee2e2; color:#b91c1c; border-radius:.5rem; padding:.25rem .55rem; font-size:.7rem; cursor:pointer;">ลบ</button>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:.2rem;">
+        <div style="flex:1 1 180px;">
           <label>อาการ</label>
-          <input type="text" class="tl-adr-name" placeholder="ระบุอาการ เช่น ผื่น, คัน, บวม" style="width:100%; border:1px solid rgba(15,23,42,.1); border-radius:.8rem; padding:.35rem .55rem;" />
-        </div>
-        <div style="width:92px; align-self:stretch; background:rgba(254,226,226,.9); border-radius:.8rem; display:flex; justify-content:center; align-items:center;">
-          <button class="tl-del" style="border:none; background:transparent; font-weight:700; color:#b91c1c; cursor:pointer;">ลบ</button>
+          <input type="text" class="tl-adr-name" placeholder="ระบุอาการ เช่น ผื่น, คัน, บวม" style="width:100%; border:1px solid rgba(15,23,42,.08); border-radius:.7rem; padding:.35rem .55rem;" />
         </div>
       </div>
       <div style="display:flex; gap:1rem; margin-top:.6rem; flex-wrap:wrap;">
         <div>
           <label>วันที่เกิด</label><br/>
-          <input type="date" class="tl-adr-start" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="date" class="tl-adr-start" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>เวลา</label><br/>
-          <input type="time" class="tl-adr-start-time" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="time" class="tl-adr-start-time" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>วันที่หาย</label><br/>
-          <input type="date" class="tl-adr-end" placeholder="วว/ดด/ปปปป" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="date" class="tl-adr-end" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
         <div>
           <label>เวลา</label><br/>
-          <input type="time" class="tl-adr-end-time" style="border:1px solid rgba(15,23,42,.1); border-radius:.6rem; padding:.25rem .45rem;" />
+          <input type="time" class="tl-adr-end-time" style="border:1px solid rgba(15,23,42,.08); border-radius:.6rem; padding:.25rem .55rem;" />
         </div>
       </div>
     `;
-    wrap.querySelector(".tl-del").addEventListener("click", () => {
-      wrap.remove();
-    });
-    list.appendChild(wrap);
+    card.querySelector(".tl-del").addEventListener("click", () => card.remove());
+    list.appendChild(card);
   }
 
-  // ====== ปุ่มล้างข้อมูล ======
+  // ----- ล้างหน้า 5 -----
   function clearPage5() {
     document.getElementById("tl-drug-list").innerHTML = "";
     document.getElementById("tl-adr-list").innerHTML = "";
@@ -198,96 +200,78 @@
     document.getElementById("tl-scroll").classList.add("hidden");
   }
 
-  // ====== สร้าง Timeline ======
+  // ----- ปุ่มสร้าง Timeline -----
   function buildTimeline() {
     const today = new Date();
+    // วันนี้แบบไทย
     today.setHours(0, 0, 0, 0);
 
-    // เก็บของยา
-    const drugRows = Array.from(document.querySelectorAll("#tl-drug-list .tl-card"));
+    // -------- เก็บข้อมูลจากฟอร์ม --------
     const drugs = [];
-    for (const row of drugRows) {
-      const name = row.querySelector(".tl-drug-name").value.trim() || "ยากลุ่มที่ 1";
-      const startStr = row.querySelector(".tl-drug-start").value;
-      const endStr = row.querySelector(".tl-drug-end").value;
-      const start = startStr ? new Date(startStr) : null;
-      let end = endStr ? new Date(endStr) : null;
+    document.querySelectorAll("#tl-drug-list .tl-card").forEach((card) => {
+      const name = card.querySelector(".tl-drug-name").value.trim() || "ยา";
+      const startVal = card.querySelector(".tl-drug-start").value;
+      const endVal = card.querySelector(".tl-drug-end").value;
+      if (!startVal) return;
 
-      if (!start) continue; // ยังไม่ใส่วันเริ่ม -> ไม่ต้องโชว์ใน timeline
-
+      const start = new Date(startVal);
       start.setHours(0, 0, 0, 0);
 
-      // ถ้าไม่ระบุวันหยุด -> ใช้วันนี้เลย (คงตามที่คุณสั่ง)
-      if (!end) {
-        end = new Date(today.getTime());
-      } else {
+      let end;
+      if (endVal) {
+        end = new Date(endVal);
         end.setHours(0, 0, 0, 0);
+      } else {
+        // ไม่ระบุ → ยาวถึงวันนี้
+        end = new Date(today.getTime());
       }
 
-      // กันไว้ ถ้าผู้ใช้ใส่วันหยุดก่อนวันเริ่ม
       if (end < start) end = new Date(start.getTime());
-
       drugs.push({ name, start, end });
-    }
+    });
 
-    // เก็บของ ADR
-    const adrRows = Array.from(document.querySelectorAll("#tl-adr-list .tl-card"));
     const adrs = [];
-    for (const row of adrRows) {
-      const name = row.querySelector(".tl-adr-name").value.trim() || "ADR";
-      const startStr = row.querySelector(".tl-adr-start").value;
-      const endStr = row.querySelector(".tl-adr-end").value;
-      const start = startStr ? new Date(startStr) : null;
-      let end = endStr ? new Date(endStr) : null;
+    document.querySelectorAll("#tl-adr-list .tl-card").forEach((card) => {
+      const name = card.querySelector(".tl-adr-name").value.trim() || "ADR";
+      const startVal = card.querySelector(".tl-adr-start").value;
+      const endVal = card.querySelector(".tl-adr-end").value;
+      if (!startVal) return;
 
-      if (!start) continue;
-
+      const start = new Date(startVal);
       start.setHours(0, 0, 0, 0);
 
-      if (!end) {
-        end = new Date(today.getTime());
-      } else {
+      let end;
+      if (endVal) {
+        end = new Date(endVal);
         end.setHours(0, 0, 0, 0);
+      } else {
+        end = new Date(today.getTime());
       }
 
       if (end < start) end = new Date(start.getTime());
-
       adrs.push({ name, start, end });
-    }
+    });
 
-    // ถ้าไม่มีเลย -> ไม่ต้องโชว์
+    // ไม่มีข้อมูล -> ซ่อน
     if (drugs.length === 0 && adrs.length === 0) {
       document.getElementById("tl-scroll").classList.add("hidden");
       return;
     }
 
-    // หา "วันเริ่มของแกน X" = วันเริ่มที่เล็กที่สุด
+    // -------- หาแกน X --------
     let axisStart = null;
-    for (const d of drugs) {
-      if (!axisStart || d.start < axisStart) axisStart = d.start;
-    }
-    for (const a of adrs) {
-      if (!axisStart || a.start < axisStart) axisStart = a.start;
-    }
-    // เผื่อไม่มีเลย
-    if (!axisStart) axisStart = new Date(today.getTime());
-
-    // หา "วันสุดท้ายของแกน X" = max(วันที่จบทั้งหมด, วันนี้)
     let axisEnd = new Date(today.getTime());
-    for (const d of drugs) {
-      if (d.end > axisEnd) axisEnd = d.end;
-    }
-    for (const a of adrs) {
-      if (a.end > axisEnd) axisEnd = a.end;
-    }
+
+    [...drugs, ...adrs].forEach((item) => {
+      if (!axisStart || item.start < axisStart) axisStart = item.start;
+      if (item.end > axisEnd) axisEnd = item.end;
+    });
 
     axisStart.setHours(0, 0, 0, 0);
     axisEnd.setHours(0, 0, 0, 0);
 
-    // รวมจำนวนวันบนแกน X (แบบ inclusive) เช่น 26 → 29 = 4 วัน
-    const totalDays = Math.floor((axisEnd - axisStart) / DAY_MS) + 1;
-    const DAY_WIDTH = 110; // กว้าง 110px ต่อวัน จะได้เห็นชัด
-
+    // จำนวนวันตั้งแต่เริ่มถึงจบ (inclusive)
+    const totalDays = diffDays(axisEnd, axisStart); // 0 = วันเดียว
     const ticks = document.getElementById("tl-ticks");
     const canvas = document.getElementById("tl-canvas");
     const scroll = document.getElementById("tl-scroll");
@@ -295,31 +279,30 @@
     ticks.innerHTML = "";
     canvas.innerHTML = "";
 
-    // ตั้งความกว้างแคนวาสตามจำนวนวัน
-    const totalWidth = totalDays * DAY_WIDTH + 140;
+    const totalWidth = (totalDays + 1) * DAY_WIDTH + 140;
     ticks.style.width = totalWidth + "px";
     canvas.style.width = totalWidth + "px";
 
-    // วาดวันบนแกน X (เริ่มตรงวันแรกเลย ไม่เลื่อนแล้ว)
-    for (let i = 0; i < totalDays; i++) {
+    // วาดวันที่บนแกน X — ตอนนี้เริ่มที่วันแรกเป๊ะ
+    for (let i = 0; i <= totalDays; i++) {
       const d = new Date(axisStart.getTime() + i * DAY_MS);
-      const thDate = d.toLocaleDateString("th-TH", {
+      const label = d.toLocaleDateString("th-TH", {
         day: "numeric",
         month: "short",
       });
       const div = document.createElement("div");
       div.className = "tl-tick";
-      div.style.left = i * DAY_WIDTH + 120 + "px"; // 120px เว้นซ้ายให้ Y label
-      div.textContent = thDate;
+      div.style.left = 120 + i * DAY_WIDTH + "px";
+      div.textContent = label;
       ticks.appendChild(div);
     }
 
-    // มีกี่แถว? อย่างน้อย 2 (ยา / ADR)
-    const trackWrap = document.createElement("div");
-    trackWrap.style.position = "relative";
-    trackWrap.style.minHeight = "120px";
+    // เตรียมแคนวาสแถว
+    const wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.style.minHeight = "120px";
 
-    // ====== แถว "ยา:" ======
+    // --- แถวยา ---
     const drugRow = document.createElement("div");
     drugRow.className = "tl-row";
     drugRow.style.gridTemplateColumns = "110px 1fr";
@@ -327,24 +310,23 @@
       <div class="tl-ylabel" style="color:#0f766e; font-weight:700;">ยา:</div>
       <div class="tl-track" style="position:relative; height:50px;"></div>
     `;
-    trackWrap.appendChild(drugRow);
+    wrap.appendChild(drugRow);
 
-    // วาดแถบยา
     const drugTrack = drugRow.querySelector(".tl-track");
     drugs.forEach((d) => {
-      const startOffset = Math.floor((d.start - axisStart) / DAY_MS); // 0 = วันแรก
-      const endOffset = Math.floor((d.end - axisStart) / DAY_MS);
+      const startOffset = diffDays(d.start, axisStart); // 0 = วันแรก
+      const endOffset = diffDays(d.end, axisStart);
+      const spanDays = endOffset - startOffset + 1; // นับวันตัวเองด้วย
+
       const bar = document.createElement("div");
       bar.className = "tl-bar drug";
-      // กว้าง = (จำนวนวันจริง + 1) * dayWidth
-      const widthPx = (endOffset - startOffset + 1) * DAY_WIDTH - 12;
-      bar.style.left = startOffset * DAY_WIDTH + 120 + "px"; // +120 ให้ตรงแกน
-      bar.style.width = widthPx + "px";
-      bar.textContent = `${d.name} (${formatISO(d.start)})`;
+      bar.style.left = 120 + startOffset * DAY_WIDTH + "px";
+      bar.style.width = spanDays * DAY_WIDTH - 12 + "px";
+      bar.textContent = `${d.name} (${toISO(d.start)})`;
       drugTrack.appendChild(bar);
     });
 
-    // ====== แถว "ADR:" ======
+    // --- แถว ADR ---
     const adrRow = document.createElement("div");
     adrRow.className = "tl-row";
     adrRow.style.gridTemplateColumns = "110px 1fr";
@@ -352,27 +334,26 @@
       <div class="tl-ylabel" style="color:#b91c1c; font-weight:700;">ADR:</div>
       <div class="tl-track" style="position:relative; height:50px;"></div>
     `;
-    trackWrap.appendChild(adrRow);
+    wrap.appendChild(adrRow);
 
     const adrTrack = adrRow.querySelector(".tl-track");
     adrs.forEach((a) => {
-      const startOffset = Math.floor((a.start - axisStart) / DAY_MS);
-      const endOffset = Math.floor((a.end - axisStart) / DAY_MS);
+      const startOffset = diffDays(a.start, axisStart);
+      const endOffset = diffDays(a.end, axisStart);
+      const spanDays = endOffset - startOffset + 1;
+
       const bar = document.createElement("div");
       bar.className = "tl-bar adr";
-      const widthPx = (endOffset - startOffset + 1) * DAY_WIDTH - 12;
-      bar.style.left = startOffset * DAY_WIDTH + 120 + "px";
-      bar.style.width = widthPx + "px";
-      bar.textContent = `${a.name} (${formatISO(a.start)})`;
+      bar.style.left = 120 + startOffset * DAY_WIDTH + "px";
+      bar.style.width = spanDays * DAY_WIDTH - 12 + "px";
+      bar.textContent = `${a.name} (${toISO(a.start)})`;
       adrTrack.appendChild(bar);
     });
 
-    canvas.appendChild(trackWrap);
-
-    // โชว์กล่อง timeline
+    canvas.appendChild(wrap);
     scroll.classList.remove("hidden");
   }
 
-  // เอาไปให้หน้า html เรียก
+  // export
   window.renderPage5 = renderPage5;
 })();
