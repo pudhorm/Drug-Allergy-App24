@@ -75,10 +75,12 @@ body {
 .tabs {
   display: flex;
   gap: 1rem;
-  padding: 0 1.5rem 0.9rem;
+  /* ดันปุ่มให้ลงมาจากขอบบนหน่อย */
+  padding: 0.6rem 1.5rem 1rem;
   background: #fff;
   box-shadow: 0 3px 10px rgba(124, 58, 237, 0.08);
   overflow-x: auto;
+  align-items: center; /* ให้ปุ่มอยู่กลางแนวตั้ง */
 }
 
 .tabs::-webkit-scrollbar {
@@ -96,8 +98,8 @@ body {
 .tabs button {
   border: none;
   background: #f1f2ff;
-  padding: .75rem 1.4rem .75rem;
-  border-radius: 1.5rem 1.5rem 0 0;
+  padding: .6rem 1.4rem .65rem;
+  border-radius: 999px;         /* ให้โค้งครบ */
   font-size: .95rem;
   font-weight: 500;
   color: #4b5563;
@@ -105,12 +107,53 @@ body {
   flex: 0 0 auto;
   transition: all .15s ease-in-out;
   border: 1px solid rgba(147, 51, 234, 0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-width: 130px;
+  text-align: center;
 }
+
 
 .tabs button:hover {
   background: #e2e7ff;
 }
 
+.tabs button.active {
+  background: #fff;
+  color: #1f2937;
+  border: 1px solid rgba(147, 51, 234, .35);
+  box-shadow: 0 8px 18px rgba(147, 51, 234, .15);
+}
+
+/* ปุ่มที่ยังไม่ active ให้เป็นสีต่างกัน */
+.tabs button:nth-child(1):not(.active) {
+  background: rgba(124, 58, 237, 0.12);
+  color: #4c1d95;
+}
+.tabs button:nth-child(2):not(.active) {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+.tabs button:nth-child(3):not(.active) {
+  background: rgba(45, 212, 191, 0.14);
+  color: #0f766e;
+}
+.tabs button:nth-child(4):not(.active) {
+  background: rgba(251, 146, 60, 0.14);
+  color: #c05621;
+}
+.tabs button:nth-child(5):not(.active) {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+}
+.tabs button:nth-child(6):not(.active) {
+  background: rgba(99, 102, 241, 0.12);
+  color: #3730a3;
+}
+
+/* ตอน active ให้เป็นเหมือนเดิมคือขาว + ขอบ + เงา */
 .tabs button.active {
   background: #fff;
   color: #1f2937;
