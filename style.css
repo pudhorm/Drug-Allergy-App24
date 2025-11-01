@@ -962,3 +962,29 @@ body {
   #page5 .p5-header-line { display: none !important; }
   #p5TimelineScroll { overflow: visible !important; }
 }
+/* ===== หน้า 5 ปรับ label timeline ออกซ้าย ===== */
+#page5 .p5-lane {
+  align-items: flex-start;
+}
+#page5 .p5-lane-label {
+  width: 56px;
+  text-align: left;
+  margin-right: 0.35rem;
+  transform: translateX(-12px); /* ดึงออกมาทางซ้าย ไม่ให้ตรงวันที่ */
+}
+#page5 .p5-lane-label.p5-lane-adr {
+  color: #b91c1c;
+}
+
+/* ===== ปุ่มล่างหน้า 5 ให้แบบรูปที่ 2 (น้ำเงินบน แดงล่าง) ===== */
+#page5 .p5-footer-btns {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+#page5 .p5-footer-btns .p5-next {
+  order: 1;           /* บันทึก/ไปหน้า 6 อยู่บน */
+}
+#page5 .p5-footer-btns .p5-clear {
+  order: 2;           /* ล้างอยู่ล่าง */
+}
