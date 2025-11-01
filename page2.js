@@ -1,10 +1,9 @@
 // page2.js
 (function () {
-  // เตรียมที่เก็บรวม
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // ---------- สีหลักของ "ส่วนที่ 1" (ให้เหมือนความผิดปกติทางตา) ----------
+  // ---------- สีหลักของส่วนที่ 1 ----------
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
   const COMMON_BORDER = "rgba(59, 130, 246, .5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
@@ -18,7 +17,6 @@
       bg: COMMON_BG,
       border: COMMON_BORDER,
       inputBorder: COMMON_INPUT_BORDER,
-      // ลบ "เจ็บคอ" ออกแล้ว
       items: [
         "หายใจมีเสียงวี๊ด",
         "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)",
@@ -79,7 +77,7 @@
     },
     {
       key: "eye",
-      title: "5. ความผิดปกติทางตา", // ← เปลี่ยนชื่อ
+      title: "5. ความผิดปกติทางตา", // เปลี่ยนชื่อแล้ว
       emoji: "👁️",
       bg: COMMON_BG,
       border: COMMON_BORDER,
@@ -130,7 +128,7 @@
     }
   ];
 
-  // ---------- ส่วนที่ 2: อวัยวะผิดปกติ ----------
+  // ---------- ส่วนที่ 2 ----------
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
     "ม้ามโต",
@@ -149,7 +147,7 @@
     const d = window.drugAllergyData.page2;
 
     root.innerHTML = `
-      <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 2.3rem;box-shadow:0 12px 28px rgba(148,163,184,.12);">
+      <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 4.5rem;box-shadow:0 12px 28px rgba(148,163,184,.12);position:relative;">
         
         <!-- ส่วนที่ 1 -->
         <section class="p2-section" style="background:rgba(239,246,255,.95);border:1px solid rgba(59,130,246,.25);border-radius:1.05rem;padding:1rem 1rem 1.1rem;margin-bottom:1rem;">
@@ -158,15 +156,10 @@
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
 
-          <!-- grid 2 คอลัมน์ -->
-          <div style="
-            display:grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-            gap: 1rem;
-          ">
+          <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));gap: 1rem;">
             ${FEATURE_GROUPS.map(group => {
-              const isLast = group.key === "other";
               const saved = d[group.key] || {};
+              const isLast = group.key === "other";
               return `
                 <div style="${isLast ? 'grid-column:1 / -1;' : ''}">
                   <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
@@ -197,7 +190,7 @@
           </div>
         </section>
 
-        <!-- ส่วนที่ 2 (สีเทา) -->
+        <!-- ส่วนที่ 2 -->
         <section class="p2-section" style="background:rgba(248,250,252,.95);border:1px solid rgba(148,163,184,.45);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#111827;margin:0 0 1rem;">
             <span>🫀</span>
@@ -222,10 +215,20 @@
             }).join("")}
           </div>
         </section>
+
+        <!-- ปุ่มลอยด้านล่าง -->
+        <div class="p2-actions" style="position:fixed;left:1.3rem;right:1.3rem;bottom:1.1rem;display:flex;flex-direction:column;gap:.65rem;z-index:90;max-width:1180px;margin:0 auto;">
+          <button id="p2_save" style="background:linear-gradient(120deg,#2563eb 0%,#7c3aed 50%,#9333ea 100%);color:#fff;border:none;border-radius:1.2rem;padding:.8rem 1.2rem;font-size:1rem;font-weight:600;box-shadow:0 18px 30px rgba(79,70,229,.35);cursor:pointer;">
+            บันทึกข้อมูลและไปหน้า 3
+          </button>
+          <button id="p2_clear" style="background:#ef4444;color:#fff;border:none;border-radius:1.2rem;padding:.8rem 1.2rem;font-size:.95rem;font-weight:600;box-shadow:0 14px 25px rgba(248,113,113,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;">
+            🗑️ ล้างข้อมูลหน้านี้
+          </button>
+        </div>
       </div>
     `;
 
-    // ---------- ผูก event ส่วนที่ 1 ----------
+    // ---------- events ส่วนที่ 1 ----------
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -242,7 +245,7 @@
       });
     });
 
-    // ---------- ผูก event ส่วนที่ 2 ----------
+    // ---------- events ส่วนที่ 2 ----------
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
       const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
@@ -253,6 +256,21 @@
         savePage2();
       });
       input.addEventListener("input", savePage2);
+    });
+
+    // ---------- ปุ่มล้าง ----------
+    document.getElementById("p2_clear").addEventListener("click", () => {
+      window.drugAllergyData.page2 = {};
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      renderPage2();
+    });
+
+    // ---------- ปุ่มบันทึกและไปหน้า 3 ----------
+    document.getElementById("p2_save").addEventListener("click", () => {
+      savePage2();
+      // ไปหน้า 3
+      const btn3 = document.querySelector('.tabs button[data-target="page3"]');
+      if (btn3) btn3.click();
     });
 
     function savePage2() {
@@ -299,6 +317,5 @@
     }
   }
 
-  // export
   window.renderPage2 = renderPage2;
 })();
