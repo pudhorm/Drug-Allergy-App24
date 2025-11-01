@@ -79,66 +79,21 @@ if (!window.drugAllergyData.page1) {
   };
 }
 
-// ถ้าคุณมี page2 / page3 อยู่แล้วให้คงไว้
+// ✅ หน้า 2 / หน้า 3 ถ้ายังไม่มี ให้สร้างโครงว่างไว้ก่อน
 window.drugAllergyData.page2 = window.drugAllergyData.page2 || {};
 window.drugAllergyData.page3 = window.drugAllergyData.page3 || {};
 
-// key สำหรับ localStorage
-const STORAGE_KEY = "drug_allergy_app_v1";
-
-(function () {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      window.drugAllergyData = Object.assign(window.drugAllergyData, parsed);
-    }
-  } catch (err) {
-    console.warn("โหลดข้อมูลเก่าไม่ได้ ใช้ค่าเริ่มต้น");
-  }
-})();
-
-window.saveDrugAllergyData = function () {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(window.drugAllergyData));
+// ✅ หน้า 4 — คุณทำไว้แล้วในไฟล์อื่น เราแค่กันช่องให้
+window.drugAllergyData.page4 = window.drugAllergyData.page4 || {
+  naranjo: {},
+  other: {}
 };
 
-// ฟังก์ชันประเมินกลาง (ตอนนี้ยังใช้หน้า 1 ได้บางส่วน เดี๋ยวค่อยเพิ่มหน้า 2–3)
-window.evaluateDrugAllergy = function () {
-  const d = window.drugAllergyData;
-  const p1 = d.page1;
+// ✅ หน้า 5 — Timeline / ประวัติการใช้ยา + เหตุการณ์อาการ
+// ตรงนี้สำคัญ เพราะหน้า 6 จะต้อง "เอาไปแสดง" แต่ "ไม่เอาไปคิดคะแนน"
+window.drugAllergyData.page5 = window.drugAllergyData.page5 || {
+  // ถ้าคุณอยากให้ timeline ผูกกับวันเริ่มใช้ ให้ใช้ตัวนี้ (ไม่บังคับ)
+  baseDate: "",
 
-  let level = "ข้อมูลยังไม่พอประเมิน";
-  const reasons = [];
-
-  // ถ้ามีผิวหลุดลอก >30% → สงสัย SJS/TEN
-  if (p1.skinDetach && p1.skinDetach.gt30) {
-    level = "รุนแรงมาก (สงสัย SJS/TEN)";
-    reasons.push("ผิวหนังหลุดลอกเกิน 30% BSA");
-  }
-
-  // ถ้ามีตุ่มน้ำ + ผิวหลุดลอกตรงกลางผื่น → ใส่เป็นผื่นรุนแรงไว้ก่อน
-  if (p1.blisters && (p1.blisters.small || p1.blisters.medium || p1.blisters.large) && p1.skinDetach && p1.skinDetach.center) {
-    if (level === "ข้อมูลยังไม่พอประเมิน") {
-      level = "ผื่นรุนแรง (bullous + central detachment)";
-    }
-    reasons.push("มีตุ่มน้ำ + ผิวหนังหลุดลอกตรงกลางผื่น");
-  }
-
-  // onset 1–3 สัปดาห์ + ผื่นแบบ mp → ผื่นแพ้ยาทั่วไป
-  if (p1.onset === "1w" || p1.onset === "2w" || p1.onset === "3w") {
-    if (p1.rashShapes && p1.rashShapes.includes("ตุ่มนูน") || p1.rashShapes.includes("ปื้นนูน")) {
-      if (level === "ข้อมูลยังไม่พอประเมิน") {
-        level = "ผื่นแพ้ยาทั่วไป (morbilliform/exanthematous)";
-      }
-      reasons.push("onset 1–3 สัปดาห์ + ผื่นตุ่ม/ปื้น");
-    }
-  }
-
-  window.drugAllergyData.assessment = {
-    level,
-    reason: reasons.length ? reasons.join(" / ") : "รอข้อมูลจากหน้า 2–3 เพิ่มเติม",
-    usedPages: ["page1"]
-  };
-
-  window.saveDrugAllergyData();
-};
+  // รายการยา
+  drugLines:
