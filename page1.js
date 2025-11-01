@@ -386,8 +386,8 @@
   </section>
 
   <!-- ส่วนที่ 3 เวลา -->
-  <section class="p1-section">
-    <h3 class="p1-sec-title purple"><span class="icon">⏱️</span>ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h3>
+ <section class="p1-section p1-section-onset">
+  <h3 class="p1-sec-title purple"><span class="icon">⏱️</span>ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h3>
     <label>เลือกช่วงเวลา
       <select id="p1_onset">
         <option value="">เลือก...</option>
