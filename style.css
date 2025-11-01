@@ -300,6 +300,28 @@ body {
   background: #fff;
 }
 
+/* ✅ เพิ่มตรงนี้ เพื่อให้ select ของหน้า 1 โค้งเหมือนช่อง input */
+.p1-wrapper select,
+.p1-grid select,
+.p1-block select,
+.p1-section-onset select {
+  border: 1px solid rgba(173, 139, 255, 0.4);
+  border-radius: .8rem;
+  padding: .55rem .7rem;
+  font-size: .9rem;
+  background: #fff;
+  outline: none;
+  transition: border .15s;
+  width: 100%;
+}
+.p1-wrapper select:focus,
+.p1-grid select:focus,
+.p1-block select:focus,
+.p1-section-onset select:focus {
+  border: 1px solid rgba(124, 58, 237, .7);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .12);
+}
+
 .p1-indent {
   margin-left: 1.6rem;
   display: flex;
