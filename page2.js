@@ -1,18 +1,18 @@
 // page2.js
 (function () {
-  // เตรียมที่เก็บรวม
+  // ที่เก็บรวม
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // ---------------- กลุ่มอาการตามระบบ (ส่วนที่ 1) ----------------
+  // ---------- ส่วนที่ 1: อาการระบบอื่นๆ ----------
   const FEATURE_GROUPS = [
     {
       key: "resp",
       title: "1. ระบบหายใจ",
       emoji: "🫁",
-      bg: "linear-gradient(90deg, rgba(254, 242, 242, 0.95), rgba(254, 226, 226, 1))",
-      border: "rgba(248, 113, 113, .4)",
-      inputBorder: "rgba(248,113,113,.5)",
+      bg: "linear-gradient(90deg, rgba(254, 242, 242, 1), rgba(254, 226, 226, 1))",
+      border: "rgba(248, 113, 113, .55)",
+      inputBorder: "rgba(248,113,113,.65)",
       // ลบ "เจ็บคอ" แล้ว
       items: [
         "หายใจมีเสียงวี๊ด",
@@ -28,9 +28,9 @@
       key: "cv",
       title: "2. ระบบไหลเวียนโลหิต",
       emoji: "❤️",
-      bg: "linear-gradient(90deg, rgba(255, 244, 230, 0.95), rgba(255, 224, 178, 1))",
-      border: "rgba(251, 146, 60, .4)",
-      inputBorder: "rgba(251,146,60,.55)",
+      bg: "linear-gradient(90deg, rgba(255, 244, 230, 1), rgba(255, 224, 178, 1))",
+      border: "rgba(251, 146, 60, .55)",
+      inputBorder: "rgba(251,146,60,.65)",
       items: [
         "เจ็บหน้าอก",
         "ใจสั่น",
@@ -46,9 +46,9 @@
       key: "gi",
       title: "3. ระบบทางเดินอาหาร",
       emoji: "🍽️",
-      bg: "linear-gradient(90deg, rgba(255, 250, 230, 0.95), rgba(255, 238, 186, 1))",
-      border: "rgba(234, 179, 8, .4)",
-      inputBorder: "rgba(234,179,8,.6)",
+      bg: "linear-gradient(90deg, rgba(255, 250, 230, 1), rgba(255, 238, 186, 1))",
+      border: "rgba(234, 179, 8, .55)",
+      inputBorder: "rgba(234,179,8,.65)",
       items: [
         "คลื่นไส้/อาเจียน",
         "กลืนลำบาก",
@@ -67,27 +67,27 @@
       key: "msk",
       title: "4. ระบบกระดูกและกล้ามเนื้อ",
       emoji: "🦴",
-      bg: "linear-gradient(90deg, rgba(236, 252, 203, 0.95), rgba(217, 249, 157, 1))",
-      border: "rgba(132, 204, 22, .4)",
-      inputBorder: "rgba(132,204,22,.6)",
+      bg: "linear-gradient(90deg, rgba(236, 252, 203, 1), rgba(217, 249, 157, 1))",
+      border: "rgba(132, 204, 22, .55)",
+      inputBorder: "rgba(132,204,22,.65)",
       items: ["ปวดข้อ", "ข้ออักเสบ", "ปวดเมื่อยกล้ามเนื้อ", "ไม่พบ"]
     },
     {
       key: "eye",
       title: "5. ระบบการมองเห็น",
       emoji: "👁️",
-      bg: "linear-gradient(90deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 1))",
-      border: "rgba(59, 130, 246, .35)",
-      inputBorder: "rgba(59,130,246,.55)",
+      bg: "linear-gradient(90deg, rgba(239, 246, 255, 1), rgba(219, 234, 254, 1))",
+      border: "rgba(59, 130, 246, .5)",
+      inputBorder: "rgba(59,130,246,.6)",
       items: ["เยื่อบุตาอักเสบ (ตาแดง)", "แผลที่กระจกตา", "ไม่พบ"]
     },
     {
       key: "gu",
       title: "6. ระบบขับถ่าย",
       emoji: "🚽",
-      bg: "linear-gradient(90deg, rgba(224, 242, 254, 0.95), rgba(186, 230, 253, 1))",
-      border: "rgba(14, 165, 233, .35)",
-      inputBorder: "rgba(14,165,233,.55)",
+      bg: "linear-gradient(90deg, rgba(224, 242, 254, 1), rgba(186, 230, 253, 1))",
+      border: "rgba(14, 165, 233, .55)",
+      inputBorder: "rgba(14,165,233,.65)",
       items: [
         "ปัสสาวะสีชา/สีดำ",
         "ปวดหลังส่วนเอว",
@@ -100,32 +100,32 @@
       key: "skin_extra",
       title: "7. ระบบผิวหนัง (เพิ่มเติม)",
       emoji: "🧴",
-      bg: "linear-gradient(90deg, rgba(245, 243, 255, 0.98), rgba(221, 214, 254, 1))",
-      border: "rgba(139, 92, 246, .35)",
-      inputBorder: "rgba(139,92,246,.55)",
+      bg: "linear-gradient(90deg, rgba(245, 243, 255, 1), rgba(221, 214, 254, 1))",
+      border: "rgba(139, 92, 246, .5)",
+      inputBorder: "rgba(139,92,246,.6)",
       items: ["จุดเลือดออก", "ฟกช้ำ", "ปื้น/จ้ำเลือด", "ไม่พบ"]
     },
     {
       key: "ent",
       title: "8. ระบบหู คอ จมูก",
       emoji: "👂",
-      bg: "linear-gradient(90deg, rgba(255, 241, 242, 0.95), rgba(254, 226, 226, 1))",
-      border: "rgba(248, 113, 113, .35)",
-      inputBorder: "rgba(248,113,113,.55)",
+      bg: "linear-gradient(90deg, rgba(255, 241, 242, 1), rgba(254, 226, 226, 1))",
+      border: "rgba(248, 113, 113, .5)",
+      inputBorder: "rgba(248,113,113,.6)",
       items: ["เจ็บคอ", "เลือดกำเดาไหล", "ทอนซิลอักเสบ", "ไม่พบ"]
     },
     {
       key: "other",
       title: "9. ระบบอื่นๆ",
-      emoji: "🧪",
-      bg: "linear-gradient(90deg, rgba(243, 244, 246, 0.95), rgba(229, 231, 235, 1))",
-      border: "rgba(148, 163, 184, .35)",
-      inputBorder: "rgba(148,163,184,.6)",
+      emoji: "🩻",
+      bg: "linear-gradient(90deg, rgba(243, 244, 246, 1), rgba(229, 231, 235, 1))",
+      border: "rgba(148, 163, 184, .6)",
+      inputBorder: "rgba(148,163,184,.7)",
       items: ["ไข้ Temp > 37.5 °C", "อ่อนเพลีย", "หนาวสั่น", "ไม่พบ"]
     }
   ];
 
-  // --------------- อวัยวะที่ผิดปกติ (ส่วนที่ 2) ----------------
+  // ---------- ส่วนที่ 2: อวัยวะผิดปกติ ----------
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
     "ม้ามโต",
@@ -141,90 +141,49 @@
   function renderPage2() {
     const root = document.getElementById("page2");
     if (!root) return;
-
     const d = window.drugAllergyData.page2;
 
     root.innerHTML = `
-      <div class="p2-wrapper" style="
-        background: radial-gradient(circle at top, #ffd5da 0%, #ffccd3 35%, #ffeef1 90%);
-        border: 1px solid rgba(255,92,120,.3);
-        border-radius: 1.4rem;
-        padding: 1.3rem 1.4rem 2.4rem;
-        box-shadow: 0 12px 30px rgba(255,120,140,.15);
-      ">
+      <div class="p2-wrapper" style="background:radial-gradient(circle at top, #ffccd3 0%, #ffe9ed 35%, #fff 90%);border:1px solid rgba(255,92,120,.3);border-radius:1.4rem;padding:1.2rem 1.2rem 2.3rem;box-shadow:0 12px 28px rgba(255,120,140,.15);">
         
         <!-- ส่วนที่ 1 -->
-        <section class="p2-section" style="
-          background: rgba(255, 241, 242, 0.95);
-          border: 1px solid rgba(190,18,60,.25);
-          border-radius: 1.05rem;
-          padding: 1.05rem 1rem 1.1rem;
-          margin-bottom: 1.2rem;
-        ">
+        <section class="p2-section" style="background:rgba(255,241,242,.95);border:1px solid rgba(190,18,60,.25);border-radius:1.05rem;padding:1rem 1rem 1.1rem;margin-bottom:1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#be123c;margin:0 0 1rem;">
             <span>🩺</span>
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
 
-          <!-- กล่องระบบให้เป็น 2 คอลัมน์ -->
-          <div style="display:flex;flex-wrap:wrap;gap:1rem;">
-            ${FEATURE_GROUPS.map((group, groupIndex) => {
-              // 1-8 -> ครึ่งจอ, 9 -> เต็มจอ
-              const isFull = group.key === "other";
+          <!-- grid 2 คอลัมน์ -->
+          <div style="
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1rem;
+          ">
+            ${FEATURE_GROUPS.map(group => {
+              const isLast = group.key === "other";
+              const saved = d[group.key] || {};
               return `
-                <div style="
-                  flex: ${isFull ? "0 0 100%" : "0 0 calc(50% - .5rem)"};
-                  min-width: ${isFull ? "100%" : "min(540px,100%)"};
-                ">
-                  <div class="p2-block" style="
-                    background: ${group.bg};
-                    border: 1px solid ${group.border};
-                    border-radius: .9rem;
-                    padding: .75rem .8rem .4rem;
-                  ">
+                <div style="${isLast ? 'grid-column:1 / -1;' : ''}">
+                  <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
                     <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#7f1d1d;margin:0 0 .55rem;">
                       <span>${group.emoji}</span>
                       <span>${group.title}</span>
                     </h3>
-                    <!-- ตัวเลือกด้านในให้เรียงซ้าย→ขวา -->
-                    <div class="p2-list" style="
-                      display:flex;
-                      flex-wrap:wrap;
-                      gap:.55rem;
-                    ">
-                      ${group.items
-                        .map((txt, idx) => {
-                          const id = `${group.key}_${idx}`;
-                          const selected = d[group.key] || {};
-                          const checked = selected[txt]?.checked ? "checked" : "";
-                          const detailVal = selected[txt]?.detail || "";
-                          return `
-                            <label for="${id}" style="
-                              display:flex;
-                              gap:.6rem;
-                              align-items:flex-start;
-                              background: rgba(255, 255, 255, .88);
-                              border: 1px solid rgba(255,255,255,.15);
-                              border-radius:.7rem;
-                              padding:.45rem .55rem .55rem;
-                              width: calc(50% - .3rem);
-                              min-width: 230px;
-                            ">
-                              <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
-                              <div style="flex:1 1 auto;">
-                                <div style="font-size:.86rem;color:#1f2937;">${txt}</div>
-                                <input type="text"
-                                       placeholder="รายละเอียด..."
-                                       class="p2-detail"
-                                       data-group="${group.key}"
-                                       data-text="${txt}"
-                                       value="${detailVal}"
-                                       style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.9);">
-                              </div>
-                            </label>
-                          `;
-                        })
-                        .join("")}
+                    <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
+                      ${group.items.map((txt, idx) => {
+                        const id = `${group.key}_${idx}`;
+                        const checked = saved[txt]?.checked ? "checked" : "";
+                        const detailVal = saved[txt]?.detail || "";
+                        return `
+                          <label for="${id}" style="display:flex;gap:.5rem;align-items:flex-start;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.25);border-radius:.7rem;padding:.45rem .55rem .55rem;width:calc(50% - .3rem);min-width:220px;">
+                            <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
+                            <div style="flex:1 1 auto;">
+                              <div style="font-size:.85rem;color:#1f2937;">${txt}</div>
+                              <input type="text" placeholder="รายละเอียด..." class="p2-detail" data-group="${group.key}" data-text="${txt}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? '' : 'display:none;'}background:rgba(255,255,255,.95);">
+                            </div>
+                          </label>
+                        `;
+                      }).join("")}
                     </div>
                   </div>
                 </div>
@@ -234,44 +193,24 @@
         </section>
 
         <!-- ส่วนที่ 2 -->
-        <section class="p2-section" style="
-          background: rgba(250, 232, 255, 0.95);
-          border: 1px solid rgba(217,70,239,.3);
-          border-radius: 1.05rem;
-          padding: 1.05rem 1rem 1.1rem;
-        ">
+        <section class="p2-section" style="background:rgba(250,232,255,.95);border:1px solid rgba(217,70,239,.3);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#86198f;margin:0 0 1rem;">
             <span>🫀</span>
             <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
           </h2>
 
-          <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px,1fr));gap:.6rem;">
             ${ORGANS.map((org, idx) => {
               const id = `org_${idx}`;
               const saved = d.organs && d.organs[org];
               const checked = saved?.checked ? "checked" : "";
               const detailVal = saved?.detail || "";
               return `
-                <label for="${id}" style="
-                  display:flex;
-                  gap:.6rem;
-                  align-items:flex-start;
-                  background: rgba(255, 255, 255, .9);
-                  border: 1px solid rgba(236,72,153,.12);
-                  border-radius:.7rem;
-                  padding:.45rem .55rem .55rem;
-                  width: calc(50% - .35rem);
-                  min-width: 250px;
-                ">
+                <label for="${id}" style="display:flex;gap:.6rem;align-items:flex-start;background:rgba(255,255,255,.9);border:1px solid rgba(236,72,153,.12);border-radius:.7rem;padding:.45rem .55rem .55rem;">
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
                     <div style="font-size:.86rem;color:#1f2937;">${org}</div>
-                    <input type="text"
-                           placeholder="รายละเอียด..."
-                           class="p2-org-detail"
-                           data-org="${org}"
-                           value="${detailVal}"
-                           style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.45);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none"};background:rgba(255,255,255,.9);">
+                    <input type="text" placeholder="รายละเอียด..." class="p2-org-detail" data-org="${org}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.45);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? '' : 'display:none;'}background:rgba(255,255,255,.95);">
                   </div>
                 </label>
               `;
@@ -281,7 +220,7 @@
       </div>
     `;
 
-    // --------- ผูก event ส่วนที่ 1 ----------
+    // ---------- events ส่วนที่ 1 ----------
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -290,30 +229,24 @@
         );
         if (!cb || !input) return;
         cb.addEventListener("change", () => {
-          if (cb.checked) {
-            input.style.display = "block";
-          } else {
-            input.style.display = "none";
-            input.value = "";
-          }
+          input.style.display = cb.checked ? "block" : "none";
+          if (!cb.checked) input.value = "";
           savePage2();
         });
         input.addEventListener("input", savePage2);
       });
     });
 
-    // --------- ผูก event ส่วนที่ 2 ----------
+    // ---------- events ส่วนที่ 2 ----------
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
-      const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
+      const input = root.querySelector(
+        `.p2-org-detail[data-org="${org}"]`
+      );
       if (!cb || !input) return;
       cb.addEventListener("change", () => {
-        if (cb.checked) {
-          input.style.display = "block";
-        } else {
-          input.style.display = "none";
-          input.value = "";
-        }
+        input.style.display = cb.checked ? "block" : "none";
+        if (!cb.checked) input.value = "";
         savePage2();
       });
       input.addEventListener("input", savePage2);
