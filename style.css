@@ -477,3 +477,13 @@ body {
   width: 100%;
   outline: none;
 }
+
+/* ====== ส่วนที่ 3 (ระยะเวลา) — พื้นหลังชมพู ====== */
+.p1-section-onset {
+  background: linear-gradient(135deg, #ffe0f3 0%, #fff 55%);
+  border-color: rgba(236, 72, 153, 0.28);
+}
+
+.p1-section-onset .p1-sec-title {
+  color: #a21caf;
+}
