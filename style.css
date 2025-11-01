@@ -988,3 +988,31 @@ body {
 #page5 .p5-footer-btns .p5-clear {
   order: 2;           /* ล้างอยู่ล่าง */
 }
+/* ========== ปรับ label ยา / ADR ไม่ให้ตกขอบ ========== */
+#page5 .p5-lane {
+  align-items: flex-start;
+}
+#page5 .p5-lane-label {
+  width: 50px;
+  padding-left: 12px;   /* ดันออกจากขอบซ้าย */
+  margin-right: 8px;
+  text-align: left;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* ปุ่มลบบนหน้า 5 ให้โค้งมน น่ารัก */
+.p5-del-btn {
+  background: radial-gradient(circle at top, #fee2e2 0%, #fca5a5 60%, #ef4444 100%);
+  border: none;
+  color: #fff;
+  padding: 0.35rem 1.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.28);
+}
+.p5-del-btn:hover {
+  filter: brightness(1.02);
+}
+
