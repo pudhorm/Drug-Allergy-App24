@@ -51,6 +51,29 @@
     );
   }
 
+  // page1.js
+(function () {
+  const SHAPES = [ /* ...ของเดิม... */ ];
+  const COLORS = [ /* ...ของเดิม... */ ];
+  const LOCS = [ /* ...ของเดิม... */ ];
+
+  // สร้างตัวเลือกอายุ 0-120 ปี + อื่นๆ
+  function buildAgeOptions(selected) {
+    const arr = [];
+    for (let i = 0; i <= 120; i++) {
+      const val = String(i);
+      arr.push(
+        `<option value="${val}" ${selected == val ? "selected" : ""}>${i} ปี</option>`
+      );
+    }
+    // ใส่ตัวเลือกอื่นๆ ท้ายสุด
+    arr.push(
+      `<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`
+    );
+    return arr.join("");
+  }
+
+  // ---------- ฟังก์ชัน render หลัก ----------
   function renderPage1() {
     const d = window.drugAllergyData.page1 || {};
     const el = document.getElementById("page1");
@@ -60,30 +83,52 @@
 <div class="p1-wrapper">
   <h2 class="p1-title">หน้า 1: ระบบผิวหนัง / ข้อมูลผู้ป่วย</h2>
 
-  <!-- ส่วนที่ 1 -->
-  <section class="p1-section">
-    <h3 class="p1-sec-title"><span class="icon">👤</span>ส่วนที่ 1 ข้อมูลผู้ป่วย</h3>
-    <div class="p1-grid">
-      <label>ชื่อ-สกุล
-        <input id="p1_name" value="${d.name || ""}">
-      </label>
-      <label>HN
-        <input id="p1_hn" value="${d.hn || ""}">
-      </label>
-      <label>อายุ (ปี)
-        <input type="number" id="p1_age" value="${d.age || ""}">
-      </label>
-      <label>น้ำหนัก (กก.)
-        <input type="number" id="p1_weight" value="${d.weight || ""}">
-      </label>
-      <label class="p1-col-2">โรคประจำตัว
-        <input id="p1_underlying" value="${d.underlying || ""}">
-      </label>
-      <label class="p1-col-2">ประวัติการแพ้ยา (เดิม)
-        <textarea id="p1_history">${d.drugAllergyHistory || ""}</textarea>
-      </label>
-    </div>
-  </section>
+     <!-- ===== ส่วนที่ 1 ข้อมูลผู้ป่วย ===== -->
+    <section class="p1-section">
+      <h3 class="p1-sec-title"><span class="icon">👤</span>ส่วนที่ 1 ข้อมูลผู้ป่วย</h3>
+      <div class="p1-grid">
+        <!-- ชื่อ -->
+        <label>ชื่อ-สกุล
+          <input id="p1_name" value="${d.name || ""}">
+        </label>
+
+        <!-- HN -->
+        <label>HN
+          <input id="p1_hn" value="${d.hn || ""}">
+        </label>
+
+        <!-- อายุ (เลือกตัวเลข) -->
+        <label>อายุ (ปี)
+          <select id="p1_age_sel">
+            <option value="">เลือก...</option>
+            ${buildAgeOptions(d.ageSel ?? d.age ?? "")}
+          </select>
+          <input
+            id="p1_age_other"
+            class="p1-other"
+            style="margin-top:.4rem; ${(d.ageSel === "other" || d.age === "other") ? "" : "display:none"}"
+            placeholder="ระบุอายุ (ปี)"
+            value="${d.ageOther || ""}"
+          >
+        </label>
+
+        <!-- น้ำหนัก (ยังเป็น input ของเดิมตอนนี้ก็ได้ ถ้ายังไม่ทำ) -->
+        <label>น้ำหนัก (กก.)
+          <input type="number" id="p1_weight" value="${d.weight || ""}">
+        </label>
+
+        <!-- โรคประจำตัว (ตอนนี้ยังให้เป็น input ของเดิมก่อน) -->
+        <label class="p1-col-2">โรคประจำตัว
+          <input id="p1_underlying" value="${d.underlying || ""}">
+        </label>
+
+        <!-- ประวัติแพ้ยา -->
+        <label class="p1-col-2">ประวัติการแพ้ยา (เดิม)
+          <textarea id="p1_history">${d.drugAllergyHistory || ""}</textarea>
+        </label>
+      </div>
+    </section>
+
 
   <!-- ส่วนที่ 2 -->
   <section class="p1-section">
@@ -273,6 +318,17 @@
       reader.readAsDataURL(f);
     }
 
+        // === toggle ช่องอายุอื่นๆ เมื่อเลือก "อื่นๆ ระบุ…" ===
+    const ageSelEl = document.getElementById("p1_age_sel");
+    const ageOtherEl = document.getElementById("p1_age_other");
+    ageSelEl.addEventListener("change", () => {
+      if (ageSelEl.value === "other") {
+        ageOtherEl.style.display = "block";
+      } else {
+        ageOtherEl.style.display = "none";
+      }
+    });
+
     // ==== ปุ่มล้าง ====
     document.getElementById("p1_clear").addEventListener("click", () => {
       window.drugAllergyData.page1 = {};
@@ -281,16 +337,32 @@
     });
 
     // ==== ปุ่มบันทึก ====
-    document.getElementById("p1_save").addEventListener("click", () => {
+      document.getElementById("p1_save").addEventListener("click", () => {
       const store = window.drugAllergyData.page1;
 
-      // ส่วนที่ 1
+      // ===== ส่วนที่ 1 =====
       store.name = document.getElementById("p1_name").value;
       store.hn = document.getElementById("p1_hn").value;
-      store.age = document.getElementById("p1_age").value;
+
+      // อายุแบบเลือกตัวเลข
+      const ageSel = document.getElementById("p1_age_sel").value;
+      store.ageSel = ageSel;
+      store.ageOther = document.getElementById("p1_age_other").value;
+      // age ที่ให้หน้า 6 ใช้เลย
+      store.age = (ageSel === "other") ? store.ageOther : ageSel;
+
+      // น้ำหนัก (ตอนนี้ยังเป็น input ตัวเลขปกติ)
       store.weight = document.getElementById("p1_weight").value;
+
+      // โรคประจำตัว (input ปกติ)
       store.underlying = document.getElementById("p1_underlying").value;
+
+      // ประวัติการแพ้ยาเดิม
       store.drugAllergyHistory = document.getElementById("p1_history").value;
+
+      // ===== ส่วนอื่นๆ ของคุณ (1.1–1.21) คงไว้ตามเดิม =====
+      // ...
+
 
       // 1.1
       store.rashShapes = SHAPES.filter((s, i) => document.getElementById("shape_" + i).checked);
