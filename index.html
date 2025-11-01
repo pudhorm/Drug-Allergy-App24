@@ -5,6 +5,8 @@
   <title>ระบบประเมินการแพ้ยา 6 หน้า</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+  <!-- กัน error favicon 404 -->
+  <link rel="icon" href="data:," />
 </head>
 
 <body>
@@ -24,12 +26,63 @@
   </nav>
 
   <main>
+    <!-- หน้า 1–4 ให้ไฟล์ JS ของคุณสร้างเอง -->
     <section id="page1" class="page visible"></section>
     <section id="page2" class="page"></section>
     <section id="page3" class="page"></section>
     <section id="page4" class="page"></section>
-    <section id="page5" class="page"></section>
-    <section id="page6" class="page"></section>
+
+    <!-- ===== หน้า 5: ใส่โครงให้ตรงกับ page5.js ===== -->
+    <section id="page5" class="page">
+      <div class="p5-wrapper">
+        <div class="p5-header-line">
+          <h2>📅 หน้า 5 Timeline ประเมินการแพ้ยา</h2>
+          <div class="p5-btn-group">
+            <button id="p5AddDrugBtn" type="button" class="p5-btn-add-drug">+ เพิ่มยา</button>
+            <button id="p5AddAdrBtn" type="button" class="p5-btn-add-adr">+ เพิ่ม ADR</button>
+          </div>
+        </div>
+
+        <!-- ฟอร์มรายการยา -->
+        <div class="p5-form-block">
+          <h3 style="margin-top:0;">💊 รายการยา</h3>
+          <div id="p5DrugCards"></div>
+        </div>
+
+        <!-- ฟอร์มรายการ ADR -->
+        <div class="p5-form-block" style="margin-top:.5rem;">
+          <h3 style="margin-top:0;">🧪 ADR (Adverse Drug Reaction)</h3>
+          <div id="p5AdrCards"></div>
+        </div>
+
+        <!-- กล่องแสดง timeline -->
+        <div class="p5-timeline-box" style="margin-top:1rem;">
+          <h3>Visual Timeline</h3>
+          <div id="p5TimelineScroll">
+            <div id="p5DateRow"></div>
+
+            <div class="p5-lane">
+              <div class="p5-lane-label">ยา</div>
+              <div id="p5DrugLane"></div>
+            </div>
+            <div class="p5-lane">
+              <div class="p5-lane-label p5-lane-adr">ADR</div>
+              <div id="p5AdrLane"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p5-footer-btns">
+          <button type="button" class="p5-clear" onclick="window.renderPage5 && window.renderPage5()">ล้าง & โหลดใหม่</button>
+          <button type="button" class="p5-next" onclick="showPage && showPage('page6')">ไปหน้า 6 (สรุป)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- หน้า 6: ให้ page6.js ใส่เนื้อหา -->
+    <section id="page6" class="page">
+      <div id="p6Root"></div>
+    </section>
   </main>
 
   <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
@@ -39,64 +92,66 @@
   <script src="page3.js"></script>
   <script src="page4.js"></script>
   <script src="page5.js"></script>
-  <script src="page6.js"></script> <!-- << เพิ่มอันนี้ เพราะมีไฟล์อยู่แล้ว -->
+  <script src="page6.js"></script>
 
   <script>
     // ปุ่มเมนูทุกปุ่ม
     const tabBtns = document.querySelectorAll(".tabs button");
-    // ทุกหน้าใน main
     const pages = document.querySelectorAll(".page");
 
-    // หน้า 2–4 ให้ render ครั้งเดียว
     let page2Rendered = false;
     let page3Rendered = false;
     let page4Rendered = false;
-    // หน้า 5 และ 6 ให้ render ทุกครั้ง เพราะต้องเอาข้อมูลล่าสุด
 
+    // ฟังก์ชันสลับหน้า (ต้องประกาศก่อนใช้ในปุ่มล่างหน้า 5)
+    function showPage(targetId) {
+      // เปลี่ยน active ปุ่ม
+      tabBtns.forEach((b) => {
+        if (b.dataset.target === targetId) {
+          b.classList.add("active");
+        } else {
+          b.classList.remove("active");
+        }
+      });
+
+      // ซ่อน/โชว์หน้า
+      pages.forEach((p) => p.classList.remove("visible"));
+      const targetPage = document.getElementById(targetId);
+      if (targetPage) targetPage.classList.add("visible");
+
+      // call render ตามหน้า
+      if (targetId === "page2" && window.renderPage2 && !page2Rendered) {
+        window.renderPage2();
+        page2Rendered = true;
+      }
+      if (targetId === "page3" && window.renderPage3 && !page3Rendered) {
+        window.renderPage3();
+        page3Rendered = true;
+      }
+      if (targetId === "page4" && window.renderPage4 && !page4Rendered) {
+        window.renderPage4();
+        page4Rendered = true;
+      }
+      if (targetId === "page5" && window.renderPage5) {
+        window.renderPage5();
+      }
+      if (targetId === "page6" && window.renderPage6) {
+        window.renderPage6();
+      }
+    }
+
+    // เอาไปใช้ที่อื่นได้
+    window.showPage = showPage;
+
+    // ผูกปุ่มแท็บ
     tabBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
         const target = btn.dataset.target;
-
-        // เปลี่ยนสถานะปุ่ม
-        tabBtns.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        // ซ่อนทุกหน้า แล้วโชว์หน้าที่เลือก
-        pages.forEach((p) => p.classList.remove("visible"));
-        const targetPage = document.getElementById(target);
-        if (targetPage) targetPage.classList.add("visible");
-
-        // หน้า 2 (ครั้งเดียว)
-        if (target === "page2" && window.renderPage2 && !page2Rendered) {
-          window.renderPage2();
-          page2Rendered = true;
-        }
-
-        // หน้า 3 (ครั้งเดียว)
-        if (target === "page3" && window.renderPage3 && !page3Rendered) {
-          window.renderPage3();
-          page3Rendered = true;
-        }
-
-        // หน้า 4 (ครั้งเดียว)
-        if (target === "page4" && window.renderPage4 && !page4Rendered) {
-          window.renderPage4();
-          page4Rendered = true;
-        }
-
-        // หน้า 5 (ทุกครั้งที่กด)
-        if (target === "page5" && window.renderPage5) {
-          window.renderPage5();
-        }
-
-        // หน้า 6 (ทุกครั้งที่กด) — หน้า 6 ต้องดึงข้อมูลล่าสุดจากหน้า 1–5
-        if (target === "page6" && window.renderPage6) {
-          window.renderPage6();
-        }
+        showPage(target);
       });
     });
 
-    // หน้า 1 ให้แสดงตั้งแต่โหลดเว็บ
+    // หน้า 1 โหลดครั้งแรก
     if (window.renderPage1) {
       window.renderPage1();
     } else {
