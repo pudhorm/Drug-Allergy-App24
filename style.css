@@ -2083,3 +2083,278 @@ body {
   #page5{margin:0;padding:0;}
   .p5-timeline-scroll{overflow:visible;}
 }
+/* =========================
+   หน้า 5: Timeline ประเมินการแพ้ยา
+   (เติมท้าย style.css)
+   ========================= */
+#page5 {
+  background: radial-gradient(circle at top, #ffe9ff 0%, #f8f5ff 50%, #ffffff 100%);
+  border-radius: 1.6rem;
+  padding: 1.5rem 1.4rem 2.6rem;
+  box-shadow: 0 16px 38px rgba(143, 93, 255, 0.06);
+}
+
+#page5 .p5-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+#page5 .p5-header-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+#page5 .p5-header-line h2 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #251b5a;
+}
+
+#page5 .p5-btn-group {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+#page5 .p5-btn-group button {
+  border: none;
+  background: #fff;
+  border: 1px solid rgba(131, 94, 255, .2);
+  border-radius: .95rem;
+  padding: .45rem .95rem;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .12s;
+  box-shadow: 0 8px 14px rgba(111, 79, 241, .05);
+}
+
+#page5 .p5-btn-add-drug { background: #22c55e; color: #fff; }
+#page5 .p5-btn-del-drug { background: #fff1f2; color: #be123c; }
+#page5 .p5-btn-add-adr.red { background: #ef4444; color: #fff; }
+#page5 .p5-btn-del-adr { background: #fff1f2; color: #b91c1c; }
+
+#page5 .p5-btn-group button:hover {
+  filter: brightness(1.02);
+}
+
+/* กล่องฟอร์มใหญ่ */
+#page5 .p5-form-block {
+  background: rgba(255, 255, 255, .6);
+  border: 1px solid rgba(209, 213, 219, .35);
+  border-radius: 1.2rem;
+  padding: 1.05rem 1rem 1.2rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, .02);
+}
+
+#page5 .p5-form-block h3 {
+  margin: 0 0 .8rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* การ์ดยา / การ์ด ADR */
+#page5 .p5-drug-card,
+#page5 .p5-adr-card {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, .25);
+  border-radius: 1rem;
+  padding: .85rem .8rem .7rem;
+  margin-bottom: .75rem;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .02);
+}
+
+#page5 .p5-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  margin-bottom: .6rem;
+}
+
+#page5 .p5-field label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+#page5 input[type="text"],
+#page5 input[type="date"],
+#page5 input[type="time"] {
+  border: 1px solid rgba(148, 163, 184, .55);
+  border-radius: .8rem;
+  padding: .45rem .55rem;
+  font-size: .86rem;
+  outline: none;
+  background: #fff;
+}
+
+#page5 input[type="text"]:focus,
+#page5 input[type="date"]:focus,
+#page5 input[type="time"]:focus {
+  border: 1px solid rgba(99, 102, 241, .8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
+}
+
+#page5 .p5-two-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .7rem;
+}
+
+#page5 .p5-inline {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+/* ปุ่มสร้าง timeline */
+#page5 .p5-action-line {
+  margin: .5rem 0 .35rem;
+}
+#page5 .p5-btn-build {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: .9rem;
+  padding: .5rem 1.3rem;
+  font-weight: 600;
+  box-shadow: 0 10px 20px rgba(29, 78, 216, .28);
+  cursor: pointer;
+}
+#page5 .p5-btn-build:hover { filter: brightness(1.02); }
+
+/* แถบวันที่/เวลา ตอนบน timeline */
+#page5 .p5-nowbar {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  margin: .9rem 0 .4rem;
+  color: #1f2937;
+  font-weight: 500;
+}
+#page5 .p5-now-icon {
+  font-size: 1.25rem;
+}
+#page5 .p5-now-text {
+  font-size: .9rem;
+}
+
+/* กล่อง timeline */
+#page5 .p5-timeline-box {
+  background: #fff;
+  border: 1px dashed rgba(148, 163, 184, .35);
+  border-radius: 1.1rem;
+  padding: .8rem .7rem 1rem;
+  min-height: 160px;
+}
+#page5 .p5-timeline-box h3 {
+  margin: 0 0 .7rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ภายใน timeline */
+#page5 .p5-tl-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+#page5 .p5-date-row {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, .14);
+  margin-bottom: .5rem;
+}
+
+#page5 .p5-date-cell {
+  width: 110px;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #0f172a;
+  padding-bottom: .4rem;
+}
+
+#page5 .p5-lane {
+  display: flex;
+  gap: .8rem;
+  align-items: center;
+  margin-top: .5rem;
+}
+
+#page5 .p5-lane-label {
+  width: 80px;
+  font-weight: 600;
+  color: #0f766e;
+  text-align: right;
+}
+#page5 .p5-lane-label.p5-lane-adr {
+  color: #b91c1c;
+}
+
+#page5 .p5-lane-track {
+  position: relative;
+  height: 46px;
+}
+
+#page5 .p5-bar {
+  position: absolute;
+  top: 8px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, .16);
+}
+#page5 .p5-bar-drug {
+  background: linear-gradient(120deg, #2563eb 0%, #0ea5e9 95%);
+}
+#page5 .p5-bar-adr {
+  background: linear-gradient(120deg, #ef4444 0%, #f97316 95%);
+}
+
+/* ข้อความตอนยังไม่มี timeline */
+#page5 .p5-empty-tl {
+  margin: .35rem 0 0;
+  color: #94a3b8;
+  font-size: .85rem;
+}
+
+/* ปุ่มท้ายหน้า */
+#page5 .p5-footer-btns {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+#page5 .p5-footer-btns button {
+  border: none;
+  border-radius: .85rem;
+  padding: .55rem 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+#page5 .p5-print { background: #22c55e; color: #fff; }
+#page5 .p5-next { background: #4f46e5; color: #fff; }
+#page5 .p5-clear { background: #ef4444; color: #fff; }
+
+@media (max-width: 900px) {
+  #page5 .p5-header-line {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #page5 .p5-btn-group { flex-wrap: wrap; }
+  #page5 .p5-footer-btns { flex-direction: column; }
+}
+
