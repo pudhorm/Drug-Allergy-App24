@@ -1,24 +1,24 @@
 // page3.js
 (function () {
-  // เตรียมที่เก็บรวม
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
 
-  // โครงข้อมูลแต่ละหมวด lab
   const LAB_SECTIONS = [
     {
       key: "cbc",
       title: "CBC",
       emoji: "🩸",
       items: [
-        { key: "wbc", label: "WBC", unit: "/µL" },
+        // แก้ชื่อ + หน่วยตรงนี้
+        { key: "wbc", label: "White Blood Cell", unit: "cells/cu.mm" },
         { key: "aec", label: "Absolute eosinophil count (AEC)", unit: "/µL" },
         { key: "neut", label: "Neutrophil", unit: "%" },
         { key: "lym", label: "Lymphocyte", unit: "%" },
         { key: "atyp", label: "Atypical lymphocytes", unit: "%" },
         { key: "eos", label: "Eosinophil", unit: "%" },
         { key: "hb", label: "Hemoglobin (Hb)", unit: "g/dL" },
-        { key: "plt", label: "Platelet (Plt)", unit: "/µL" }
+        // แก้หน่วยตรงนี้
+        { key: "plt", label: "Platelet (Plt)", unit: "cells/cu.mm" }
       ]
     },
     {
@@ -123,8 +123,8 @@
           <span>🧪</span>
           <span>หน้า 3 ผลตรวจทางห้องปฏิบัติการ</span>
         </h1>
-        <p style="margin:0 0 1.2rem;color:#065f46;opacity:.8;font-size:.88rem;">
-          เลือกเฉพาะผลที่ตรวจได้ แล้วกรอกค่า / หน่วย / รายละเอียดเพิ่มเติม
+        <p style="margin:0 0 1.2rem;color:#065f46;opacity:.85;font-size:.88rem;">
+          ติ้กเลือกเฉพาะผล Lab ที่มี + รายละเอียดเพิ่มเติมได้เลย
         </p>
 
         <div class="p3-grid" style="display:flex;flex-direction:column;gap:1rem;">
@@ -142,8 +142,12 @@
                   <span style="font-size:1.35rem;">${sec.emoji}</span>
                   <h2 style="font-size:1.05rem;font-weight:700;color:#065f46;margin:0;">${sec.title}</h2>
                 </div>
-                <div class="p3-items" style="display:flex;flex-direction:column;gap:.55rem;">
-                  ${sec.items.map((item, idx) => {
+                <div class="p3-items" style="
+                  display:grid;
+                  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                  gap:.6rem .7rem;
+                ">
+                  ${sec.items.map(item => {
                     const id = `${sec.key}_${item.key}`;
                     const row = secData[item.key] || {};
                     const checked = row.checked ? "checked" : "";
@@ -152,27 +156,28 @@
                     return `
                       <label for="${id}" style="
                         display:grid;
-                        grid-template-columns: auto 170px 60px 1fr;
-                        gap:.45rem .6rem;
+                        grid-template-columns: auto 120px 55px;
+                        grid-template-rows: auto auto;
+                        gap:.3rem .5rem;
                         align-items:center;
                         background: rgba(209, 250, 229, .25);
                         border: 1px solid rgba(22, 163, 74, .08);
                         border-radius:.7rem;
-                        padding:.4rem .55rem .55rem;
+                        padding:.4rem .5rem .55rem;
                       ">
-                        <div style="display:flex;align-items:center;gap:.45rem;">
+                        <div style="display:flex;align-items:center;gap:.4rem;">
                           <input type="checkbox" id="${id}" data-sec="${sec.key}" data-item="${item.key}" ${checked}
                             style="width:16px;height:16px;accent-color:#059669;">
-                          <span style="font-size:.86rem;color:#0f172a;">${item.label}</span>
+                          <span style="font-size:.83rem;color:#0f172a;">${item.label}</span>
                         </div>
                         <input type="text" placeholder="ค่า" value="${value}"
                           class="p3-val" data-sec="${sec.key}" data-item="${item.key}"
-                          style="width:100%;border:1px solid rgba(16,185,129,.35);border-radius:.55rem;padding:.35rem .45rem;font-size:.8rem;${checked ? "" : "opacity:.35;"}" ${checked ? "" : "disabled"}>
-                        <span style="font-size:.74rem;color:#047857;">${item.unit || ""}</span>
+                          style="width:100%;border:1px solid rgba(16,185,129,.35);border-radius:.55rem;padding:.3rem .4rem;font-size:.78rem;${checked ? "" : "opacity:.35;"}" ${checked ? "" : "disabled"}>
+                        <span style="font-size:.7rem;color:#047857;">${item.unit || ""}</span>
                         <input type="text" placeholder="รายละเอียดเพิ่มเติม"
                           class="p3-detail" data-sec="${sec.key}" data-item="${item.key}"
                           value="${detail}"
-                          style="width:100%;border:1px solid rgba(16,185,129,.15);border-radius:.55rem;padding:.35rem .4rem;font-size:.78rem;${checked ? "" : "display:none;"}">
+                          style="grid-column:1 / 4;width:100%;border:1px solid rgba(16,185,129,.12);border-radius:.55rem;padding:.32rem .4rem;font-size:.75rem;${checked ? "" : "display:none;"}">
                       </label>
                     `;
                   }).join("")}
@@ -182,7 +187,6 @@
           }).join("")}
         </div>
 
-        <!-- ปุ่มท้ายหน้า -->
         <div style="display:flex;gap:1rem;margin-top:1.6rem;flex-wrap:wrap;">
           <button id="p3-save-next" style="
             background: linear-gradient(120deg,#22c55e 0%,#0f766e 70%);
@@ -199,7 +203,7 @@
       </div>
     `;
 
-    // ผูก event
+    // bind events
     LAB_SECTIONS.forEach(sec => {
       sec.items.forEach(item => {
         const cb = root.querySelector(
@@ -233,14 +237,12 @@
       });
     });
 
-    // ปุ่ม
     const btnSaveNext = document.getElementById("p3-save-next");
     const btnClear = document.getElementById("p3-clear");
 
     if (btnSaveNext) {
       btnSaveNext.addEventListener("click", () => {
         savePage3();
-        // เปลี่ยนแท็บไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
@@ -283,7 +285,6 @@
   function savePage3() {
     const root = document.getElementById("page3");
     if (!root) return;
-
     const store = (window.drugAllergyData.page3 = {});
 
     LAB_SECTIONS.forEach(sec => {
@@ -313,6 +314,5 @@
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
   }
 
-  // export
   window.renderPage3 = renderPage3;
 })();
