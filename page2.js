@@ -11,7 +11,7 @@
       title: "1. ระบบหายใจ",
       emoji: "🫁",
       items: [
-        // ลบ "เจ็บคอ" ออกแล้ว
+        // เอา "เจ็บคอ" ออกแล้ว
         "หายใจมีเสียงวี๊ด",
         "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)",
         "ไอ",
@@ -117,11 +117,24 @@
 
     const d = window.drugAllergyData.page2;
 
+    // ชั้น 1: wrapper เข้มขึ้น
     root.innerHTML = `
-      <div class="p2-wrapper" style="background:linear-gradient(135deg,#fff7f3 0%,#fff 35%,#ffffff 100%);border:1px solid rgba(255,108,132,.12);border-radius:1.4rem;padding:1.3rem 1.4rem 2.4rem;box-shadow:0 10px 25px rgba(245,132,132,.08);">
+      <div class="p2-wrapper" style="
+        background: radial-gradient(circle at top, #ffe0e4 0%, #ffd1d9 30%, #fff0f2 80%);
+        border: 1px solid rgba(255,92,120,.25);
+        border-radius: 1.4rem;
+        padding: 1.3rem 1.4rem 2.4rem;
+        box-shadow: 0 12px 30px rgba(255,120,140,.18);
+      ">
         
         <!-- ส่วนที่ 1 -->
-        <section class="p2-section" style="background:#fff;border:1px solid rgba(255,150,150,.18);border-radius:1.05rem;padding:1.05rem 1rem 1.1rem;margin-bottom:1.2rem;">
+        <section class="p2-section" style="
+          background: rgba(255,243,244,0.95);
+          border: 1px solid rgba(190,18,60,.25);
+          border-radius: 1.05rem;
+          padding: 1.05rem 1rem 1.1rem;
+          margin-bottom: 1.2rem;
+        ">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#be123c;margin:0 0 1rem;">
             <span>🩺</span>
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
@@ -130,7 +143,13 @@
           ${FEATURE_GROUPS.map(group => {
             const selected = d[group.key] || {};
             return `
-              <div class="p2-block" style="background:linear-gradient(90deg,rgba(255,228,230,.28),rgba(255,255,255,.2));border:1px solid rgba(255,99,132,.12);border-radius:.9rem;padding:.75rem .8rem .4rem;margin-bottom:.65rem;">
+              <div class="p2-block" style="
+                background: linear-gradient(90deg, rgba(255, 166, 179, 0.35), rgba(255, 232, 236, 0.95));
+                border: 1px solid rgba(244,63,94,.25);
+                border-radius: .9rem;
+                padding: .75rem .8rem .4rem;
+                margin-bottom: .65rem;
+              ">
                 <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#b91c1c;margin:0 0 .55rem;">
                   <span>${group.emoji}</span>
                   <span>${group.title}</span>
@@ -141,12 +160,27 @@
                       const id = `${group.key}_${idx}`;
                       const checked = selected[txt]?.checked ? "checked" : "";
                       const detailVal = selected[txt]?.detail || "";
+                      // ชั้น 3: รายการเดี่ยวสีไม่ขาวจ๋าแล้ว
                       return `
-                        <label for="${id}" style="display:flex;gap:.6rem;align-items:flex-start;background:rgba(255,255,255,.85);border:1px solid rgba(248,113,113,.03);border-radius:.7rem;padding:.45rem .55rem .55rem;">
+                        <label for="${id}" style="
+                          display:flex;
+                          gap:.6rem;
+                          align-items:flex-start;
+                          background: rgba(255, 250, 250, 0.95);
+                          border: 1px solid rgba(248,113,113,.15);
+                          border-radius:.7rem;
+                          padding:.45rem .55rem .55rem;
+                        ">
                           <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
                           <div style="flex:1 1 auto;">
                             <div style="font-size:.86rem;color:#1f2937;">${txt}</div>
-                            <input type="text" placeholder="รายละเอียด..." class="p2-detail" data-group="${group.key}" data-text="${txt}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid rgba(248,113,113,.35);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"}">
+                            <input type="text"
+                                   placeholder="รายละเอียด..."
+                                   class="p2-detail"
+                                   data-group="${group.key}"
+                                   data-text="${txt}"
+                                   value="${detailVal}"
+                                   style="margin-top:.35rem;width:100%;border:1px solid rgba(248,113,113,.5);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"};background:rgba(255,255,255,.65);">
                           </div>
                         </label>
                       `;
@@ -159,7 +193,12 @@
         </section>
 
         <!-- ส่วนที่ 2 -->
-        <section class="p2-section" style="background:linear-gradient(135deg,#fee2ff 0%,#fff 50%);border:1px solid rgba(244,114,182,.25);border-radius:1.05rem;padding:1.05rem 1rem 1.1rem;">
+        <section class="p2-section" style="
+          background: rgba(254, 226, 255, 0.9);
+          border: 1px solid rgba(217,70,239,.25);
+          border-radius: 1.05rem;
+          padding: 1.05rem 1rem 1.1rem;
+        ">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#a21caf;margin:0 0 1rem;">
             <span>🫀</span>
             <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
@@ -172,11 +211,24 @@
               const checked = saved?.checked ? "checked" : "";
               const detailVal = saved?.detail || "";
               return `
-                <label for="${id}" style="display:flex;gap:.6rem;align-items:flex-start;background:rgba(255,255,255,.9);border:1px solid rgba(236,72,153,.03);border-radius:.7rem;padding:.45rem .55rem .55rem;">
+                <label for="${id}" style="
+                  display:flex;
+                  gap:.6rem;
+                  align-items:flex-start;
+                  background: rgba(255,247,255,.95);
+                  border: 1px solid rgba(236,72,153,.12);
+                  border-radius:.7rem;
+                  padding:.45rem .55rem .55rem;
+                ">
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
                     <div style="font-size:.86rem;color:#1f2937;">${org}</div>
-                    <input type="text" placeholder="รายละเอียด..." class="p2-org-detail" data-org="${org}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.35);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"}">
+                    <input type="text"
+                           placeholder="รายละเอียด..."
+                           class="p2-org-detail"
+                           data-org="${org}"
+                           value="${detailVal}"
+                           style="margin-top:.35rem;width:100%;border:1px solid rgba(236,72,153,.35);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none"};background:rgba(255,255,255,.6);">
                   </div>
                 </label>
               `;
