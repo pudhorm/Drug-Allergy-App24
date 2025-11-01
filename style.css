@@ -861,3 +861,165 @@ body {
     flex-direction: column;
   }
 }
+
+/* ====== หน้า 4 Naranjo (ชมพู-ส้ม วิ๊งๆ) ====== */
+.p4-wrapper {
+  background: radial-gradient(circle at top, #ffe1f2 0%, #ffd1aa 40%, #fff 70%);
+  border: 1px solid rgba(255, 149, 189, 0.22);
+  border-radius: 1.2rem;
+  padding: 1.3rem 1.3rem 5.5rem;
+  box-shadow: 0 20px 40px rgba(245, 111, 149, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ฟองแสงวิ๊งๆ ด้านหลัง */
+.p4-wrapper::before,
+.p4-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: -80px -30px auto;
+  height: 220px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 55%) 10% 10% / 140px 140px no-repeat,
+    radial-gradient(circle, rgba(255,232,249,.8) 0%, rgba(255,232,249,0) 65%) 60% 0% / 190px 190px no-repeat,
+    radial-gradient(circle, rgba(255,166,137,.5) 0%, rgba(255,166,137,0) 65%) 90% 35% / 140px 140px no-repeat;
+  pointer-events: none;
+}
+.p4-wrapper::after {
+  inset: auto -40px -90px;
+  height: 180px;
+  filter: blur(2px);
+  opacity: .6;
+}
+
+/* หัวข้อบนสุด */
+.p4-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 5;
+}
+.p4-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #7a215f;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+
+/* ปุ่มเพิ่มยาตัวใหม่ */
+.p4-add-btn {
+  background: linear-gradient(120deg, #22c55e 0%, #16a34a 40%, #22c55e 80%);
+  border: none;
+  color: #fff;
+  padding: .55rem 1.1rem;
+  border-radius: .9rem;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(34, 197, 94, .35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* กล่องยาทีละตัว */
+.p4-drug-card {
+  background: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(255, 171, 196, 0.35);
+  border-radius: 1rem;
+  padding: 1rem 1rem 1.1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 3;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 12px 18px rgba(255, 172, 190, 0.07);
+}
+.p4-drug-title {
+  font-weight: 700;
+  color: #3f2350;
+  margin-bottom: .45rem;
+}
+.p4-drug-name {
+  width: 100%;
+  border: 1px solid rgba(255, 140, 156, 0.35);
+  border-radius: .7rem;
+  padding: .45rem .55rem;
+  font-size: .9rem;
+  margin-bottom: .8rem;
+}
+
+/* บล็อกคำถาม */
+.p4-qblock {
+  background: rgba(255, 242, 243, .85);
+  border: 1px solid rgba(255, 149, 159, .18);
+  border-radius: .8rem;
+  padding: .6rem .55rem .55rem;
+  margin-bottom: .6rem;
+}
+.p4-qblock h4 {
+  margin: 0 0 .4rem;
+  font-size: .9rem;
+  color: #7a215f;
+}
+
+.p4-ans-row {
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+
+/* ปุ่มตัวเลือก (ใช่/ไม่ใช่/ไม่ทราบ) */
+.p4-choice {
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  background: #fff;
+  border-radius: .6rem;
+  padding: .35rem .8rem .4rem;
+  font-size: .83rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  transition: transform .08s ease-out, box-shadow .08s ease-out;
+}
+.p4-choice:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(238, 113, 136, .1);
+}
+
+/* ตอนเลือก */
+.p4-choice.is-positive {
+  background: radial-gradient(circle, #22c55e 0%, #16a34a 55%, #15803d 100%);
+  color: #fff;
+  border: 1px solid rgba(34,197,94,.9);
+  box-shadow: 0 10px 22px rgba(34, 197, 94, .35);
+}
+.p4-choice.is-negative {
+  background: radial-gradient(circle, #f97316 0%, #ea580c 65%);
+  color: #fff;
+  border: 1px solid rgba(249, 115, 22, .68);
+}
+.p4-choice.is-unknown {
+  background: radial-gradient(circle, #f973c2 0%, #db2777 75%);
+  color: #fff;
+  border: 1px solid rgba(236, 72, 153, .65);
+}
+
+/* กล่องสรุปคะแนน */
+.p4-summary {
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(255, 180, 192, .35);
+  border-radius: 1rem;
+  padding: .8rem .8rem 1rem;
+  margin-top: 1rem;
+  box-shadow: 0 10px 18px rgba(255, 145, 169, 0.08);
+}
+.p4-score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #7a215f;
+}
