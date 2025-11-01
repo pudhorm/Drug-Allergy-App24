@@ -21,14 +21,17 @@ body {
   overflow: hidden;
 }
 
-/* ตัวหนังสือให้อยู่หน้าฟอง */
-.topbar h1,
-.topbar .hospital-badge {
-  position: relative;
-  z-index: 2;
-}
-
 /* ฟองอากาศลอย */
+.topbar::before,
+.topbar::after {
+  content: "";
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  animation: bubble 6s infinite ease-in-out;
+}
 .topbar::before {
   top: -40px;
   left: 12%;
@@ -37,119 +40,6 @@ body {
   bottom: -50px;
   right: 18%;
   animation-delay: 1.2s;
-}
-/* กลุ่มฟองอากาศเล็กๆ ที่ลอยเร็ว */
-.topbar {
-  position: relative;
-  background: linear-gradient(120deg, #7c3aed 0%, #ec4899 50%, #fb7185 100%);
-  color: #fff;
-  padding: 2.6rem 1.5rem 3.3rem;
-  text-align: center;
-  overflow: hidden;
-}
-
-/* ชั้นฟองอากาศ อยู่หลังตัวหนังสือ */
-.top-bubbles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;           /* <-- ฟองอยู่หลัง h1/p ที่ z=2 */
-  overflow: hidden;     /* ถ้าลอยออกขอบจะถูกตัด */
-}
-
-/* ฟองทุกอันพื้นฐาน */
-.top-bubbles span {
-  position: absolute;
-  display: block;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0));
-  border-radius: 999px;
-  opacity: 0;
-  animation: rise-bubble 6s linear infinite;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,.12));
-  /* ทำให้ดูอวบ/มีมิติ: ใช้ scaleX ต่างกัน */
-  transform-origin: center;
-}
-
-
-/* ฟองแต่ละอันกำหนดตำแหน่ง + สี + ขนาด */
-/* ฟอง 1 – ใหญ่ อมม่วง */
-.top-bubbles span:nth-child(1) {
-  width: 150px;
-  height: 110px;                  /* อ้วนๆ */
-  left: 6%;
-  bottom: -140px;                 /* เริ่มล่างจอ */
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(208,180,255,0.15));
-  animation-duration: 7s;
-}
-/* ฟอง 2 – กลาง เป๊ะ */
-.top-bubbles span:nth-child(2) {
-  width: 90px;
-  height: 70px;
-  left: 25%;
-  bottom: -120px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(187,247,208,0.12));
-  animation-duration: 5.4s;
-  animation-delay: 1s;
-}
-/* ฟอง 3 – ใหญ่กว่าปานกลาง โทนชมพู */
-.top-bubbles span:nth-child(3) {
-  width: 130px;
-  height: 95px;
-  right: 22%;
-  bottom: -150px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(252,231,243,0.25));
-  animation-duration: 6.2s;
-  animation-delay: 1.5s;
-}
-/* ฟอง 4 – เล็ก สีฟ้า */
-.top-bubbles span:nth-child(4) {
-  width: 55px;
-  height: 45px;
-  right: 5%;
-  bottom: -110px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(219,234,254,0.25));
-  animation-duration: 4.4s;
-  animation-delay: .5s;
-}
-/* ฟอง 5 – เล็กมาก ไว */
-.top-bubbles span:nth-child(5) {
-  width: 40px;
-  height: 32px;
-  left: 45%;
-  bottom: -90px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(255,247,237,0.1));
-  animation-duration: 3.9s;
-  animation-delay: 2s;
-}
-/* ฟอง 6 – อ้วนเตี้ย อยู่แถวกลางๆ */
-.top-bubbles span:nth-child(6) {
-  width: 120px;
-  height: 78px;
-  left: 62%;
-  bottom: -140px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), rgba(236,252,203,.15));
-  animation-duration: 6.8s;
-  animation-delay: 2.6s;
-}
-
-
-/* แอนิเมชันให้ลอยขึ้นแล้วหายไป */
-@keyframes rise-bubble {
-  0% {
-    transform: translateY(0) scaleX(1);
-    opacity: 0;
-  }
-  8% {
-    opacity: .9;                 /* โผล่เร็ว */
-  }
-  50% {
-    transform: translateY(-55%) scaleX(1.03);  /* ลอยผ่านกลาง */
-    opacity: .85;
-  }
-  100% {
-    transform: translateY(-140%) scaleX(1.08); /* เลยหัวแล้วหาย */
-    opacity: 0;
-  }
 }
 
 @keyframes bubble {
