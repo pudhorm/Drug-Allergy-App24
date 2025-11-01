@@ -1664,3 +1664,203 @@ body {
     overflow: visible;
   }
 }
+/* ===== หน้า 5 (Timeline) สไตล์ใหม่ให้เหมือนก่อนหน้า ===== */
+.p5-timeline-shell {
+  background: linear-gradient(180deg, #fff7e6 0%, #fef5ff 65%, #ffffff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1.6rem;
+  padding: 1.4rem 1.1rem 6.2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 30px rgba(248, 113, 113, 0.06);
+}
+.p5-bg-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 5% 0%, rgba(255, 243, 207, 0.8), rgba(255,255,255,0));
+  pointer-events: none;
+}
+
+/* กล่องยา / ADR */
+.tl-section {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 1.2rem;
+  padding: 1rem 1rem 1.2rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(2px);
+}
+.tl-drug-card { margin-bottom: 1rem; }
+.tl-adr-card { margin-bottom: 1rem; }
+
+.tl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .6rem;
+}
+.tl-head h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+}
+.tl-head .icon {
+  font-size: 1.25rem;
+}
+
+.tl-head-actions {
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+
+.tl-del-btn-all {
+  background: rgba(248, 113, 113, 0.08);
+  color: #b91c1c;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: .6rem;
+  padding: .35rem .6rem .3rem;
+  font-size: .75rem;
+  cursor: pointer;
+}
+.tl-hide { display: none !important; }
+
+.tl-card {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 1rem;
+  padding: .7rem .7rem .6rem;
+  margin-bottom: .6rem;
+  box-shadow: 0 10px 20px rgba(15,23,42,.04);
+}
+
+.tl-row-top {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  margin-bottom: .55rem;
+}
+.tl-row-top label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tl-input {
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: .7rem;
+  padding: .35rem .6rem;
+  font-size: .88rem;
+  background: #fff;
+  outline: none;
+}
+.tl-input:focus {
+  border-color: rgba(59,130,246,.55);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+}
+
+.tl-grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .6rem .8rem;
+}
+.tl-inline {
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+
+/* timeline view */
+#p5_tlScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px dashed rgba(148,163,184,.30);
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, #fff, rgba(255,255,255,.6));
+  padding: .7rem .4rem 1.4rem;
+}
+#p5_tlAxis {
+  position: relative;
+  height: 30px;
+}
+.tl-tick {
+  position: absolute;
+  top: 0;
+  font-size: .82rem;
+  color: #111;
+}
+#p5_tlCanvas {
+  position: relative;
+  min-height: 130px;
+}
+.tl-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: .4rem;
+  align-items: center;
+  height: 58px;
+}
+.tl-ylabel {
+  font-weight: 700;
+  color: #0f766e;
+  padding-left: .4rem;
+}
+.tl-ylabel-adr {
+  color: #b91c1c;
+}
+.tl-track {
+  position: relative;
+  height: 44px;
+}
+.tl-bar {
+  position: absolute;
+  top: 7px;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+}
+.tl-bar.drug {
+  background: #0ea5e9;
+  box-shadow: 0 10px 20px rgba(14,165,233,.35);
+}
+.tl-bar.adr {
+  background: #ef4444;
+  box-shadow: 0 10px 20px rgba(239,68,68,.25);
+}
+
+/* แสดงเวลาปัจจุบัน */
+.p5-nowbox {
+  margin-top: .3rem;
+  margin-bottom: .4rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.p5-nowbox::before {
+  content: "📅";
+}
+
+/* ปุ่มล่างให้ติดท้ายหน้า */
+.tl-bottom-actions-fixed {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1));
+  padding-top: .9rem;
+}
