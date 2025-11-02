@@ -23,6 +23,19 @@ window.renderPage5 = function () {
   const pageEl = document.getElementById("page5");
   if (!pageEl) return;
 
+  // 👇 เพิ่มแค่ตรงนี้ เพื่อใช้วันที่/เวลาปัจจุบัน
+  const now = new Date();
+  const nowDateTH = now.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+  const nowTimeTH = now.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  // 👆 จบส่วนเพิ่ม
+
   const { drugLines, adrLines } = window.drugAllergyData.page5;
 
   // ---------- สร้าง HTML (เหมือนที่คุณใช้) ----------
@@ -35,6 +48,8 @@ window.renderPage5 = function () {
           <button id="p5AddAdr" class="p5-btn-add-adr">+ เพิ่ม ADR</button>
         </div>
       </div>
+      <!-- 👇 แทรกวันที่/เวลาไว้ตรงนี้ -->
+      <div class="p5-meta-now">📆 ${nowDateTH} · ⏰ ${nowTimeTH} น.</div>
 
       <!-- รายการยา -->
       <div class="p5-form-block">
@@ -128,15 +143,16 @@ window.renderPage5 = function () {
         </div>
       </div>
 
-       <!-- ปุ่มล่าง -->
-  <div class="p5-footer-btns">
-  <button id="p5GoSummary" class="p5-bottom-btn p5-bottom-primary">
-    บันทึกข้อมูลและไปหน้า 6
-  </button>
-  <button id="p5Clear" class="p5-bottom-btn p5-bottom-danger">
-    🗑️ ล้างข้อมูลหน้านี้
-  </button>
-</div>
+      <!-- ปุ่มล่าง -->
+      <div class="p5-footer-btns">
+        <button id="p5GoSummary" class="p5-bottom-btn p5-bottom-primary">
+          บันทึกข้อมูลและไปหน้า 6
+        </button>
+        <button id="p5Clear" class="p5-bottom-btn p5-bottom-danger">
+          🗑️ ล้างข้อมูลหน้านี้
+        </button>
+      </div>
+    </div>
   `;
 
   // ---------- ผูก event หลังจากสร้าง DOM แล้วเท่านั้น ----------
@@ -256,7 +272,7 @@ window.renderPage5 = function () {
   drawTimeline();
 };
 
-// 3) ฟังก์ชันวาด timeline (เวอร์ชันที่คุณบอกว่า “ตรงแล้ว” แต่เพิ่มไม่ให้ ADR ซ้อน + รองรับหลายแถว)
+// 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ ไม่แตะ)
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
@@ -361,7 +377,6 @@ function drawTimeline() {
     if (d.stopDate) {
       const stop = parseDate(d.stopDate);
       if (stop) {
-        // ← ตรงนี้คือสูตรที่คุณบอกว่าใช้ได้แล้ว: -1 วัน
         end = new Date(stop.getFullYear(), stop.getMonth(), stop.getDate() - 1);
       } else {
         end = maxDate;
@@ -389,7 +404,7 @@ function drawTimeline() {
     drugLane.appendChild(bar);
   });
 
-  // วาด "ADR" แยกแถว ไม่ซ้อนยา
+  // วาด "ADR" แยกแถว
   adrs.forEach((a, idx) => {
     const start = parseDate(a.startDate);
     if (!start) return;
