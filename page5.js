@@ -35,7 +35,7 @@ window.renderPage5 = function () {
         </div>
       </div>
 
-      <!-- แสดงวันที่/เวลาปัจจุบัน (เดี๋ยว JS ด้านล่างจะเติมให้ และอัปเดตทุกวินาที) -->
+      <!-- แสดงวันที่/เวลาปัจจุบัน -->
       <div id="p5NowBox" class="p5-meta-now"></div>
 
       <!-- รายการยา -->
@@ -137,6 +137,9 @@ window.renderPage5 = function () {
         </button>
         <button id="p5Clear" class="p5-bottom-btn p5-bottom-danger">
           🗑️ ล้างข้อมูลหน้านี้
+        </button>
+        <button id="p5Print" class="p5-bottom-btn p5-bottom-print">
+          🖨️ พิมพ์ Timeline
         </button>
       </div>
     </div>
@@ -253,6 +256,12 @@ window.renderPage5 = function () {
       window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
       window.renderPage5();
     });
+  }
+
+  // ✅ ปุ่มพิมพ์ timeline
+  const printBtn = document.getElementById("p5Print");
+  if (printBtn) {
+    printBtn.addEventListener("click", p5PrintTimeline);
   }
 
   // วาด timeline ครั้งแรก
@@ -457,3 +466,50 @@ function p5UpdateNowBox() {
 
 // อัปเดตทุก 1 วิ
 setInterval(p5UpdateNowBox, 1000);
+
+// ====== พิมพ์ timeline ให้เห็นทั้งหมด ======
+function p5PrintTimeline() {
+  const box = document.getElementById("p5TimelineScroll");
+  if (!box) {
+    window.print();
+    return;
+  }
+  box.classList.add("p5-print-mode");
+  window.print();
+  setTimeout(() => {
+    box.classList.remove("p5-print-mode");
+  }, 400);
+}
+
+// ใส่ style สำหรับ print ถ้ายังไม่มี
+(function addP5PrintStyle() {
+  if (document.getElementById("p5-print-style")) return;
+  const css = `
+    @media print {
+      .topbar,
+      .tabs,
+      .p5-footer-btns,
+      .p5-btn-group {
+        display: none !important;
+      }
+      #p5TimelineScroll.p5-print-mode {
+        overflow: visible !important;
+        width: auto !important;
+      }
+      #p5DateRow,
+      #p5DrugLane,
+      #p5AdrLane {
+        transform: scale(0.7);
+        transform-origin: top left;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+  `;
+  const style = document.createElement("style");
+  style.id = "p5-print-style";
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
