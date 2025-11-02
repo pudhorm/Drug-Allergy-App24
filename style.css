@@ -1171,4 +1171,10 @@ body {
     padding: 1.4rem 1.5rem 2rem;
   }
 }
+/* ขยายตราโรงพยาบาลบนหัวเว็บ */
+.topbar img.topbar-logo {
+  width: 190px;   /* เดิม 140px */
+  height: auto;
+  margin-bottom: 1.1rem;
+}
 
