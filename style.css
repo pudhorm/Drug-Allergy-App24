@@ -6,7 +6,9 @@
 /* 1) พื้นหลังหน้าเว็บ จากฟ้า → ชมพูพาสเทล */
 body {
   margin: 0;
-  font-family: "Saraban", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Mitr", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 300;         /* = ตัวบาง */
+  letter-spacing: 0.02em;   /* เว้นห่างนิดนึงให้อ่านสบาย */
   /* เดิม: background: #f3f4ff; */
   background: radial-gradient(circle at top, #ffe3f4 0%, #ffeef9 45%, #fff 85%);
   color: #1f2937;
@@ -23,12 +25,12 @@ body {
 }
 
 .topbar h1 {
-  font-size: clamp(3rem, 5.2vw, 3.7rem);
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.05;
-  text-shadow: 0 10px 28px rgba(0,0,0,.15);
+  font-weight: 400;         /* เดิมอาจจะ 700 → ลดให้ดูเฟรนด์ลี่ */
+  letter-spacing: 0.04em;   /* ห่างขึ้นนิดนึง */
+}
+.topbar .hospital-badge {
+  font-weight: 300;
+  letter-spacing: 0.04em;
 }
 
 /* ให้ป้ายโรงพยาบาลดูสมดุลกับหัวใหญ่ๆ */
