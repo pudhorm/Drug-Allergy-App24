@@ -1047,3 +1047,9 @@ body {
               linear-gradient(90deg, #f04438 0%, #f25d44 50%, #f26a4d 100%);
 }
 
+.p5-meta-now {
+  margin-top: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
