@@ -7,6 +7,30 @@
   <link rel="stylesheet" href="style.css" />
   <!-- กัน error favicon 404 -->
   <link rel="icon" href="data:," />
+
+  <!-- ✨ เพิ่มเฉพาะนี้: กระจายปุ่มเมนูให้เต็มแถว -->
+  <style>
+    nav.tabs {
+      display: flex;
+      gap: 0.75rem;           /* ระยะห่างระหว่างปุ่ม */
+      width: 100%;
+    }
+    nav.tabs button {
+      flex: 1 1 0;            /* ให้ทุกปุ่มกว้างเท่ากันและขยายเต็มแถว */
+      text-align: center;
+      white-space: nowrap;    /* ไม่ตัดบรรทัดชื่อปุ่ม */
+    }
+    @media (max-width: 900px) {
+      /* ถ้าหน้าจอแคบให้ปุ่มหดลงแต่ยังเรียงในแถวเดียว */
+      nav.tabs {
+        gap: 0.5rem;
+      }
+      nav.tabs button {
+        font-size: 0.78rem;
+        padding-inline: 0.4rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -103,9 +127,7 @@
     let page3Rendered = false;
     let page4Rendered = false;
 
-    // ฟังก์ชันสลับหน้า (ต้องประกาศก่อนใช้ในปุ่มล่างหน้า 5)
     function showPage(targetId) {
-      // เปลี่ยน active ปุ่ม
       tabBtns.forEach((b) => {
         if (b.dataset.target === targetId) {
           b.classList.add("active");
@@ -114,12 +136,10 @@
         }
       });
 
-      // ซ่อน/โชว์หน้า
       pages.forEach((p) => p.classList.remove("visible"));
       const targetPage = document.getElementById(targetId);
       if (targetPage) targetPage.classList.add("visible");
 
-      // call render ตามหน้า
       if (targetId === "page2" && window.renderPage2 && !page2Rendered) {
         window.renderPage2();
         page2Rendered = true;
@@ -140,10 +160,8 @@
       }
     }
 
-    // เอาไปใช้ที่อื่นได้
     window.showPage = showPage;
 
-    // ผูกปุ่มแท็บ
     tabBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
         const target = btn.dataset.target;
