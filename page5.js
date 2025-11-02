@@ -1,4 +1,4 @@
-// ====================== page5.js (วางทับได้เลย) ======================
+// ====================== page5.js ======================
 
 // เตรียมที่เก็บข้อมูลหน้า 5 ถ้ายังไม่มี
 (function () {
@@ -27,7 +27,6 @@ window.renderPage5 = function () {
   const drugs = store.drugLines;
   const adrs = store.adrLines;
 
-  // ---------- HTML เดิม ----------
   pageEl.innerHTML = `
     <div class="p5-wrapper">
       <div class="p5-header-line">
@@ -130,7 +129,7 @@ window.renderPage5 = function () {
         </div>
       </div>
 
-      <!-- ปุ่มล่าง (ตามแบบที่คุณขอ) -->
+      <!-- ปุ่มล่าง -->
       <div class="p5-footer-btns">
         <button id="p5GoSummary" class="p5-next">บันทึกข้อมูลและไปหน้า 6</button>
         <button id="p5Clear" class="p5-clear">🗑 ล้างข้อมูลหน้านี้</button>
@@ -138,9 +137,9 @@ window.renderPage5 = function () {
     </div>
   `;
 
-  // ---------- ผูก event ----------
+  // ====== ผูก event ======
 
-  // ปุ่มเพิ่มยา
+  // เพิ่มยา
   const btnAddDrug = document.getElementById("p5AddDrug");
   if (btnAddDrug) {
     btnAddDrug.onclick = function () {
@@ -155,7 +154,7 @@ window.renderPage5 = function () {
     };
   }
 
-  // ปุ่มเพิ่ม ADR
+  // เพิ่ม ADR
   const btnAddAdr = document.getElementById("p5AddAdr");
   if (btnAddAdr) {
     btnAddAdr.onclick = function () {
@@ -170,7 +169,7 @@ window.renderPage5 = function () {
     };
   }
 
-  // ปุ่มลบแต่ละบรรทัด
+  // ลบบรรทัด
   pageEl.querySelectorAll(".p5-line-del").forEach((btn) => {
     btn.addEventListener("click", function () {
       const kind = this.dataset.kind;
@@ -184,7 +183,7 @@ window.renderPage5 = function () {
     });
   });
 
-  // อัปเดตค่า — ยา
+  // อัปเดตยา
   pageEl.querySelectorAll(".p5-drug-card").forEach((card) => {
     const idx = Number(card.dataset.idx);
     const nameInput = card.querySelector(".p5-drug-name");
@@ -197,15 +196,12 @@ window.renderPage5 = function () {
         drawTimeline();
       });
     }
-
     if (startInput) {
       startInput.addEventListener("change", (e) => {
-        // browser จะให้รูปแบบ yyyy-mm-dd เสมอ
         window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
         drawTimeline();
       });
     }
-
     if (stopInput) {
       stopInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
@@ -214,7 +210,7 @@ window.renderPage5 = function () {
     }
   });
 
-  // อัปเดตค่า — ADR
+  // อัปเดต ADR
   pageEl.querySelectorAll(".p5-adr-card").forEach((card) => {
     const idx = Number(card.dataset.idx);
     const symInput = card.querySelector(".p5-adr-symptom");
@@ -276,7 +272,6 @@ function drawTimeline() {
   const drugs = Array.isArray(page5.drugLines) ? page5.drugLines : [];
   const adrs = Array.isArray(page5.adrLines) ? page5.adrLines : [];
 
-  // ถ้าไม่มีเลยก็ล้าง
   if (!drugs.length && !adrs.length) {
     dateRow.innerHTML = "";
     drugLane.innerHTML = "";
@@ -287,33 +282,37 @@ function drawTimeline() {
   const MS_DAY = 24 * 60 * 60 * 1000;
   const DAY_W = 120;
 
+  // ====== สำคัญ: รองรับหลายรูปแบบ ======
   function parseDate(str) {
     if (!str) return null;
-    // เราคาดหวังรูปแบบ yyyy-mm-dd จาก <input type="date">
-    const parts = str.split("-");
-    if (parts.length === 3) {
-      const y = Number(parts[0]);
-      const m = Number(parts[1]);
-      const d = Number(parts[2]);
-      if (!y || !m || !d) return null;
+    const s = String(str).trim();
+
+    // 1) dd/mm/yyyy หรือ d/m/yyyy
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+      const [d, m, y] = s.split("/").map(Number);
       return new Date(y, m - 1, d);
     }
+
+    // 2) yyyy-mm-dd (ค่ามาตรฐานจาก input date)
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    // 3) รูปแบบอื่นอ่านไม่ออก → null
     return null;
   }
+
   function addDays(date, n) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
   }
 
   const today = new Date();
-  const todayDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  // ----- หา min / max -----
+  // หา min/max
   let minDate = null;
-  let maxDate = todayDate; // อย่างน้อยต้องถึงวันนี้
+  let maxDate = todayDate;
   drugs.forEach((d) => {
     const s = parseDate(d.startDate);
     if (s && (!minDate || s < minDate)) minDate = s;
@@ -326,17 +325,13 @@ function drawTimeline() {
     const e = parseDate(a.endDate);
     if (e && e > maxDate) maxDate = e;
   });
-
   if (!minDate) minDate = todayDate;
 
-  // จำนวนวันทั้งหมด
   const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
 
-  // ===== วาดหัววัน =====
+  // วาดหัววัน และดันขวาให้ไม่ชนคำว่า "ยา"
   dateRow.innerHTML = "";
-  // ดันให้ตรงกับ label "ยา"
-  const labelWidth =
-    document.querySelector(".p5-lane-label")?.offsetWidth || 70;
+  const labelWidth = document.querySelector(".p5-lane-label")?.offsetWidth || 70;
   dateRow.style.paddingLeft = labelWidth + "px";
 
   for (let i = 0; i < totalDays; i++) {
@@ -355,7 +350,7 @@ function drawTimeline() {
   drugLane.innerHTML = "";
   adrLane.innerHTML = "";
 
-  // ปรับความสูง lane ให้พอ
+  // ให้ lane สูงพอสำหรับหลายแท่ง
   const DRUG_ROW_H = 36;
   const ADR_ROW_H = 36;
   drugLane.style.height = 44 + Math.max(0, drugs.length - 1) * DRUG_ROW_H + "px";
@@ -365,25 +360,30 @@ function drawTimeline() {
     const diff = Math.floor((date - minDate) / MS_DAY);
     return diff * DAY_W;
   }
+
   function clampEnd(start, end) {
-    if (!end) return todayDate; // ongoing → วันนี้
-    if (end < start) return start; // กันวันหยุดน้อยกว่าวันเริ่ม
+    // ถ้าไม่ใส่วันหยุด → วันนี้
+    if (!end) return todayDate;
+    // ถ้าวันหยุด < วันเริ่ม → บังคับเท่ากับวันเริ่ม
+    if (end < start) return start;
     return end;
   }
 
-  // ===== วาดยา (ทีละแถว) =====
+  // วาดยา — คนละแถว
   drugs.forEach((d, idx) => {
     const s = parseDate(d.startDate);
-    if (!s) return; // ไม่มีก็ไม่วาด
-    const e = clampEnd(s, parseDate(d.stopDate));
+    if (!s) return;
+    let e = clampEnd(s, parseDate(d.stopDate));
 
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-drug";
     bar.textContent = d.name || `ยาตัวที่ ${idx + 1}`;
 
-    const left = dateToX(s) + labelWidth; // บวก label เพื่อไม่ให้เหลื่อม
-    const width =
-      (Math.floor((e - s) / MS_DAY) + 1) * DAY_W - 10; // -10 ให้ไม่ชนขอบ
+    const left = dateToX(s) + labelWidth;
+    const days = Math.floor((e - s) / MS_DAY) + 1;
+    let width = days * DAY_W - 10;
+    if (width < DAY_W * 0.5) width = DAY_W * 0.5;
+
     bar.style.left = left + "px";
     bar.style.width = width + "px";
     bar.style.top = 7 + idx * DRUG_ROW_H + "px";
@@ -391,19 +391,21 @@ function drawTimeline() {
     drugLane.appendChild(bar);
   });
 
-  // ===== วาด ADR =====
+  // วาด ADR — คนละแถว
   adrs.forEach((a, idx) => {
     const s = parseDate(a.startDate);
     if (!s) return;
-    const e = clampEnd(s, parseDate(a.endDate));
+    let e = clampEnd(s, parseDate(a.endDate));
 
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-adr";
     bar.textContent = a.symptom || `ADR ${idx + 1}`;
 
     const left = dateToX(s) + labelWidth;
-    const width =
-      (Math.floor((e - s) / MS_DAY) + 1) * DAY_W - 10;
+    const days = Math.floor((e - s) / MS_DAY) + 1;
+    let width = days * DAY_W - 10;
+    if (width < DAY_W * 0.5) width = DAY_W * 0.5;
+
     bar.style.left = left + "px";
     bar.style.width = width + "px";
     bar.style.top = 7 + idx * ADR_ROW_H + "px";
