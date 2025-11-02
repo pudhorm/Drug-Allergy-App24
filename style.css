@@ -21,7 +21,14 @@ body {
   text-align: center;
   overflow: hidden;
 }
-
+.topbar-logo {
+  width: 155px;      /* ปรับตรงนี้ให้ใหญ่/เล็กได้ */
+  height: auto;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,.16));
+  z-index: 3;
+}
 .topbar h1 {
   font-size: clamp(3rem, 5.2vw, 3.7rem);
   margin: 0;
@@ -142,33 +149,6 @@ body {
   60%  { transform: translateY(6px) translateX(-3px); opacity: .55; }
   100% { transform: translateY(0) translateX(0); opacity: .9; }
 }
-/* ครอบหัวข้อทั้งหมด */
-.topbar-inner {
-  max-width: 1180px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 1.4rem;
-  position: relative;
-  z-index: 3; /* ให้อยู่เหนือฟองอากาศ */
-}
-
-/* รูปซ้ายมือ ขนาดปกติ (ถ้าอยากใหญ่ขึ้นค่อยขยับ width) */
-.topbar-logo {
-  width: 140px;
-  height: auto;
-  flex: 0 0 auto;
-  display: block;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,.16));
-  border-radius: 9999px; /* ถ้ารูปทรงกลมจะเนียนขึ้น */
-}
-
-/* ตัวหนังสือให้อยู่กลาง */
-.topbar-text {
-  flex: 1;
-  text-align: center;
-}
-
 
 /* ====== เมนูแท็บ ====== */
 /* 2) ให้เมนู 1–6 กระจายเต็มแถบเลย */
