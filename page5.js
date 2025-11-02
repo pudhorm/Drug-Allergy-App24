@@ -474,9 +474,24 @@ function p5PrintTimeline() {
     window.print();
     return;
   }
+
+  // เก็บของเดิมไว้ก่อน
+  const oldWidth = box.style.width;
+  const oldOverflow = box.style.overflow;
+
+  // ขยายเป็นความกว้างจริงทั้งหมดก่อนพิมพ์
+  const fullWidth = box.scrollWidth;
+  box.style.width = fullWidth + "px";
+  box.style.overflow = "visible";
   box.classList.add("p5-print-mode");
+
+  // สั่งพิมพ์
   window.print();
+
+  // คืนค่าหลังจากเปิด dialog แล้ว
   setTimeout(() => {
+    box.style.width = oldWidth;
+    box.style.overflow = oldOverflow;
     box.classList.remove("p5-print-mode");
   }, 400);
 }
@@ -486,25 +501,50 @@ function p5PrintTimeline() {
   if (document.getElementById("p5-print-style")) return;
   const css = `
     @media print {
+      /* ซ่อนส่วนที่ไม่เกี่ยว */
       .topbar,
       .tabs,
       .p5-footer-btns,
       .p5-btn-group {
         display: none !important;
       }
+
+      body, html {
+        overflow: visible !important;
+      }
+
+      /* กล่องหลักของ timeline ตอนพิมพ์ */
       #p5TimelineScroll.p5-print-mode {
         overflow: visible !important;
         width: auto !important;
-      }
-      #p5DateRow,
-      #p5DrugLane,
-      #p5AdrLane {
-        transform: scale(0.7);
+        max-width: none !important;
+        transform: scale(0.85);
         transform-origin: top left;
       }
+
+      /* ให้หัววันกับ lane ยาวได้จริง */
+      #p5TimelineScroll.p5-print-mode #p5DateRow,
+      #p5TimelineScroll.p5-print-mode #p5DrugLane,
+      #p5TimelineScroll.p5-print-mode #p5AdrLane {
+        display: inline-block !important;
+        width: max-content !important;
+      }
+
+      /* ให้กล่อง timeline ไม่ตัดขอบ */
+      .p5-timeline-box {
+        overflow: visible !important;
+      }
+
+      /* พิมพ์แนวนอน */
       @page {
         size: A4 landscape;
         margin: 10mm;
+      }
+
+      /* ให้สีขึ้นชัด */
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
     }
   `;
