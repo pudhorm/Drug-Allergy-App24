@@ -1,12 +1,9 @@
 // ====================== page5.js ======================
-// เตรียมที่เก็บข้อมูลหน้า 5 ถ้ายังไม่มี
+// เตรียมโครงเก็บข้อมูลหน้า 5 ถ้ายังไม่มี
 (function () {
   const root = (window.drugAllergyData = window.drugAllergyData || {});
   if (!root.page5) {
-    root.page5 = {
-      drugLines: [],
-      adrLines: []
-    };
+    root.page5 = { drugLines: [], adrLines: [] };
   } else {
     root.page5.drugLines = Array.isArray(root.page5.drugLines)
       ? root.page5.drugLines
@@ -17,7 +14,7 @@
   }
 })();
 
-// ===== ฟังก์ชันหลักของหน้า 5 =====
+// ================== ฟังก์ชันหลักของหน้า 5 ==================
 window.renderPage5 = function () {
   const pageEl = document.getElementById("page5");
   if (!pageEl) return;
@@ -26,7 +23,7 @@ window.renderPage5 = function () {
   const drugs = store.drugLines;
   const adrs = store.adrLines;
 
-  // ---------- สร้าง HTML ----------
+  // ----- สร้าง HTML (เหมือนเดิม) -----
   pageEl.innerHTML = `
     <div class="p5-wrapper">
       <div class="p5-header-line">
@@ -129,45 +126,48 @@ window.renderPage5 = function () {
         </div>
       </div>
 
-      <!-- ปุ่มล่าง (คง style เดิมที่คุณชอบ) -->
+      <!-- ปุ่มล่าง (แบบที่คุณขอ) -->
       <div class="p5-footer-btns">
-        <button id="p5GoSummary" class="p5-next">ไปหน้า 6 (สรุป)</button>
-        <button id="p5Clear" class="p5-clear">ล้าง &amp; โหลดใหม่</button>
+        <button id="p5GoSummary" class="p5-next">บันทึกข้อมูลและไปหน้า 6</button>
+        <button id="p5Clear" class="p5-clear">🗑 ล้างข้อมูลหน้านี้</button>
       </div>
     </div>
   `;
 
-  // ---------- ผูก event ----------
+  // ====== ผูกปุ่ม ======
+  const btnAddDrug = document.getElementById("p5AddDrug");
+  if (btnAddDrug) {
+    btnAddDrug.onclick = function () {
+      window.drugAllergyData.page5.drugLines.push({
+        name: "",
+        startDate: "",
+        startTime: "",
+        stopDate: "",
+        stopTime: ""
+      });
+      window.renderPage5();
+    };
+  }
 
-  // ปุ่มเพิ่มยา
-  document.getElementById("p5AddDrug")?.addEventListener("click", () => {
-    window.drugAllergyData.page5.drugLines.push({
-      name: "",
-      startDate: "",
-      startTime: "",
-      stopDate: "",
-      stopTime: ""
-    });
-    window.renderPage5();
-  });
+  const btnAddAdr = document.getElementById("p5AddAdr");
+  if (btnAddAdr) {
+    btnAddAdr.onclick = function () {
+      window.drugAllergyData.page5.adrLines.push({
+        symptom: "",
+        startDate: "",
+        startTime: "",
+        endDate: "",
+        endTime: ""
+      });
+      window.renderPage5();
+    };
+  }
 
-  // ปุ่มเพิ่ม ADR
-  document.getElementById("p5AddAdr")?.addEventListener("click", () => {
-    window.drugAllergyData.page5.adrLines.push({
-      symptom: "",
-      startDate: "",
-      startTime: "",
-      endDate: "",
-      endTime: ""
-    });
-    window.renderPage5();
-  });
-
-  // ปุ่มลบแต่ละบรรทัด
+  // ปุ่มลบในแต่ละบรรทัด
   pageEl.querySelectorAll(".p5-line-del").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const kind = btn.dataset.kind;
-      const idx = Number(btn.dataset.idx);
+    btn.addEventListener("click", function () {
+      const kind = this.dataset.kind;
+      const idx = Number(this.dataset.idx);
       if (kind === "drug") {
         window.drugAllergyData.page5.drugLines.splice(idx, 1);
       } else if (kind === "adr") {
@@ -177,81 +177,91 @@ window.renderPage5 = function () {
     });
   });
 
-  // อัปเดตจาก input — ยา
+  // อัปเดตค่าจาก input — ยา
   pageEl.querySelectorAll(".p5-drug-card").forEach((card) => {
     const idx = Number(card.dataset.idx);
-    card.querySelector(".p5-drug-name")?.addEventListener("input", (e) => {
-      window.drugAllergyData.page5.drugLines[idx].name = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-drug-start")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-drug-start-time")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.drugLines[idx].startTime = e.target.value;
-    });
-    card.querySelector(".p5-drug-stop")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-drug-stop-time")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.drugLines[idx].stopTime = e.target.value;
-    });
+    const nameInput = card.querySelector(".p5-drug-name");
+    const startInput = card.querySelector(".p5-drug-start");
+    const stopInput = card.querySelector(".p5-drug-stop");
+
+    if (nameInput)
+      nameInput.addEventListener("input", (e) => {
+        window.drugAllergyData.page5.drugLines[idx].name = e.target.value;
+        drawTimeline();
+      });
+    if (startInput)
+      startInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
+        drawTimeline();
+      });
+    if (stopInput)
+      stopInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
+        drawTimeline();
+      });
   });
 
-  // อัปเดตจาก input — ADR
+  // อัปเดตค่าจาก input — ADR
   pageEl.querySelectorAll(".p5-adr-card").forEach((card) => {
     const idx = Number(card.dataset.idx);
-    card.querySelector(".p5-adr-symptom")?.addEventListener("input", (e) => {
-      window.drugAllergyData.page5.adrLines[idx].symptom = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-adr-start")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.adrLines[idx].startDate = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-adr-start-time")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.adrLines[idx].startTime = e.target.value;
-    });
-    card.querySelector(".p5-adr-end")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.adrLines[idx].endDate = e.target.value;
-      drawTimeline();
-    });
-    card.querySelector(".p5-adr-end-time")?.addEventListener("change", (e) => {
-      window.drugAllergyData.page5.adrLines[idx].endTime = e.target.value;
-    });
+    const symInput = card.querySelector(".p5-adr-symptom");
+    const startInput = card.querySelector(".p5-adr-start");
+    const endInput = card.querySelector(".p5-adr-end");
+
+    if (symInput)
+      symInput.addEventListener("input", (e) => {
+        window.drugAllergyData.page5.adrLines[idx].symptom = e.target.value;
+        drawTimeline();
+      });
+    if (startInput)
+      startInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.adrLines[idx].startDate = e.target.value;
+        drawTimeline();
+      });
+    if (endInput)
+      endInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.adrLines[idx].endDate = e.target.value;
+        drawTimeline();
+      });
   });
 
   // ปุ่มไปหน้า 6
-  document.getElementById("p5GoSummary")?.addEventListener("click", () => {
-    document.querySelector('.tabs button[data-target="page6"]')?.click();
-    if (window.renderPage6) window.renderPage6();
-  });
+  const go6 = document.getElementById("p5GoSummary");
+  if (go6) {
+    go6.onclick = () => {
+      const tabBtn = document.querySelector('.tabs button[data-target="page6"]');
+      if (tabBtn) tabBtn.click();
+      if (window.renderPage6) window.renderPage6();
+    };
+  }
 
-  // ปุ่มล้างหน้า 5
-  document.getElementById("p5Clear")?.addEventListener("click", () => {
-    window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
-    window.renderPage5();
-  });
+  // ปุ่มล้าง
+  const clearBtn = document.getElementById("p5Clear");
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
+      window.renderPage5();
+    };
+  }
 
-  // วาด timeline ครั้งแรก
+  // วาด timeline รอบนี้
   drawTimeline();
 };
 
-// ===== drawTimeline: ล็อกซ้ายขวาตรงวัน + วาดคนละแถว =====
+// ================= drawTimeline (ล็อกซ้ายขวาตรงวัน) =================
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
   const adrLane = document.getElementById("p5AdrLane");
+  const scrollWrap = document.getElementById("p5TimelineScroll");
   if (!dateRow || !drugLane || !adrLane) return;
 
-  const store = window.drugAllergyData || {};
-  const page5 = store.page5 || { drugLines: [], adrLines: [] };
+  const root = window.drugAllergyData || {};
+  const page5 = root.page5 || { drugLines: [], adrLines: [] };
   const drugs = Array.isArray(page5.drugLines) ? page5.drugLines : [];
   const adrs = Array.isArray(page5.adrLines) ? page5.adrLines : [];
 
-  // ถ้าไม่มีอะไรเลย เคลียร์แล้วจบ
+  // ไม่มีข้อมูล → ล้าง
   if (!drugs.length && !adrs.length) {
     dateRow.innerHTML = "";
     drugLane.innerHTML = "";
@@ -261,52 +271,76 @@ function drawTimeline() {
 
   const MS_DAY = 24 * 60 * 60 * 1000;
   const DAY_W = 120;
-  const ROW_H = 40; // ความสูงต่อ 1 แถว
+  const LABEL_W = 70; // ให้ตรงกับ .p5-lane-label
 
   function parseDate(str) {
     if (!str) return null;
     const pure = String(str).trim().split(" ")[0];
     if (pure.includes("/")) {
-      // dd/mm/yyyy
       const [d, m, y] = pure.split("/").map(Number);
-      if (!d || !m || !y) return null;
-      return new Date(y, m - 1, d);
+      if (d && m && y) return new Date(y, m - 1, d);
+      return null;
     }
     if (pure.includes("-")) {
-      // yyyy-mm-dd
       const [y, m, d] = pure.split("-").map(Number);
-      if (!y || !m || !d) return null;
-      return new Date(y, m - 1, d);
+      if (y && m && d) return new Date(y, m - 1, d);
+      return null;
     }
     return null;
   }
-  function addDays(date, n) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
+
+  function stripTime(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  function addDays(d, n) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  }
 
-  // ===== หา minDate จากทุก event =====
+  const today = stripTime(new Date());
+
+  // ===== หา first/last day จากทุกแถว =====
   let minDate = null;
-  function consider(date) {
-    if (!date) return;
-    if (!minDate || date < minDate) minDate = date;
-  }
-  drugs.forEach((d) => {
-    consider(parseDate(d.startDate || d.start || d.giveDate));
-  });
-  adrs.forEach((a) => {
-    consider(parseDate(a.startDate || a.eventDate || a.symptomDate));
-  });
-  if (!minDate) minDate = today;
+  let maxEnd = today; // อย่างน้อยต้องเห็นวันนี้
 
-  // ปลายสุด = วันนี้
-  const maxDate = today;
+  drugs.forEach((d) => {
+    const s = parseDate(d.startDate);
+    if (s) {
+      const st = stripTime(s);
+      if (!minDate || st < minDate) minDate = st;
+    }
+    const e = d.stopDate ? parseDate(d.stopDate) : null;
+    if (e) {
+      const et = stripTime(e);
+      if (et > maxEnd) maxEnd = et;
+    }
+  });
+
+  adrs.forEach((a) => {
+    const s = parseDate(a.startDate);
+    if (s) {
+      const st = stripTime(s);
+      if (!minDate || st < minDate) minDate = st;
+    }
+    const e = a.endDate ? parseDate(a.endDate) : null;
+    if (e) {
+      const et = stripTime(e);
+      if (et > maxEnd) maxEnd = et;
+    }
+  });
+
+  if (!minDate) minDate = today;
+  // ถ้า maxEnd น้อยกว่าวันนี้ ให้โชว์ถึงวันนี้
+  if (maxEnd < today) maxEnd = today;
 
   // ===== วาดหัววัน =====
-  const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
+  const totalDays =
+    Math.floor((maxEnd.getTime() - minDate.getTime()) / MS_DAY) + 1;
+
   dateRow.innerHTML = "";
+  // ให้หัววันเลื่อนขวาเท่ากับ label "ยา"
+  dateRow.style.marginLeft = LABEL_W + "px";
+
   for (let i = 0; i < totalDays; i++) {
     const d = addDays(minDate, i);
     const cell = document.createElement("div");
@@ -319,72 +353,82 @@ function drawTimeline() {
     dateRow.appendChild(cell);
   }
 
-  // เคลียร์ lane
+  // ===== เตรียมเลน =====
+  const totalWidthPx = totalDays * DAY_W;
   drugLane.innerHTML = "";
   adrLane.innerHTML = "";
+  drugLane.style.position = "relative";
+  adrLane.style.position = "relative";
+  drugLane.style.width = totalWidthPx + "px";
+  adrLane.style.width = totalWidthPx + "px";
 
-  function dateToLeftPx(date) {
-    const diff = Math.floor((date - minDate) / MS_DAY);
+  // แต่ละแท่งต้องตรงช่องวัน
+  function dateToLeftPx(d) {
+    const diff = Math.floor((d.getTime() - minDate.getTime()) / MS_DAY);
     return diff * DAY_W;
   }
 
-  function clampToToday(date) {
-    if (date > maxDate) return maxDate;
-    return date;
+  function widthFromStartEnd(startD, endD) {
+    const diff = Math.floor(
+      (endD.getTime() - startD.getTime()) / MS_DAY
+    ); // 27→30 = 3
+    const days = diff + 1; // รวมวันเริ่ม
+    return days * DAY_W;
   }
 
-  // ===== วาดยา → คนละแถว =====
-  drugLane.style.position = "relative";
-  drugs.forEach((d, i) => {
-    let start = parseDate(d.startDate || d.start || d.giveDate);
-    if (!start) return;
-    start = clampToToday(start);
+  // ===== วาดยา (แยกชั้น) =====
+  drugs.forEach((d, idx) => {
+    const s = d.startDate ? parseDate(d.startDate) : null;
+    if (!s) return; // ถ้าไม่กรอกวันเริ่ม ไม่ต้องวาด
 
-    let end = parseDate(d.stopDate || d.endDate || d.stop);
-    if (!end) end = maxDate;
-    end = clampToToday(end);
-    if (end < start) end = start;
+    let e = d.stopDate ? parseDate(d.stopDate) : null;
+    if (!e) e = today; // ongoing → จบวันนี้
+    // กันเคส stop < start
+    if (stripTime(e) < stripTime(s)) e = stripTime(s);
+    // กันเคสเกิน timeline
+    if (stripTime(e) > maxEnd) e = maxEnd;
 
-    const days = Math.floor((end - start) / MS_DAY) + 1;
+    const start = stripTime(s);
+    const end = stripTime(e);
+
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-drug";
-    bar.textContent = d.name || d.drugName || `ยาตัวที่ ${i + 1}`;
+    bar.textContent = d.name || `ยาตัวที่ ${idx + 1}`;
     bar.style.left = dateToLeftPx(start) + "px";
-    bar.style.top = 7 + i * ROW_H + "px";
-    bar.style.width = days * DAY_W + "px";
+    bar.style.width = widthFromStartEnd(start, end) + "px";
+    bar.style.top = 7 + idx * 38 + "px"; // เลื่อนลงทีละแท่ง
 
     drugLane.appendChild(bar);
   });
-  // ปรับความสูง lane ให้พอดีกับจำนวนยา
-  const drugHeight = Math.max(44, drugs.length * ROW_H + 14);
-  drugLane.style.height = drugHeight + "px";
+  // ตั้งความสูง lane ยา
+  drugLane.style.height = 7 + drugs.length * 38 + "px";
 
-  // ===== วาด ADR → คนละแถว =====
-  adrLane.style.position = "relative";
-  adrs.forEach((a, i) => {
-    let start = parseDate(a.startDate || a.eventDate || a.symptomDate);
-    if (!start) return;
-    start = clampToToday(start);
+  // ===== วาด ADR (แยกชั้น) =====
+  adrs.forEach((a, idx) => {
+    const s = a.startDate ? parseDate(a.startDate) : null;
+    if (!s) return;
 
-    let end = parseDate(a.endDate || a.resolveDate);
-    if (!end) end = maxDate;
-    end = clampToToday(end);
-    if (end < start) end = start;
+    let e = a.endDate ? parseDate(a.endDate) : null;
+    if (!e) e = today;
+    if (stripTime(e) < stripTime(s)) e = stripTime(s);
+    if (stripTime(e) > maxEnd) e = maxEnd;
 
-    const days = Math.floor((end - start) / MS_DAY) + 1;
+    const start = stripTime(s);
+    const end = stripTime(e);
+
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-adr";
-    bar.textContent = a.symptom || a.name || `ADR ${i + 1}`;
+    bar.textContent = a.symptom || `ADR ${idx + 1}`;
     bar.style.left = dateToLeftPx(start) + "px";
-    bar.style.top = 7 + i * ROW_H + "px";
-    bar.style.width = days * DAY_W + "px";
+    bar.style.width = widthFromStartEnd(start, end) + "px";
+    bar.style.top = 7 + idx * 38 + "px";
 
     adrLane.appendChild(bar);
   });
-  const adrHeight = Math.max(44, adrs.length * ROW_H + 14);
-  adrLane.style.height = adrHeight + "px";
+  adrLane.style.height = 7 + adrs.length * 38 + "px";
 
-  // scroll ไปท้าย
-  const sc = document.getElementById("p5TimelineScroll");
-  if (sc) sc.scrollLeft = sc.scrollWidth;
+  // เลื่อนให้เห็นวันท้าย
+  if (scrollWrap) {
+    scrollWrap.scrollLeft = scrollWrap.scrollWidth;
+  }
 }
