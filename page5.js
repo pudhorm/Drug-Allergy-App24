@@ -196,7 +196,9 @@ window.renderPage5 = function () {
     const idx = Number(card.dataset.idx);
     const nameInput = card.querySelector(".p5-drug-name");
     const startInput = card.querySelector(".p5-drug-start");
+    const startTimeInput = card.querySelector(".p5-drug-start-time");  // ✅ เพิ่ม
     const stopInput = card.querySelector(".p5-drug-stop");
+    const stopTimeInput = card.querySelector(".p5-drug-stop-time");    // ✅ เพิ่ม
 
     if (nameInput)
       nameInput.addEventListener("input", (e) => {
@@ -208,10 +210,18 @@ window.renderPage5 = function () {
         window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
         drawTimeline();
       });
+    if (startTimeInput)                               // ✅ ใหม่
+      startTimeInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.drugLines[idx].startTime = e.target.value;
+      });
     if (stopInput)
       stopInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
         drawTimeline();
+      });
+    if (stopTimeInput)                                // ✅ ใหม่
+      stopTimeInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.drugLines[idx].stopTime = e.target.value;
       });
   });
 
@@ -220,7 +230,9 @@ window.renderPage5 = function () {
     const idx = Number(card.dataset.idx);
     const symInput = card.querySelector(".p5-adr-symptom");
     const startInput = card.querySelector(".p5-adr-start");
+    const startTimeInput = card.querySelector(".p5-adr-start-time");  // ✅ เพิ่ม
     const endInput = card.querySelector(".p5-adr-end");
+    const endTimeInput = card.querySelector(".p5-adr-end-time");      // ✅ เพิ่ม
 
     if (symInput)
       symInput.addEventListener("input", (e) => {
@@ -232,12 +244,21 @@ window.renderPage5 = function () {
         window.drugAllergyData.page5.adrLines[idx].startDate = e.target.value;
         drawTimeline();
       });
+    if (startTimeInput)                               // ✅ ใหม่
+      startTimeInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.adrLines[idx].startTime = e.target.value;
+      });
     if (endInput)
       endInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].endDate = e.target.value;
         drawTimeline();
       });
+    if (endTimeInput)                                 // ✅ ใหม่
+      endTimeInput.addEventListener("change", (e) => {
+        window.drugAllergyData.page5.adrLines[idx].endTime = e.target.value;
+      });
   });
+
 
   // ปุ่มไปหน้า 6
   const go6 = document.getElementById("p5GoSummary");
