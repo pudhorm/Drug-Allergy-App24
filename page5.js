@@ -467,62 +467,62 @@ function p5UpdateNowBox() {
 // อัปเดตทุก 1 วิ
 setInterval(p5UpdateNowBox, 1000);
 
-// ====== พิมพ์ timeline ให้เห็นทั้งหมด ======
+// ====== พิมพ์ timeline ให้เห็นทั้งหมด (Auto-fit to page width) ======
 function p5PrintTimeline() {
-  const box = document.getElementById("p5TimelineScroll");
-  if (!box) {
-    window.print();
-    return;
-  }
+  const sc = document.getElementById("p5TimelineScroll");
+  if (!sc) { window.print(); return; }
 
-  // เก็บของเดิมไว้ก่อน
-  const oldWidth = box.style.width;
-  const oldOverflow = box.style.overflow;
+  // เก็บค่าเดิม
+  const oldWidth = sc.style.width;
+  const oldOverflow = sc.style.overflow;
 
-  // ขยายเป็นความกว้างจริงทั้งหมดก่อนพิมพ์
-  const fullWidth = box.scrollWidth;
-  box.style.width = fullWidth + "px";
-  box.style.overflow = "visible";
-  box.classList.add("p5-print-mode");
+  // ทำให้กล่องกว้างเท่าความยาวจริงก่อนค่อยย่อสเกล
+  const fullW = sc.scrollWidth;           // ความกว้างจริงของ timeline (px)
+  sc.style.width = fullW + "px";
+  sc.style.overflow = "visible";
 
-  // สั่งพิมพ์
+  // คำนวณสเกลให้พอดีหน้า A4 แนวนอน (กว้าง ~ 277 มม. = ~1046px หลังหัก margin 10mm)
+  const PRINTABLE_PX = 277 / 25.4 * 96;   // ≈ 1046px
+  const scale = Math.min(1, PRINTABLE_PX / fullW);
+
+  // ใส่คลาสโหมดพิมพ์ + ตั้งตัวแปรสเกล
+  sc.classList.add("p5-print-mode");
+  document.documentElement.style.setProperty("--p5-print-scale", String(scale));
+
+  // พิมพ์
   window.print();
 
-  // คืนค่าหลังจากเปิด dialog แล้ว
+  // คืนค่าเดิมหลังเปิด dialog
   setTimeout(() => {
-    box.style.width = oldWidth;
-    box.style.overflow = oldOverflow;
-    box.classList.remove("p5-print-mode");
+    sc.classList.remove("p5-print-mode");
+    sc.style.width = oldWidth;
+    sc.style.overflow = oldOverflow;
+    document.documentElement.style.removeProperty("--p5-print-scale");
   }, 400);
 }
 
-// ใส่ style สำหรับ print ถ้ายังไม่มี
-(function addP5PrintStyle() {
+// ใส่สไตล์พิมพ์ครั้งเดียว
+(function addP5PrintStyle(){
   if (document.getElementById("p5-print-style")) return;
-  const css = `
+  const style = document.createElement("style");
+  style.id = "p5-print-style";
+  style.textContent = `
     @media print {
-      /* ซ่อนส่วนที่ไม่เกี่ยว */
-      .topbar,
-      .tabs,
-      .p5-footer-btns,
-      .p5-btn-group {
-        display: none !important;
-      }
+      /* ซ่อนของที่ไม่เกี่ยวเวลา print */
+      .topbar, .tabs, .p5-footer-btns, .p5-btn-group { display: none !important; }
 
-      body, html {
-        overflow: visible !important;
-      }
+      @page { size: A4 landscape; margin: 10mm; }
 
-      /* กล่องหลักของ timeline ตอนพิมพ์ */
+      /* ให้กล่อง timeline ยาวได้ และย่อสเกลให้พอดีกระดาษ */
       #p5TimelineScroll.p5-print-mode {
         overflow: visible !important;
         width: auto !important;
         max-width: none !important;
-        transform: scale(0.85);
+        transform: scale(var(--p5-print-scale, 1));
         transform-origin: top left;
       }
 
-      /* ให้หัววันกับ lane ยาวได้จริง */
+      /* ทำให้แถววันที่/เลนยาวตามเนื้อหา ไม่ถูกตัด */
       #p5TimelineScroll.p5-print-mode #p5DateRow,
       #p5TimelineScroll.p5-print-mode #p5DrugLane,
       #p5TimelineScroll.p5-print-mode #p5AdrLane {
@@ -530,26 +530,9 @@ function p5PrintTimeline() {
         width: max-content !important;
       }
 
-      /* ให้กล่อง timeline ไม่ตัดขอบ */
-      .p5-timeline-box {
-        overflow: visible !important;
-      }
-
-      /* พิมพ์แนวนอน */
-      @page {
-        size: A4 landscape;
-        margin: 10mm;
-      }
-
-      /* ให้สีขึ้นชัด */
-      * {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      /* กันสีซีดเวลา print */
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   `;
-  const style = document.createElement("style");
-  style.id = "p5-print-style";
-  style.textContent = css;
   document.head.appendChild(style);
 })();
