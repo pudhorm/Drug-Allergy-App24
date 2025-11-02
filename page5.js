@@ -467,7 +467,7 @@ function p5UpdateNowBox() {
 // อัปเดตทุก 1 วิ
 setInterval(p5UpdateNowBox, 1000);
 
-// ====== พิมพ์ Timeline แบบเห็นยาวทั้งหมด โดยไม่แตะหน้า 5 เดิม ======
+// ====== พิมพ์ Timeline แบบบีบให้เห็นต้น-ปลายครบ ======
 function p5PrintTimeline() {
   const src = document.getElementById("p5TimelineScroll");
   if (!src) {
@@ -475,107 +475,88 @@ function p5PrintTimeline() {
     return;
   }
 
-  // ดึง HTML ของ timeline จริง
   const timelineHTML = src.outerHTML;
-
-  // เปิดหน้าต่างใหม่ชั่วคราว
   const win = window.open("", "_blank", "width=1200,height=800");
 
-  // เขียนหน้าใหม่ที่มีแต่ timeline + style ของ timeline
   win.document.write(`
     <html>
       <head>
-        <title>Print Timeline</title>
         <meta charset="utf-8" />
+        <title>Print Timeline</title>
         <style>
-          * {
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-          }
-          body {
-            margin: 0;
-            padding: 16px;
-            background: #fff;
-          }
-          h3 {
-            margin: 0 0 12px;
+          *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;}
+          body{margin:0;padding:16px;background:#fff;}
+          h3{margin:0 0 12px;}
+
+          #p5TimelineScroll{
+            overflow:visible !important;
+            width:auto !important;
+            max-width:none !important;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:14px 14px 18px 14px;
+            background:#fff;
+            /* ให้มีที่ว่างซ้ายขวาเวลา scale */
+            display:inline-block;
           }
 
-          /* กล่อง timeline หลัก */
-          #p5TimelineScroll {
-            overflow: visible !important;
-            width: auto !important;
-            max-width: none !important;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 16px 16px 20px 16px;
-            background: #fff;
-          }
-
-          /* บรรทัดวันที่ / lane ให้เป็น grid เหมือนเดิม */
           #p5DateRow,
           #p5DrugLane,
-          #p5AdrLane {
-            display: grid;
-            grid-auto-rows: 44px;
-            row-gap: 6px;
+          #p5AdrLane{
+            display:grid;
+            grid-auto-rows:40px;
+            row-gap:6px;
           }
 
-          /* แบบเซลล์วัน */
-          .p5-date-cell {
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 12px;
-            font-weight: 600;
-            padding-bottom: 4px;
-            white-space: nowrap;
+          .p5-date-cell{
+            border-bottom:1px solid #edf2f7;
+            font-size:11px;
+            font-weight:600;
+            white-space:nowrap;
+            padding-bottom:2px;
+            text-align:left;
           }
 
-          .p5-lane {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-            margin-top: 8px;
+          .p5-lane{
+            display:flex;
+            gap:10px;
+            align-items:flex-start;
+            margin-top:6px;
           }
-          .p5-lane-label {
-            width: 50px;
-            font-weight: 700;
-            color: #06705d;
-            padding-top: 10px;
-            flex: 0 0 50px;
+          .p5-lane-label{
+            width:38px;
+            flex:0 0 38px;
+            font-weight:700;
+            color:#06705d;
+            padding-top:10px;
           }
-          .p5-lane-adr {
-            color: #c53030;
+          .p5-lane-adr{color:#c53030;}
+
+          .p5-bar{
+            height:34px;
+            border-radius:9999px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#fff;
+            font-weight:600;
+            white-space:nowrap;
+            box-shadow:0 8px 22px rgba(15,23,42,.12);
+            font-size:12px;
+          }
+          .p5-bar-drug{
+            background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%);
+          }
+          .p5-bar-adr{
+            background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%);
           }
 
-          /* แถบจริง */
-          .p5-bar {
-            height: 40px;
-            border-radius: 9999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 600;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-            white-space: nowrap;
+          @page{
+            size:A4 landscape;
+            margin:8mm;
           }
-          .p5-bar-drug {
-            background: linear-gradient(90deg, #1679ff 0%, #25c4ff 100%);
-          }
-          .p5-bar-adr {
-            background: linear-gradient(90deg, #f43f5e 0%, #f97316 100%);
-          }
-
-          /* พิมพ์เป็นแนวนอน */
-          @page {
-            size: A4 landscape;
-            margin: 10mm;
-          }
-
-          @media print {
-            body {
-              background: #fff;
-            }
+          @media print{
+            body{background:#fff;}
           }
         </style>
       </head>
@@ -584,40 +565,57 @@ function p5PrintTimeline() {
         ${timelineHTML}
         <script>
           (function () {
-            // หลังจากเอา HTML เข้ามาแล้ว เราค่อยย่อความกว้างต่อวันให้สั้นลง
             const dateRow = document.getElementById("p5DateRow");
             const drugLane = document.getElementById("p5DrugLane");
-            const adrLane = document.getElementById("p5AdrLane");
-            const scrollBox = document.getElementById("p5TimelineScroll");
+            const adrLane  = document.getElementById("p5AdrLane");
+            const box      = document.getElementById("p5TimelineScroll");
+            if (!dateRow || !drugLane || !adrLane || !box) {
+              window.print();
+              return;
+            }
 
-            if (dateRow && drugLane && adrLane && scrollBox) {
-              const dayCount = dateRow.children.length || 1;
+            const dayCount = dateRow.children.length || 1;
 
-              // กำหนดความกว้างต่อวันที่นี่เลย (ยิ่งน้อยยิ่งย่อได้มาก)
-              const PRINT_DAY_W = 80; // ปรับได้ 60–90
+            // 1) ลดความกว้างต่อวัน
+            const PRINT_DAY_W = 45; // ถ้ายังยาวอยู่ ลดเป็น 40 ได้
+            const cols = "repeat(" + dayCount + ", " + PRINT_DAY_W + "px)";
+            dateRow.style.gridTemplateColumns = cols;
+            drugLane.style.gridTemplateColumns = cols;
+            adrLane.style.gridTemplateColumns  = cols;
 
-              const cols = "repeat(" + dayCount + ", " + PRINT_DAY_W + "px)";
-              dateRow.style.gridTemplateColumns = cols;
-              drugLane.style.gridTemplateColumns = cols;
-              adrLane.style.gridTemplateColumns = cols;
+            // 2) ซ่อน label กลางๆ เอาไว้แค่ต้น-ปลาย-ทุกๆ 4 วัน
+            const cells = Array.from(dateRow.children);
+            const lastIdx = cells.length - 1;
+            cells.forEach(function (cell, i) {
+              if (i === 0 || i === lastIdx) {
+                // แรกกับสุดท้าย แสดงเต็ม
+                return;
+              }
+              if (i % 4 !== 0) {
+                cell.textContent = "";     // ว่างเลยเพื่อลดความยาวสายตา
+                cell.style.borderBottom = "1px solid #edf2f7";
+              }
+            });
 
-              // ให้กล่องกว้างตามความยาวจริง
-              const totalW = dayCount * PRINT_DAY_W + 40; // +padding
-              scrollBox.style.width = totalW + "px";
+            // 3) ถ้ายังยาวเกิน 1000px ให้ scale ทั้งกล่องลง
+            const maxWidth = 1000; // ความกว้างที่อยากให้พิมพ์ออกมาพอดี
+            // คำนวณความกว้าง grid จริง
+            const totalWidth = dayCount * PRINT_DAY_W + 60; // +เผื่อซ้ายขวา
+            if (totalWidth > maxWidth) {
+              const scale = maxWidth / totalWidth;
+              box.style.transform = "scale(" + scale.toFixed(3) + ")";
+              box.style.transformOrigin = "top left";
+              // ให้ container สูงตาม scale ด้วย
+              box.style.height = (box.offsetHeight * scale) + "px";
             }
 
             // เรียกพิมพ์
             window.print();
-
-            // ปิดหน้าต่างหลังพิมพ์
-            setTimeout(function () {
-              window.close();
-            }, 500);
+            setTimeout(function () { window.close(); }, 500);
           })();
         </script>
       </body>
     </html>
   `);
-
   win.document.close();
 }
