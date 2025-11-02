@@ -1192,8 +1192,8 @@ body {
 .topbar img.topbar-logo {
   position: absolute;
   left: 9.0rem;          /* ระยะจากขอบซ้าย ปรับได้ */
-  top: 1.0rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
-  width: 260px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
+  top: 0.5rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
+  width: 290px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
   height: auto;
   border-radius: 999px;
   filter: drop-shadow(0 12px 26px rgba(0,0,0,.2));
