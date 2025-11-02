@@ -444,3 +444,33 @@ function drawTimeline() {
   const sc = document.getElementById("p5TimelineScroll");
   if (sc) sc.scrollLeft = sc.scrollWidth;
 }
+// ====== ตัวช่วยแสดงวันที่-เวลาปัจจุบัน (มีวินาที) ======
+function p5UpdateNowBox() {
+  const box = document.getElementById("p5NowBox");
+  if (!box) return;
+
+  const now = new Date();
+  const text = now.toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  box.textContent = "📅 วันที่/เวลา ณ ตอนนี้: " + text;
+}
+
+// สวม renderPage5 เดิม ไม่แตะส่วนอื่น
+if (window.renderPage5) {
+  const oldRender = window.renderPage5;
+  window.renderPage5 = function () {
+    oldRender();
+    // ให้รอ DOM สร้างเสร็จแล้วค่อยอัปเดต
+    setTimeout(p5UpdateNowBox, 50);
+  };
+}
+
+// อัปเดตทุก 1 วินาทีให้วินาทีเดินจริง
+setInterval(p5UpdateNowBox, 1000);
