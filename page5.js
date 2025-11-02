@@ -23,22 +23,8 @@ window.renderPage5 = function () {
   const pageEl = document.getElementById("page5");
   if (!pageEl) return;
 
-  // 👇 เพิ่มแค่ตรงนี้ เพื่อใช้วันที่/เวลาปัจจุบัน
-  const now = new Date();
-  const nowDateTH = now.toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  });
-  const nowTimeTH = now.toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-  // 👆 จบส่วนเพิ่ม
-
   const { drugLines, adrLines } = window.drugAllergyData.page5;
 
-  // ---------- สร้าง HTML (เหมือนที่คุณใช้) ----------
   pageEl.innerHTML = `
     <div class="p5-wrapper">
       <div class="p5-header-line">
@@ -48,8 +34,9 @@ window.renderPage5 = function () {
           <button id="p5AddAdr" class="p5-btn-add-adr">+ เพิ่ม ADR</button>
         </div>
       </div>
-      <!-- 👇 แทรกวันที่/เวลาไว้ตรงนี้ -->
-      <div class="p5-meta-now">📆 ${nowDateTH} · ⏰ ${nowTimeTH} น.</div>
+
+      <!-- แสดงวันที่/เวลาปัจจุบัน (เดี๋ยว JS ด้านล่างจะเติมให้ และอัปเดตทุกวินาที) -->
+      <div id="p5NowBox" class="p5-meta-now"></div>
 
       <!-- รายการยา -->
       <div class="p5-form-block">
@@ -168,7 +155,7 @@ window.renderPage5 = function () {
         stopDate: "",
         stopTime: ""
       });
-      window.renderPage5(); // re-render แล้วจะวาด timeline ใหม่เอง
+      window.renderPage5();
     });
   }
 
@@ -270,6 +257,9 @@ window.renderPage5 = function () {
 
   // วาด timeline ครั้งแรก
   drawTimeline();
+
+  // อัปเดตกล่องวันที่/เวลาหลัง DOM เสร็จ
+  setTimeout(p5UpdateNowBox, 50);
 };
 
 // 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ ไม่แตะ)
@@ -444,33 +434,26 @@ function drawTimeline() {
   const sc = document.getElementById("p5TimelineScroll");
   if (sc) sc.scrollLeft = sc.scrollWidth;
 }
-// ====== ตัวช่วยแสดงวันที่-เวลาปัจจุบัน (มีวินาที) ======
+
+// ====== ตัวช่วยแสดงวันที่-เวลาปัจจุบัน (มีวินาทีจริง) ======
 function p5UpdateNowBox() {
   const box = document.getElementById("p5NowBox");
   if (!box) return;
 
   const now = new Date();
-  const text = now.toLocaleString("th-TH", {
-    year: "numeric",
-    month: "short",
+
+  const dateTH = now.toLocaleDateString("th-TH", {
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
+    month: "short",
+    year: "numeric"
   });
 
-  box.textContent = "📅 วันที่/เวลา ณ ตอนนี้: " + text;
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+
+  box.textContent = `📅 วันที่/เวลา ณ ตอนนี้: ${dateTH} ${hh}:${mm}:${ss} น.`;
 }
 
-// สวม renderPage5 เดิม ไม่แตะส่วนอื่น
-if (window.renderPage5) {
-  const oldRender = window.renderPage5;
-  window.renderPage5 = function () {
-    oldRender();
-    // ให้รอ DOM สร้างเสร็จแล้วค่อยอัปเดต
-    setTimeout(p5UpdateNowBox, 50);
-  };
-}
-
-// อัปเดตทุก 1 วินาทีให้วินาทีเดินจริง
+// อัปเดตทุก 1 วิ
 setInterval(p5UpdateNowBox, 1000);
