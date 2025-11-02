@@ -275,7 +275,7 @@ window.renderPage5 = function () {
   drawTimeline();
 };
 
-// ===================== drawTimeline (เวอร์ชันใช้ CSS Grid) =====================
+// ====== drawTimeline (แก้ให้ปลายขวาขยับจริง) ======
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
@@ -298,17 +298,14 @@ function drawTimeline() {
   const MS_DAY = 24 * 60 * 60 * 1000;
   const DAY_W = 120;
 
-  // แปลง date
   function parseDate(str) {
     if (!str) return null;
     const pure = String(str).trim().split(" ")[0];
-    // yyyy-mm-dd (จาก input[type=date])
     if (pure.includes("-")) {
       const [y, m, d] = pure.split("-").map(Number);
       if (!y || !m || !d) return null;
       return new Date(y, m - 1, d);
     }
-    // dd/mm/yyyy
     if (pure.includes("/")) {
       const [d, m, y] = pure.split("/").map(Number);
       if (!d || !m || !y) return null;
@@ -317,11 +314,11 @@ function drawTimeline() {
     return null;
   }
 
-  // วันนี้ (ตัดเวลา)
+  // วันนี้แบบตัดเวลา (ให้ ongoing จบวันนี้)
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // หา minDate (วันที่เริ่มเร็วสุด)
+  // หา min-date จากทุกอย่าง
   let minDate = null;
   drugs.forEach((d) => {
     const s = parseDate(d.startDate);
@@ -333,18 +330,16 @@ function drawTimeline() {
   });
   if (!minDate) minDate = today;
 
-  // maxDate = วันนี้ (เพราะเขาบอก ongoing ต้องจบที่วันนี้)
+  // max-date = วันนี้
   const maxDate = today;
 
-  // รวมจำนวนวัน
   const totalDays =
     Math.floor((maxDate.getTime() - minDate.getTime()) / MS_DAY) + 1;
 
-  // ---------- สร้างแถววันที่ด้วย Grid ----------
+  // ---------- แถววัน ----------
   dateRow.innerHTML = "";
   dateRow.style.display = "grid";
   dateRow.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
-  dateRow.style.columnGap = "0";
 
   for (let i = 0; i < totalDays; i++) {
     const d = new Date(
@@ -361,16 +356,14 @@ function drawTimeline() {
     dateRow.appendChild(cell);
   }
 
-  // ---------- เตรียม lane เป็น Grid เหมือนกัน ----------
-  function prepLane(el, rows) {
+  // ---------- เตรียม lane ----------
+  function prepLane(el) {
     el.innerHTML = "";
     el.style.display = "grid";
     el.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
     el.style.gridAutoRows = "44px";
     el.style.rowGap = "6px";
-    el.style.columnGap = "0";
   }
-
   prepLane(drugLane);
   prepLane(adrLane);
 
@@ -378,18 +371,14 @@ function drawTimeline() {
     return Math.floor((date.getTime() - minDate.getTime()) / MS_DAY);
   }
 
-  // ---------- วาดยา (แต่ละตัวคนละแถว) ----------
+  // ---------- วาดยา ----------
   drugs.forEach((d, idx) => {
     const start = parseDate(d.startDate);
-    if (!start) return; // ไม่มีวันเริ่มไม่ต้องวาด
+    if (!start) return;
 
     let end = d.stopDate ? parseDate(d.stopDate) : maxDate;
     if (!end) end = maxDate;
-
-    // กันกรณีวันหยุดก่อนวันเริ่ม
     if (end < start) end = start;
-
-    // clamp ไม่ให้เกินวันนี้
     if (end > maxDate) end = maxDate;
 
     const startIdx = dayIndexOf(start);
@@ -399,14 +388,20 @@ function drawTimeline() {
     bar.className = "p5-bar p5-bar-drug";
     bar.textContent = d.name || `ยาตัวที่ ${idx + 1}`;
 
-    // grid-column: เริ่มที่ startIdx+1 จบที่ endIdx+2 เพื่อให้กินวันสุดท้ายด้วย
+    // ★ สำคัญ: บังคับใช้ตำแหน่งของ grid (หักล้าง style เก่า)
+    bar.style.position = "relative";
+    bar.style.left = "0";
+    bar.style.right = "auto";
+    bar.style.width = "100%";
+
+    // grid-column จบที่ endIdx+2 เพื่อให้ “กิน” วันหยุดด้วย
     bar.style.gridColumn = `${startIdx + 1} / ${endIdx + 2}`;
     bar.style.gridRow = `${idx + 1}`;
 
     drugLane.appendChild(bar);
   });
 
-  // ---------- วาด ADR (แต่ละตัวคนละแถว) ----------
+  // ---------- วาด ADR ----------
   adrs.forEach((a, idx) => {
     const start = parseDate(a.startDate);
     if (!start) return;
@@ -423,15 +418,18 @@ function drawTimeline() {
     bar.className = "p5-bar p5-bar-adr";
     bar.textContent = a.symptom || `ADR ${idx + 1}`;
 
+    bar.style.position = "relative";
+    bar.style.left = "0";
+    bar.style.right = "auto";
+    bar.style.width = "100%";
+
     bar.style.gridColumn = `${startIdx + 1} / ${endIdx + 2}`;
     bar.style.gridRow = `${idx + 1}`;
 
     adrLane.appendChild(bar);
   });
 
-  // ให้ scroll ไปเห็นวันล่าสุด
+  // เลื่อนให้เห็นวันสุดท้าย
   const sc = document.getElementById("p5TimelineScroll");
-  if (sc) {
-    sc.scrollLeft = sc.scrollWidth;
-  }
+  if (sc) sc.scrollLeft = sc.scrollWidth;
 }
