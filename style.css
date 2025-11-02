@@ -1152,4 +1152,23 @@ body {
   color: #fff;
   box-shadow: 0 10px 20px rgba(247, 143, 179, 0.35);
 }
+/* ===== ปรับความสูงปกด้านบนให้เตี้ยลง ===== */
+.topbar {
+  padding: 1.6rem 1.5rem 2.2rem;   /* เดิมมันสูงกว่านี้ ลดลงทั้งบน-ล่าง */
+  min-height: auto;
+}
+
+/* ย่อโลโก้ให้ไม่กินพื้นที่แนวตั้งเยอะ */
+.topbar img.topbar-logo {
+  width: 140px;         /* ถ้ายังใหญ่ไป ลดเหลือ 120px ได้ */
+  height: auto;
+  margin-bottom: 1.1rem;
+}
+
+/* จอกว้างให้เตี้ยกว่านี้อีกนิด */
+@media (min-width: 1024px) {
+  .topbar {
+    padding: 1.4rem 1.5rem 2rem;
+  }
+}
 
