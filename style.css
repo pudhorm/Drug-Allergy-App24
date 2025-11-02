@@ -1144,4 +1144,12 @@ body {
   font-size: 0.85rem;
   color: #475569;
 }
+/* ปุ่มพิมพ์ Timeline สีชมพูนม */
+#p5Print,
+#page5 .p5-bottom-print,
+#page5 .p5-print {
+  background: linear-gradient(135deg, #f9c5d1 0%, #f8a5c2 45%, #f78fb3 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(247, 143, 179, 0.35);
+}
 
