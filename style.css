@@ -1191,11 +1191,11 @@ body {
 .topbar img.topbar-logo {
   position: absolute;
   left: 2.6rem;          /* ระยะจากขอบซ้าย ปรับได้ */
-  top: 1.4rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
-  width: 150px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
+  top: 1.1rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
+  width: 190px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
   height: auto;
   border-radius: 999px;
-  filter: drop-shadow(0 8px 18px rgba(0,0,0,.15));
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,.18));
   pointer-events: none;  /* กันไม่ให้รูปบังปุ่มหรือข้อความ */
   z-index: 10;           /* ลอยเหนือฟองอากาศ */
 }
