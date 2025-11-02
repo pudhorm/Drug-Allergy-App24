@@ -1183,4 +1183,20 @@ body {
   height: auto;
   margin-bottom: 1.1rem;
 }
+/* ===== ย้ายโลโก้ไปซ้ายมือแบบไม่ต้องแก้ HTML ===== */
+.topbar {
+  position: relative;   /* มีอยู่แล้วก็ได้ ไม่เป็นไร */
+}
+
+.topbar img.topbar-logo {
+  position: absolute;
+  left: 2.6rem;          /* ระยะจากขอบซ้าย ปรับได้ */
+  top: 1.4rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
+  width: 150px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
+  height: auto;
+  border-radius: 999px;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.15));
+  pointer-events: none;  /* กันไม่ให้รูปบังปุ่มหรือข้อความ */
+  z-index: 10;           /* ลอยเหนือฟองอากาศ */
+}
 
