@@ -22,7 +22,7 @@ body {
   overflow: hidden;
 }
 .topbar-logo {
-  width: 180px;      /* ปรับตรงนี้ให้ใหญ่/เล็กได้ */
+  width: 155px;      /* ปรับตรงนี้ให้ใหญ่/เล็กได้ */
   height: auto;
   flex: 0 0 auto;
   border-radius: 999px;
