@@ -142,6 +142,32 @@ body {
   60%  { transform: translateY(6px) translateX(-3px); opacity: .55; }
   100% { transform: translateY(0) translateX(0); opacity: .9; }
 }
+/* ครอบหัวข้อทั้งหมด */
+.topbar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  position: relative;
+  z-index: 3; /* ให้อยู่เหนือฟองอากาศ */
+}
+
+/* รูปซ้ายมือ ขนาดปกติ (ถ้าอยากใหญ่ขึ้นค่อยขยับ width) */
+.topbar-logo {
+  width: 140px;
+  height: auto;
+  flex: 0 0 auto;
+  display: block;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,.16));
+  border-radius: 9999px; /* ถ้ารูปทรงกลมจะเนียนขึ้น */
+}
+
+/* ตัวหนังสือให้อยู่กลาง */
+.topbar-text {
+  flex: 1;
+  text-align: center;
+}
 
 
 /* ====== เมนูแท็บ ====== */
