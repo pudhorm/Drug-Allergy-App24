@@ -115,7 +115,28 @@ body {
   background: rgba(163, 217, 255, .78);
   animation-delay: 1s;
 }
-
+.topbar .dot12 {
+  top: 90px; left: 16%;
+  width: 14px; height: 14px;
+  background: rgba(195, 248, 255, .75);
+  animation-delay: .5s;
+}
+.topbar .dot13 {
+  top: 14px; left: 10%;
+  width: 26px; height: 26px;
+  background: rgba(255, 255, 255, .65);
+}
+.topbar .dot14 {
+  top: 14px; left: 10%;
+  width: 26px; height: 26px;
+  background: rgba(255, 255, 255, .65);
+}
+.topbar .dot15 {
+  top: 60px; left: 5%;
+  width: 18px; height: 18px;
+  background: rgba(255, 225, 245, .8);
+  animation-delay: .25s;
+}
 /* ลอยเร็วขึ้นหน่อย */
 @keyframes floaty {
   0%   { transform: translateY(0) translateX(0); opacity: .9; }
