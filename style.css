@@ -21,17 +21,10 @@ body {
   text-align: center;
   overflow: hidden;
 }
-.topbar-logo {
-  width: 155px;      /* ปรับตรงนี้ให้ใหญ่/เล็กได้ */
-  height: auto;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,.16));
-  z-index: 3;
-}
+
 .topbar h1 {
   font-size: clamp(3rem, 5.2vw, 3.7rem);
-  margin: 3.4;
+  margin: 0;
   font-weight: 800;
   letter-spacing: 0.01em;
   line-height: 1.05;
@@ -41,7 +34,6 @@ body {
 /* ให้ป้ายโรงพยาบาลดูสมดุลกับหัวใหญ่ๆ */
 .topbar .hospital-badge {
   font-size: 2.25rem;
-  margin-top: 1.4rem
   padding: 0.55rem 2.4rem;
 }
 
@@ -150,6 +142,7 @@ body {
   60%  { transform: translateY(6px) translateX(-3px); opacity: .55; }
   100% { transform: translateY(0) translateX(0); opacity: .9; }
 }
+
 
 /* ====== เมนูแท็บ ====== */
 /* 2) ให้เมนู 1–6 กระจายเต็มแถบเลย */
@@ -1183,21 +1176,5 @@ body {
   width: 190px;   /* เดิม 140px */
   height: auto;
   margin-bottom: 1.1rem;
-}
-/* ===== ย้ายโลโก้ไปซ้ายมือแบบไม่ต้องแก้ HTML ===== */
-.topbar {
-  position: relative;   /* มีอยู่แล้วก็ได้ ไม่เป็นไร */
-}
-
-.topbar img.topbar-logo {
-  position: absolute;
-  left: 9.0rem;          /* ระยะจากขอบซ้าย ปรับได้ */
-  top: 0.1rem;           /* ระยะจากขอบบน ปรับได้ให้พอดีกับหัวข้อ */
-  width: 270px;          /* ขนาดรูป ปรับได้ 140-170px ตามใจ */
-  height: auto;
-  border-radius: 999px;
-  filter: drop-shadow(0 12px 26px rgba(0,0,0,.2));
-  pointer-events: none;  /* กันไม่ให้รูปบังปุ่มหรือข้อความ */
-  z-index: 10;           /* ลอยเหนือฟองอากาศ */
 }
 
