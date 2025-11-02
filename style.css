@@ -6,7 +6,7 @@
 /* 1) พื้นหลังหน้าเว็บ จากฟ้า → ชมพูพาสเทล */
 body {
   margin: 0;
-  font-family: "Mitr", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "TH SarabunPSK", system-ui, -apple-system, "Segoe UI", sans-serif;
   /* เดิม: background: #f3f4ff; */
   background: radial-gradient(circle at top, #ffe3f4 0%, #ffeef9 45%, #fff 85%);
   color: #1f2937;
