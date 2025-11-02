@@ -130,14 +130,13 @@ window.renderPage5 = function () {
 
        <!-- ปุ่มล่าง -->
   <div class="p5-footer-btns">
-    <button id="p5GoSummary" class="p5-bottom-btn p5-bottom-primary">
-      ไปหน้า 6 (สรุป)
-    </button>
-    <button id="p5Clear" class="p5-bottom-btn p5-bottom-danger">
-      🗑️ ล้างข้อมูลหน้านี้
-    </button>
-  </div>
-
+  <button id="p5GoSummary" class="p5-bottom-btn p5-bottom-primary">
+    บันทึกข้อมูลและไปหน้า 6
+  </button>
+  <button id="p5Clear" class="p5-bottom-btn p5-bottom-danger">
+    🗑️ ล้างข้อมูลหน้านี้
+  </button>
+</div>
   `;
 
   // ---------- ผูก event หลังจากสร้าง DOM แล้วเท่านั้น ----------
