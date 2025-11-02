@@ -3,151 +3,107 @@
   box-sizing: border-box;
 }
 
+/* 1) พื้นหลังหน้าเว็บ จากฟ้า → ชมพูพาสเทล */
 body {
   margin: 0;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Tahoma", sans-serif;
-  background: #f3f4ff;
+  /* เดิม: background: #f3f4ff; */
+  background: radial-gradient(circle at top, #ffe3f4 0%, #ffeef9 45%, #fff 85%);
   color: #1f2937;
   min-height: 100vh;
 }
 
-/* ====== ส่วนหัวบนสุด ====== */
-.topbar {
-  position: relative;
-  background: linear-gradient(120deg, #7c3aed 0%, #ec4899 50%, #fb7185 100%);
-  color: #fff;
-  padding: 2.6rem 1.5rem 3.3rem;
-  text-align: center;
-  overflow: hidden;
-}
-
-.topbar::before,
-.topbar::after {
-  content: "";
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  animation: bubble 6s infinite ease-in-out;
-}
-.topbar::before {
-  top: -40px;
-  left: 12%;
-}
-.topbar::after {
-  bottom: -50px;
-  right: 18%;
-  animation-delay: 1.2s;
-}
-
-@keyframes bubble {
-  0% { transform: translateY(0); opacity: .8; }
-  50% { transform: translateY(10px); opacity: .4; }
-  100% { transform: translateY(0); opacity: .8; }
-}
-
-.topbar h1 {
-  font-size: clamp(2.1rem, 3vw, 2.7rem);
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.topbar p {
-  margin-top: 1rem;
-  margin-bottom: 0;
-  font-size: 1.05rem;
-}
-
-.topbar .hospital-badge {
-  display: inline-block;
-  margin-top: 1rem;
-  background: rgba(255, 255, 255, 0.25);
-  padding: .5rem 1.8rem;
-  border-radius: 999px;
-  font-weight: 500;
-  backdrop-filter: blur(6px);
-}
-
 /* ====== เมนูแท็บ ====== */
+/* 2) ให้เมนู 1–6 กระจายเต็มแถบเลย */
 .tabs {
-  display: flex;
-  gap: 0.75rem;               /* ระยะห่างระหว่างปุ่ม */
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 1rem;
   padding: 0.6rem 1.5rem 1rem;
   background: #fff;
   box-shadow: 0 3px 10px rgba(124, 58, 237, 0.08);
   align-items: center;
-  width: 100%;
+  /* ไม่ต้องเลื่อนแนวนอนแล้ว */
+  overflow-x: hidden;
 }
 
+/* 3) ปุ่ม 1–6 ให้เข้มขึ้น นูน มีมิติ */
 .tabs button {
   border: none;
-  background: #f1f2ff;
-  padding: .6rem 1.4rem .65rem;
+  background: #f7f0ff;
+  padding: .65rem 1.2rem .7rem;
   border-radius: 999px;
-  font-size: .95rem;
-  font-weight: 500;
+  font-size: .96rem;
+  font-weight: 600;
   color: #4b5563;
   cursor: pointer;
-  /* 👇 อันนี้สำคัญ ทำให้ 6 ปุ่มแบ่งเท่ากันและกินเต็มแถบ */
-  flex: 1 1 0;
-  min-width: 0;
-  transition: all .15s ease-in-out;
-  border: 1px solid rgba(147, 51, 234, 0);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: .4rem;
-  text-align: center;
+  min-height: 45px;
+  /* สำคัญ: ให้กินพื้นที่กริดเต็ม */
+  width: 100%;
+  /* ปุ่มนูน */
+  box-shadow: 0 10px 22px rgba(148, 163, 184, 0.26);
+  border: 1px solid rgba(147, 51, 234, 0);
+  transition: transform .12s ease-out, box-shadow .12s ease-out, background .12s;
 }
 
-/* ของเดิมที่ทำสีแต่ละปุ่มยังใช้ได้เหมือนเดิม */
+/* เวลา hover ให้ดูลอยขึ้นนิดนึง */
 .tabs button:hover {
-  background: #e2e7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(147, 51, 234, .16);
 }
+
+/* ปุ่มที่ active อยู่ */
 .tabs button.active {
-  background: #fff;
+  background: radial-gradient(circle at 15% 15%, rgba(255,255,255,0.55) 0, rgba(255,255,255,0) 45%),
+              linear-gradient(135deg, #ffffff 0%, #f4e6ff 55%, #ecd9ff 100%);
   color: #1f2937;
-  border: 1px solid rgba(147, 51, 234, .35);
-  box-shadow: 0 8px 18px rgba(147, 51, 234, .15);
+  border: 1px solid rgba(147, 51, 234, .5);
+  box-shadow: 0 14px 30px rgba(147, 51, 234, .25);
 }
+
+/* === โทนสีของแต่ละปุ่มตอน "ยังไม่ active" ให้เข้มขึ้นหน่อย === */
 .tabs button:nth-child(1):not(.active) {
-  background: rgba(124, 58, 237, 0.12);
-  color: #4c1d95;
+  background: rgba(124, 58, 237, 0.16);
+  color: #3b0764;
 }
 .tabs button:nth-child(2):not(.active) {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.16);
   color: #1d4ed8;
 }
 .tabs button:nth-child(3):not(.active) {
-  background: rgba(45, 212, 191, 0.14);
+  background: rgba(45, 212, 191, 0.16);
   color: #0f766e;
 }
 .tabs button:nth-child(4):not(.active) {
-  background: rgba(251, 146, 60, 0.14);
+  background: rgba(251, 146, 60, 0.16);
   color: #c05621;
 }
 .tabs button:nth-child(5):not(.active) {
-  background: rgba(244, 63, 94, 0.12);
+  background: rgba(244, 63, 94, 0.16);
   color: #be123c;
 }
 .tabs button:nth-child(6):not(.active) {
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(99, 102, 241, 0.16);
   color: #3730a3;
 }
 
-/* จอเล็กให้มันยังอยู่บรรทัดเดียวแต่ตัวหนังสือลดลง */
-@media (max-width: 900px) {
+/* ถ้าหน้าจอแคบให้กลับไปเลื่อนแบบเดิม */
+@media (max-width: 980px) {
   .tabs {
-    gap: .55rem;
-    padding-inline: .5rem;
+    display: flex;
+    overflow-x: auto;
+    gap: .6rem;
   }
   .tabs button {
-    font-size: .78rem;
-    padding: .5rem .6rem;
+    width: auto;
+    min-width: 130px;
   }
 }
+
 
 /* ====== หน้า (6 หน้า) ====== */
 .page {
