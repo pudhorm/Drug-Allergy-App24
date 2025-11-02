@@ -467,53 +467,85 @@ function p5UpdateNowBox() {
 // อัปเดตทุก 1 วิ
 setInterval(p5UpdateNowBox, 1000);
 
-// ====== พิมพ์ timeline ให้เห็นทั้งหมด (Auto-fit to page width) ======
+// ====== พิมพ์ timeline แบบย่อวันให้เห็นครบ ======
 function p5PrintTimeline() {
   const sc = document.getElementById("p5TimelineScroll");
-  if (!sc) { window.print(); return; }
+  const dateRow = document.getElementById("p5DateRow");
+  const drugLane = document.getElementById("p5DrugLane");
+  const adrLane = document.getElementById("p5AdrLane");
 
-  // เก็บค่าเดิม
-  const oldWidth = sc.style.width;
-  const oldOverflow = sc.style.overflow;
+  if (!sc || !dateRow || !drugLane || !adrLane) {
+    window.print();
+    return;
+  }
 
-  // ทำให้กล่องกว้างเท่าความยาวจริงก่อนค่อยย่อสเกล
-  const fullW = sc.scrollWidth;           // ความกว้างจริงของ timeline (px)
-  sc.style.width = fullW + "px";
+  // เก็บค่าเดิมไว้ก่อน
+  const old = {
+    scWidth: sc.style.width,
+    scOverflow: sc.style.overflow,
+    dateCols: dateRow.style.gridTemplateColumns,
+    drugCols: drugLane.style.gridTemplateColumns,
+    adrCols: adrLane.style.gridTemplateColumns,
+    adrMarginTop: adrLane.style.marginTop
+  };
+
+  // นับจำนวนวันจากหัวตาราง
+  const dayCount = dateRow.children.length || 1;
+
+  // ความกว้างต่อวันตอนพิมพ์ (ย่อวันตรงนี้ได้เลย)
+  const PRINT_DAY_W = 60; // ← เดิม 120px ตอนวาดบนจอ
+
+  // เซ็ตคอลัมน์ใหม่แบบย่อวัน
+  dateRow.style.gridTemplateColumns = `repeat(${dayCount}, ${PRINT_DAY_W}px)`;
+  drugLane.style.gridTemplateColumns = `repeat(${dayCount}, ${PRINT_DAY_W}px)`;
+  adrLane.style.gridTemplateColumns = `repeat(${dayCount}, ${PRINT_DAY_W}px)`;
+  adrLane.style.marginTop = "10px";
+
+  // ทำให้กล่องกว้างตามความยาวจริงของ timeline
+  const timelineWidth = dayCount * PRINT_DAY_W;
+  sc.style.width = timelineWidth + "px";
   sc.style.overflow = "visible";
 
-  // คำนวณสเกลให้พอดีหน้า A4 แนวนอน (กว้าง ~ 277 มม. = ~1046px หลังหัก margin 10mm)
-  const PRINTABLE_PX = 277 / 25.4 * 96;   // ≈ 1046px
-  const scale = Math.min(1, PRINTABLE_PX / fullW);
+  // คำนวณสเกลให้พอดีหน้า A4 แนวนอน
+  const PRINTABLE_PX = 277 / 25.4 * 96; // ≈ 1046px usable
+  const scale = timelineWidth > 0 ? Math.min(1, PRINTABLE_PX / timelineWidth) : 1;
 
-  // ใส่คลาสโหมดพิมพ์ + ตั้งตัวแปรสเกล
   sc.classList.add("p5-print-mode");
   document.documentElement.style.setProperty("--p5-print-scale", String(scale));
 
-  // พิมพ์
+  // เรียก dialog พิมพ์
   window.print();
 
-  // คืนค่าเดิมหลังเปิด dialog
+  // คืนค่าทุกอย่างหลังจากเปิด dialog
   setTimeout(() => {
     sc.classList.remove("p5-print-mode");
-    sc.style.width = oldWidth;
-    sc.style.overflow = oldOverflow;
+    sc.style.width = old.scWidth;
+    sc.style.overflow = old.scOverflow;
+    dateRow.style.gridTemplateColumns = old.dateCols;
+    drugLane.style.gridTemplateColumns = old.drugCols;
+    adrLane.style.gridTemplateColumns = old.adrCols;
+    adrLane.style.marginTop = old.adrMarginTop;
     document.documentElement.style.removeProperty("--p5-print-scale");
   }, 400);
 }
 
-// ใส่สไตล์พิมพ์ครั้งเดียว
-(function addP5PrintStyle(){
+// ใส่ style พิมพ์ (ครั้งเดียว)
+(function addP5PrintStyle() {
   if (document.getElementById("p5-print-style")) return;
   const style = document.createElement("style");
   style.id = "p5-print-style";
   style.textContent = `
     @media print {
-      /* ซ่อนของที่ไม่เกี่ยวเวลา print */
-      .topbar, .tabs, .p5-footer-btns, .p5-btn-group { display: none !important; }
-
-      @page { size: A4 landscape; margin: 10mm; }
-
-      /* ให้กล่อง timeline ยาวได้ และย่อสเกลให้พอดีกระดาษ */
+      .topbar,
+      .tabs,
+      .p5-footer-btns,
+      .p5-btn-group {
+        display: none !important;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
       #p5TimelineScroll.p5-print-mode {
         overflow: visible !important;
         width: auto !important;
@@ -521,17 +553,16 @@ function p5PrintTimeline() {
         transform: scale(var(--p5-print-scale, 1));
         transform-origin: top left;
       }
-
-      /* ทำให้แถววันที่/เลนยาวตามเนื้อหา ไม่ถูกตัด */
       #p5TimelineScroll.p5-print-mode #p5DateRow,
       #p5TimelineScroll.p5-print-mode #p5DrugLane,
       #p5TimelineScroll.p5-print-mode #p5AdrLane {
         display: inline-block !important;
         width: max-content !important;
       }
-
-      /* กันสีซีดเวลา print */
-      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   `;
   document.head.appendChild(style);
