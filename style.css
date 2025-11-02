@@ -33,7 +33,7 @@ body {
 
 /* ให้ป้ายโรงพยาบาลดูสมดุลกับหัวใหญ่ๆ */
 .topbar .hospital-badge {
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   padding: 0.55rem 2.4rem;
 }
 
