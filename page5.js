@@ -1,5 +1,16 @@
 // ====================== page5.js ======================
 
+// 0) ตัวช่วยยิงอีเวนต์อัปเดตให้หน้า 6 รู้ตัว
+function p5EmitUpdate(source) {
+  try {
+    document.dispatchEvent(
+      new CustomEvent("da:update", { detail: { source: source || "page5", ts: Date.now() } })
+    );
+  } catch (e) {
+    // เงียบไว้ ไม่ให้พังหน้า
+  }
+}
+
 // 1) เตรียมที่เก็บข้อมูลหน้า 5 ถ้ายังไม่มี
 (function () {
   const root = (window.drugAllergyData = window.drugAllergyData || {});
@@ -159,6 +170,7 @@ window.renderPage5 = function () {
         stopTime: ""
       });
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
       window.renderPage5();
     });
   }
@@ -175,6 +187,7 @@ window.renderPage5 = function () {
         endTime: ""
       });
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
       window.renderPage5();
     });
   }
@@ -190,6 +203,7 @@ window.renderPage5 = function () {
         window.drugAllergyData.page5.adrLines.splice(idx, 1);
       }
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
       window.renderPage5();
     });
   });
@@ -213,28 +227,33 @@ window.renderPage5 = function () {
         window.drugAllergyData.page5.drugLines[idx].name = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (startInput)
       startInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (startTimeInput)
       startTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].startTime = e.target.value;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (stopInput)
       stopInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (stopTimeInput)
       stopTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopTime = e.target.value;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
   });
 
@@ -252,41 +271,47 @@ window.renderPage5 = function () {
         window.drugAllergyData.page5.adrLines[idx].symptom = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (startInput)
       startInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].startDate = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (startTimeInput)
       startTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].startTime = e.target.value;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (endInput)
       endInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].endDate = e.target.value;
         safeDrawTimeline();
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
     if (endTimeInput)
       endTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].endTime = e.target.value;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        p5EmitUpdate("page5");
       });
   });
 
-  // ปุ่มไปหน้า 6  ✅ ตั้งธง __saved และ popup
+  // ปุ่มไปหน้า 6  ✅ ตั้งธง __saved และพาไป+คำนวณ
   const go6 = document.getElementById("p5GoSummary");
   if (go6) {
     go6.addEventListener("click", () => {
       window.drugAllergyData.page5.__saved = true;
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5"); // แจ้งให้หน้า 6 รีคอมพิวต์
       alert("บันทึกหน้า 5 แล้ว");
       const tabBtn = document.querySelector('.tabs button[data-target="page6"]');
       if (tabBtn) tabBtn.click();
-      if (window.renderPage6) window.renderPage6();
+      if (window.renderPage6) window.renderPage6(); // เผื่อ router ไม่ยิงอัตโนมัติ
     });
   }
 
@@ -296,6 +321,7 @@ window.renderPage5 = function () {
     clearBtn.addEventListener("click", () => {
       window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
       window.renderPage5();
       alert("ล้างข้อมูลหน้า 5 แล้ว");
     });
