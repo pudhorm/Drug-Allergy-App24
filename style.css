@@ -529,6 +529,50 @@ body {
   padding: 1.2rem 1rem 1rem;
   margin-bottom: 1.1rem;
 }
+/* ===== หน้า 2: จัดใหม่ 1–2 / 3–4–5 / 6–7 / 8–9 ===== */
+.p2-feature-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* จอเล็กให้เรียงลงปกติ */
+@media (max-width: 1099px) {
+  .p2-feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* จอใหญ่: ทำ 3 คอลัมน์ แล้วบังคับให้กล่องที่ 1 กิน 2 ช่อง */
+@media (min-width: 1100px) {
+  .p2-feature-grid {
+    grid-template-columns: repeat(3, minmax(260px, 1fr));
+  }
+
+  /* แถว 1 = 1 กับ 2 (1 กิน 2 ช่อง) */
+  .p2-feature-grid .p2-f1 {
+    grid-column: span 2;
+  }
+  .p2-feature-grid .p2-f2 {
+    grid-column: span 1;
+  }
+  /* แถว 2 จะได้เป็น 3, 4, 5 อัตโนมัติ */
+
+  /* แถว 3 = 6 กับ 7 */
+  .p2-feature-grid .p2-f6 {
+    grid-column: span 1;
+  }
+  .p2-feature-grid .p2-f7 {
+    grid-column: span 1;
+  }
+
+  /* แถว 4 = 8 กับ 9 */
+  .p2-feature-grid .p2-f8 {
+    grid-column: span 1;
+  }
+  .p2-feature-grid .p2-f9 {
+    grid-column: span 1;
+  }
+}
 .p2-sec-title {
   display: flex;
   align-items: center;
