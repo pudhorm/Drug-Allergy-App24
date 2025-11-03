@@ -212,15 +212,17 @@
       });
     }
 
-    // ปุ่มบันทึกและไปหน้า 4  **เพิ่มธง __saved = true**
+    // ปุ่มบันทึกและไปหน้า 4  **เพิ่มธง __saved = true และ popup**
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
         savePage3();
-        window.drugAllergyData.page3.__saved = true; // <-- ธงว่าหน้า 3 บันทึกแล้ว
+        window.drugAllergyData.page3.__saved = true; // บันทึกแล้ว
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-        // สลับแท็บไปหน้า 4 ถ้ามี
+        alert("บันทึกหน้า 3 แล้ว");
+
+        // ไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
