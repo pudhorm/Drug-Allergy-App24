@@ -134,7 +134,7 @@
                 grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
                 gap:.55rem 1.1rem;
               ">
-                ${group.items.map((item, idx) => {
+                ${group.items.map((item) => {
                   const fieldId = `${group.key}_${item.key}`;
                   const checked = groupData[item.key]?.checked ? "checked" : "";
                   const value = groupData[item.key]?.value || "";
@@ -145,11 +145,7 @@
                       <div style="flex:1 1 auto;display:flex;flex-direction:column;gap:.35rem;">
                         <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
                           <span style="font-size:.87rem;color:#022c22;">${item.label}</span>
-                          ${
-                            item.unit
-                              ? `<span style="font-size:.7rem;color:#047857;background:rgba(209,250,229,.7);padding:.1rem .45rem;border-radius:999px;">${item.unit}</span>`
-                              : ""
-                          }
+                          ${item.unit ? `<span style="font-size:.7rem;color:#047857;background:rgba(209,250,229,.7);padding:.1rem .45rem;border-radius:999px;">${item.unit}</span>` : ""}
                         </div>
                         <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
                           <input type="text" placeholder="ค่า"
@@ -192,36 +188,32 @@
         const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
         const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
         const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
-
         if (!cb || !valInput || !detailInput) return;
-
-        cb.addEventListener("change", () => {
-          savePage3();
-        });
+        cb.addEventListener("change", savePage3);
         valInput.addEventListener("input", savePage3);
         detailInput.addEventListener("input", savePage3);
       });
     });
 
-    // ปุ่มล้าง
+    // ปุ่มล้าง  ✅ เพิ่ม popup เหมือนหน้าอื่น
     const clearBtn = root.querySelector("#p3-clear");
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
         window.drugAllergyData.page3 = {};
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         renderPage3(); // วาดใหม่ให้โล่ง
+        alert("ล้างข้อมูลหน้า 3 แล้ว");
       });
     }
 
-    // ปุ่มบันทึกและไปหน้า 4  **เพิ่มธง __saved = true และ popup**
+    // ปุ่มบันทึกและไปหน้า 4  **ธง __saved = true + popup**
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
         savePage3();
         window.drugAllergyData.page3.__saved = true; // บันทึกแล้ว
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
         alert("บันทึกหน้า 3 แล้ว");
-
         // ไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
