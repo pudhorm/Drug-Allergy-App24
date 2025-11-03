@@ -1,8 +1,7 @@
-// page6.js — Naranjo หลายตัว + Visual Timeline + ปุ่มพิมพ์ที่วาดใหม่แบบหน้า 5
+// page6.js — แสดงผลทั้งหน้า 6 + พิมพ์ทั้งหน้าแบบไม่ตัด Timeline (label ทุก 4 วัน, scale อัตโนมัติ)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
 
-  // ---------------- core ready check ----------------
   function checkCorePagesReady() {
     const d = window.drugAllergyData || {};
     const p1 = !!(d.page1 && d.page1.__saved === true);
@@ -15,7 +14,7 @@
     return { ready: p1 && p2 && p3, missing };
   }
 
-  // ---------------- Naranjo helpers (เทียบหน้า 4) ----------------
+  // ----- Naranjo helpers (สอดคล้องหน้า 4) -----
   const P6_NARANJO_QUESTIONS = [
     { idx: 0,  yes: +1, no: 0,  dk: 0 },
     { idx: 1,  yes: +2, no: -1, dk: 0 },
@@ -45,7 +44,7 @@
     return "ไม่น่าจะเป็น (Doubtful)";
   }
 
-  // ---------------- format วันที่/เวลา ----------------
+  // ----- format เวลา -----
   function fmtDateTH(str) {
     if (!str) return "—";
     const pure = String(str).trim().split(" ")[0];
@@ -62,7 +61,7 @@
     return `${start} → ${end}`;
   }
 
-  // ---------------- section 2 & 3 ----------------
+  // ----- section 2/3 -----
   function renderSection2(drugNames) {
     return `
       <div class="p6-block sec2">
@@ -86,7 +85,6 @@
     `;
   }
 
-  // ---------------- ดึงข้อมูลหน้า 4/5 ----------------
   function getNaranjoListFromPage4() {
     const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
     const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
@@ -108,7 +106,7 @@
     };
   }
 
-  // ---------------- Visual Timeline (เหมือนหน้า 5 ในหน้าแสดงผล) ----------------
+  // ----- Visual timeline (หน้าจอหลัก) — อย่าแตะตรรกะ -----
   function p6DrawVisualTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
@@ -137,14 +135,13 @@
     const today = new Date(); const today0=new Date(today.getFullYear(),today.getMonth(),today.getDate());
 
     let minDate = null;
-    drugs.forEach(d=>{ const s=parseDate(d.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
-    adrs.forEach(a=>{ const s=parseDate(a.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+    getPage5Data().drugs.forEach(d=>{ const s=parseDate(d.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+    getPage5Data().adrs.forEach(a=>{ const s=parseDate(a.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
     if(!minDate) minDate = today0;
 
     const maxDate = today0;
     const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
 
-    // header วัน
     dateRow.style.display="grid";
     dateRow.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
     for(let i=0;i<totalDays;i++){
@@ -155,7 +152,6 @@
       dateRow.appendChild(cell);
     }
 
-    // lanes
     const ROW_H=46;
     function prepLane(el,rows){
       el.style.display="grid";
@@ -165,13 +161,13 @@
       el.style.height=(Math.max(rows,1)*(ROW_H+6))+"px";
       el.innerHTML="";
     }
-    prepLane(drugLane, drugs.length);
-    prepLane(adrLane,  adrs.length);
+    prepLane(drugLane, getPage5Data().drugs.length);
+    prepLane(adrLane,  getPage5Data().adrs.length);
     adrLane.style.marginTop="10px";
 
     function dayIndexOf(date){ return Math.floor((date - minDate)/MS_DAY); }
 
-    drugs.forEach((d,idx)=>{
+    getPage5Data().drugs.forEach((d,idx)=>{
       const start=parseDate(d.startDate); if(!start) return;
       let end;
       if (d.stopDate){ const e=parseDate(d.stopDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
@@ -187,7 +183,7 @@
       drugLane.appendChild(bar);
     });
 
-    adrs.forEach((a,idx)=>{
+    getPage5Data().adrs.forEach((a,idx)=>{
       const start=parseDate(a.startDate); if(!start) return;
       let end;
       if (a.endDate){ const e=parseDate(a.endDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
@@ -206,7 +202,6 @@
     if (sc) sc.scrollLeft = sc.scrollWidth;
   }
 
-  // ---------------- Section 4: Naranjo (หลายตัว) + Timeline ----------------
   function renderSection4() {
     const naranjoList = getNaranjoListFromPage4();
     const { drugs, adrs } = getPage5Data();
@@ -277,7 +272,6 @@
     `;
   }
 
-  // ---------------- render main ----------------
   function renderPage6() {
     const root = document.getElementById("p6Root");
     if (!root) return;
@@ -323,11 +317,9 @@
       </div>
     `;
 
-    // วาด Visual Timeline บนหน้าจอหลัก
     setTimeout(() => { try { p6DrawVisualTimeline(); } catch(e){ console.error("[page6] draw timeline:", e); } }, 0);
   }
 
-  // ---------------- styles (สำหรับ Visual Timeline) ----------------
   (function injectP6Styles(){
     if (document.getElementById("p6-visual-style")) return;
     const css = `
@@ -351,16 +343,19 @@
     document.head.appendChild(tag);
   })();
 
-  // ฟังอีเวนต์จากหน้า 4/5 แล้วเรนเดอร์ใหม่
   document.addEventListener("da:update", () => { if (window.renderPage6) window.renderPage6(); });
 
   window.renderPage6 = renderPage6;
 })();
 
 
-// ====== พิมพ์หน้า 6 — วาด Timeline ใหม่แบบหน้า 5 (label ทุก 4 วัน + scale อัตโนมัติ) ======
+// ====== พิมพ์หน้า 6 — แสดงทั้งหน้า + วาด Timeline ใหม่ (label ทุก 4 วัน, scale อัตโนมัติ) ======
 function p6PrintTimeline() {
-  // สรุปข้อมูลจากหน้า 5
+  // 1) เก็บ snapshot ของ “ทั้งหน้า 6”
+  const root = document.getElementById("p6Root");
+  const pageSnapshot = root ? root.outerHTML : "";
+
+  // 2) ดึงข้อมูลสำหรับสรุป/วาด timeline (ห้ามแตะตรรกะเดิม)
   const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
   const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
   const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
@@ -376,58 +371,28 @@ function p6PrintTimeline() {
   }
   function fmtTime(str) { if (!str) return ""; const t = String(str).slice(0,5); return t + " น."; }
 
-  const summaryHTML = `
-    <section class="p6-print-summary">
-      <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
-      <div class="sec">
-        <h4>💊 รายการยา</h4>
-        ${
-          drugs.length
-            ? `<ol>
-                ${drugs.map(d=>{
-                  const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
-                  const sD=fmtDateTH(d.startDate), sT=fmtTime(d.startTime);
-                  const eD=fmtDateTH(d.stopDate),  eT=fmtTime(d.stopTime);
-                  return `<li><strong>${name}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หยุด ${eD}${eT?" "+eT:""}</li>`;
-                }).join("")}
-               </ol>`
-            : `<p class="muted">— ไม่มีรายการยา —</p>`
-        }
-      </div>
-      <div class="sec">
-        <h4>🧪 ADR</h4>
-        ${
-          adrs.length
-            ? `<ol>
-                ${adrs.map(a=>{
-                  const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
-                  const sD=fmtDateTH(a.startDate), sT=fmtTime(a.startTime);
-                  const eD=fmtDateTH(a.endDate),  eT=fmtTime(a.endTime);
-                  return `<li><strong>${sym}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หาย ${eD}${eT?" "+eT:""}</li>`;
-                }).join("")}
-               </ol>`
-            : `<p class="muted">— ไม่มี ADR —</p>`
-        }
-      </div>
-    </section>
-  `;
-
-  // เปิดหน้าต่างพิมพ์ แล้ว "วาด Timeline ใหม่" จากข้อมูลจริง (ไม่พึ่ง DOM เดิม)
+  // 3) เปิดหน้าต่างพิมพ์
   const win = window.open("", "_blank", "width=1200,height=800");
   win.document.write(`
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>พิมพ์หน้า 6 Timeline</title>
+        <title>พิมพ์หน้า 6</title>
         <style>
           * { box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
           body { margin:0; padding:12px 16px 16px; background:#fff;
                  -webkit-print-color-adjust: exact !important;
                  print-color-adjust: exact !important; }
 
+          /* ซ่อนปุ่ม/แท็บ/ตัวควบคุม ใน snapshot */
+          .tabs, .p6-footer-btns, .p6-btn, .p6-btn-group, button { display:none !important; }
+          /* ซ่อน Visual Timeline ใน snapshot เพื่อไม่ให้ซ้ำ */
+          .p6-visual-box { display:none !important; }
+
+          /* กล่องหัวข้อสรุป + Timeline พิมพ์ */
           .p6-print-summary {
             border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px;
-            margin-bottom:14px; background:#fafafa;
+            margin:12px 0 14px; background:#fafafa;
           }
           .p6-print-summary h3 { margin:0 0 8px; }
           .p6-print-summary h4 { margin:10px 0 6px; }
@@ -435,7 +400,8 @@ function p6PrintTimeline() {
           .p6-print-summary li { margin:2px 0; }
           .p6-print-summary .muted { color:#6b7280; margin:0; }
 
-          .p6-visual-box { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
+          /* สไตล์ส่วน timeline ที่วาดใหม่ */
+          .p6-visual-box-print { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
           #printTimelineScroll { overflow:visible; width:auto; max-width:none; display:inline-block; background:#fff; }
           #printDateRow, #printDrugLane, #printAdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
           .p6-date-cell { border-bottom:1px solid #edf2f7; font-size:11px; font-weight:600; white-space:nowrap; padding-bottom:2px; text-align:left; }
@@ -452,8 +418,41 @@ function p6PrintTimeline() {
         </style>
       </head>
       <body>
-        ${summaryHTML}
-        <div class="p6-visual-box">
+        <!-- Snapshot ของหน้า 6 ทั้งหน้า -->
+        ${pageSnapshot}
+
+        <!-- สรุปอ่านง่าย + Timeline เวอร์ชันพิมพ์ (label ทุก 4 วัน / scale อัตโนมัติ) -->
+        <section class="p6-print-summary">
+          <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
+          <div class="sec">
+            <h4>💊 รายการยา</h4>
+            ${
+              drugs.length
+                ? `<ol>${drugs.map(d=>{
+                    const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
+                    const sD=fmtDateTH(d.startDate), sT=${"`"}\${(d.startTime||"").slice(0,5)}${"`"}; 
+                    const eD=fmtDateTH(d.stopDate),  eT=${"`"}\${(d.stopTime||"").slice(0,5)}${"`"};
+                    return \`<li><strong>\${name}</strong> — เริ่ม \${sD}\${sT?" "+sT+" น.":""} · หยุด \${eD}\${eT?" "+eT+" น.":""}</li>\`;
+                  }).join("")}</ol>`
+                : `<p class="muted">— ไม่มีรายการยา —</p>`
+            }
+          </div>
+          <div class="sec">
+            <h4>🧪 ADR</h4>
+            ${
+              adrs.length
+                ? `<ol>${adrs.map(a=>{
+                    const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
+                    const sD=fmtDateTH(a.startDate), sT=${"`"}\${(a.startTime||"").slice(0,5)}${"`"};
+                    const eD=fmtDateTH(a.endDate),  eT=${"`"}\${(a.endTime||"").slice(0,5)}${"`"};
+                    return \`<li><strong>\${sym}</strong> — เริ่ม \${sD}\${sT?" "+sT+" น.":""} · หาย \${eD}\${eT?" "+eT+" น.":""}</li>\`;
+                  }).join("")}</ol>`
+                : `<p class="muted">— ไม่มี ADR —</p>`
+            }
+          </div>
+        </section>
+
+        <div class="p6-visual-box-print">
           <h4 style="margin:0 0 8px;font-size:1.05rem;font-weight:700;color:#111827;">Visual Timeline</h4>
           <div id="printTimelineScroll">
             <div id="printDateRow"></div>
@@ -470,16 +469,14 @@ function p6PrintTimeline() {
 
         <script>
           (function(){
-            // ====== สร้าง timeline ใหม่จากข้อมูลของ opener ======
             const p5 = (window.opener && window.opener.window && window.opener.window.drugAllergyData && window.opener.window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
             const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
             const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+
             const dateRow = document.getElementById("printDateRow");
             const drugLane = document.getElementById("printDrugLane");
             const adrLane  = document.getElementById("printAdrLane");
             const box      = document.getElementById("printTimelineScroll");
-
-            if (!dateRow || !drugLane || !adrLane) { window.print(); return; }
 
             function parseDate(str){
               if(!str) return null;
@@ -500,9 +497,8 @@ function p6PrintTimeline() {
             const maxDate = today0;
             const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
 
-            // สร้างหัววัน
-            dateRow.innerHTML = "";
-            const PRINT_DAY_W = 45; // กว้างต่อวัน (เหมือนหน้า 5)
+            // header วัน
+            const PRINT_DAY_W = 45;
             dateRow.style.display="grid";
             dateRow.style.gridTemplateColumns="repeat("+totalDays+", "+PRINT_DAY_W+"px)";
             for(let i=0;i<totalDays;i++){
@@ -513,7 +509,7 @@ function p6PrintTimeline() {
               dateRow.appendChild(cell);
             }
 
-            // เตรียม lane
+            // lanes
             const ROW_H=40;
             function prepLane(el,rows){
               el.innerHTML="";
@@ -528,41 +524,31 @@ function p6PrintTimeline() {
 
             function dayIndexOf(date){ return Math.floor((date - minDate)/MS_DAY); }
 
-            // วาด bar ยา
             drugs.forEach((d,idx)=>{
-              const start=parseDate(d.startDate); if(!start) return;
-              let end;
-              if (d.stopDate){ const e=parseDate(d.stopDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
-              else end=maxDate;
-              if (end<start) end=start;
-              if (end>maxDate) end=maxDate;
-
+              const s=parseDate(d.startDate); if(!s) return;
+              let e; if (d.stopDate){ const _e=parseDate(d.stopDate); e = _e? new Date(_e.getFullYear(),_e.getMonth(),_e.getDate()-1): maxDate; } else e=maxDate;
+              if (e<s) e=s; if (e>maxDate) e=maxDate;
               const bar=document.createElement("div");
               bar.className="p6-bar p6-bar-drug";
               bar.textContent = (d.name && String(d.name).trim()) ? String(d.name).trim() : "ยา "+(idx+1);
-              bar.style.gridColumn = (dayIndexOf(start)+1) + " / " + (dayIndexOf(end)+2);
+              bar.style.gridColumn = (dayIndexOf(s)+1) + " / " + (dayIndexOf(e)+2);
               bar.style.gridRow = (idx+1);
               drugLane.appendChild(bar);
             });
 
-            // วาด bar ADR
             adrs.forEach((a,idx)=>{
-              const start=parseDate(a.startDate); if(!start) return;
-              let end;
-              if (a.endDate){ const e=parseDate(a.endDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
-              else end=maxDate;
-              if (end<start) end=start;
-              if (end>maxDate) end=maxDate;
-
+              const s=parseDate(a.startDate); if(!s) return;
+              let e; if (a.endDate){ const _e=parseDate(a.endDate); e = _e? new Date(_e.getFullYear(),_e.getMonth(),_e.getDate()-1): maxDate; } else e=maxDate;
+              if (e<s) e=s; if (e>maxDate) e=maxDate;
               const bar=document.createElement("div");
               bar.className="p6-bar p6-bar-adr";
               bar.textContent = (a.symptom && String(a.symptom).trim()) ? String(a.symptom).trim() : "ADR "+(idx+1);
-              bar.style.gridColumn = (dayIndexOf(start)+1) + " / " + (dayIndexOf(end)+2);
+              bar.style.gridColumn = (dayIndexOf(s)+1) + " / " + (dayIndexOf(e)+2);
               bar.style.gridRow = (idx+1);
               adrLane.appendChild(bar);
             });
 
-            // ลด label วัน: แสดงเฉพาะทุกๆ 4 วัน + วันแรก/วันสุดท้าย
+            // แสดง label ทุก ๆ 4 วัน + ต้น/ท้าย
             (function thinLabels(){
               const cells = Array.from(dateRow.children);
               const lastIdx = cells.length - 1;
@@ -573,7 +559,7 @@ function p6PrintTimeline() {
             })();
 
             // scale ให้พอดีกระดาษ
-            const maxWidth = Math.min(1120, window.innerWidth - 80); // ขอบเขต A4 landscape โดยประมาณ
+            const maxWidth = Math.min(1120, window.innerWidth - 80);
             const totalWidth = totalDays * PRINT_DAY_W + 60;
             if (totalWidth > maxWidth) {
               const scale = maxWidth / totalWidth;
