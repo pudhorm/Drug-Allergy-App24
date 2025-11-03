@@ -340,7 +340,7 @@ window.renderPage5 = function () {
   setTimeout(p5UpdateNowBox, 50);
 };
 
-// 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ ไม่แตะ)
+// 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ + เพิ่มเงื่อนไข "วันเดียวกันให้เป็นจุด")
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
@@ -459,6 +459,34 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
+    // 🔵 กรณีเริ่มและหยุด "วันเดียวกัน" (ฟิลด์ startDate/stopDate ถูกกรอกจริงทั้งคู่) ให้แสดงเป็นจุด
+    const isSameDayExplicit =
+      d.startDate && d.stopDate &&
+      parseDate(d.startDate) && parseDate(d.stopDate) &&
+      dayIndexOf(parseDate(d.startDate)) === dayIndexOf(parseDate(d.stopDate));
+
+    if (isSameDayExplicit) {
+      const cell = document.createElement("div");
+      cell.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
+      cell.style.gridRow = `${idx + 1}`;
+      cell.style.display = "flex";
+      cell.style.alignItems = "center";
+      cell.style.justifyContent = "center";
+
+      const dot = document.createElement("div");
+      dot.title = d.name || `ยาตัวที่ ${idx + 1}`;
+      dot.style.width = "16px";
+      dot.style.height = "16px";
+      dot.style.borderRadius = "9999px";
+      dot.style.background = "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)";
+      dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
+
+      cell.appendChild(dot);
+      drugLane.appendChild(cell);
+      return;
+    }
+
+    // แสดงเป็นแถบตามเดิม
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-drug";
     bar.textContent = d.name || `ยาตัวที่ ${idx + 1}`;
@@ -495,6 +523,34 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
+    // 🟠 กรณีเกิดและหาย "วันเดียวกัน" (มี startDate & endDate) → แสดงจุด
+    const isSameDayExplicit =
+      a.startDate && a.endDate &&
+      parseDate(a.startDate) && parseDate(a.endDate) &&
+      dayIndexOf(parseDate(a.startDate)) === dayIndexOf(parseDate(a.endDate));
+
+    if (isSameDayExplicit) {
+      const cell = document.createElement("div");
+      cell.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
+      cell.style.gridRow = `${idx + 1}`;
+      cell.style.display = "flex";
+      cell.style.alignItems = "center";
+      cell.style.justifyContent = "center";
+
+      const dot = document.createElement("div");
+      dot.title = a.symptom || `ADR ${idx + 1}`;
+      dot.style.width = "16px";
+      dot.style.height = "16px";
+      dot.style.borderRadius = "9999px";
+      dot.style.background = "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
+      dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
+
+      cell.appendChild(dot);
+      adrLane.appendChild(cell);
+      return;
+    }
+
+    // แสดงเป็นแถบตามเดิม
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-adr";
     bar.textContent = a.symptom || `ADR ${idx + 1}`;
