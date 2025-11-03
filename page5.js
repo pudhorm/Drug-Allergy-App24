@@ -340,7 +340,7 @@ window.renderPage5 = function () {
   setTimeout(p5UpdateNowBox, 50);
 };
 
-// 3) ฟังก์ชันวาด timeline (ตัวเดิม + จุดวันเดียวกันที่ขยับซ้ายอีกเล็กน้อย)
+// 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ ไม่แตะ — เพิ่มเพียงกรณี dot และ marginRight)
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
@@ -459,33 +459,25 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
-    // จุดกรณีวันเดียวกัน (ขยับซ้ายอีกเล็กน้อย)
-    const isSameDayExplicit =
-      d.startDate && d.stopDate &&
-      parseDate(d.startDate) && parseDate(d.stopDate) &&
-      dayIndexOf(parseDate(d.startDate)) === dayIndexOf(parseDate(d.stopDate));
-
-    if (isSameDayExplicit) {
-      const cell = document.createElement("div");
-      cell.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
-      cell.style.gridRow = `${idx + 1}`;
-      cell.style.display = "flex";
-      cell.style.alignItems = "center";
-      cell.style.justifyContent = "flex-start";
+    // กรณีเริ่มและจบวันเดียวกัน → แสดง "จุด" และขยับซ้ายอีกนิด
+    if (endIdx === startIdx) {
       const dot = document.createElement("div");
-      dot.title = d.name || `ยาตัวที่ ${idx + 1}`;
-      dot.style.width = "16px";
-      dot.style.height = "16px";
+      dot.className = "p5-dot p5-dot-drug";
+      dot.style.width = "12px";
+      dot.style.height = "12px";
       dot.style.borderRadius = "9999px";
-      dot.style.background = "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)";
-      dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
-      dot.style.marginLeft = "4px"; // ← ขยับซ้ายเพิ่มจาก 10px เป็น 4px
-      cell.appendChild(dot);
-      drugLane.appendChild(cell);
+      dot.style.background = "linear-gradient(180deg,#3bb2ff,#0ea5e9)";
+      dot.style.boxShadow = "0 8px 18px rgba(2,132,199,.25)";
+      dot.style.justifySelf = "center";
+      dot.style.alignSelf = "center";
+      // ขยับซ้ายเพิ่มอีกนิดให้ตรงวัน (เวอร์ชันนี้เลื่อน ~8px)
+      dot.style.transform = "translateX(-8px)";
+      dot.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
+      dot.style.gridRow = `${idx + 1}`;
+      drugLane.appendChild(dot);
       return;
     }
 
-    // แสดงเป็นแถบตามเดิม
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-drug";
     bar.textContent = d.name || `ยาตัวที่ ${idx + 1}`;
@@ -495,6 +487,9 @@ function drawTimeline() {
     bar.style.width = "100%";
     bar.style.gridColumn = `${startIdx + 1} / ${endIdx + 2}`;
     bar.style.gridRow = `${idx + 1}`;
+
+    // ถ้าไม่มีวันหยุด → ให้ปลายแถบสั้นเข้ามานิดเดียว (ไม่ล้นวันปัจจุบัน)
+    if (!d.stopDate) bar.style.marginRight = "8px";
 
     drugLane.appendChild(bar);
   });
@@ -522,33 +517,24 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
-    // จุดกรณีวันเดียวกัน (ขยับซ้ายอีกเล็กน้อย)
-    const isSameDayExplicit =
-      a.startDate && a.endDate &&
-      parseDate(a.startDate) && parseDate(a.endDate) &&
-      dayIndexOf(parseDate(a.startDate)) === dayIndexOf(parseDate(a.endDate));
-
-    if (isSameDayExplicit) {
-      const cell = document.createElement("div");
-      cell.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
-      cell.style.gridRow = `${idx + 1}`;
-      cell.style.display = "flex";
-      cell.style.alignItems = "center";
-      cell.style.justifyContent = "flex-start";
+    // เริ่ม-จบวันเดียวกัน → แสดง "จุด" และขยับซ้ายอีกนิด
+    if (endIdx === startIdx) {
       const dot = document.createElement("div");
-      dot.title = a.symptom || `ADR ${idx + 1}`;
-      dot.style.width = "16px";
-      dot.style.height = "16px";
+      dot.className = "p5-dot p5-dot-adr";
+      dot.style.width = "12px";
+      dot.style.height = "12px";
       dot.style.borderRadius = "9999px";
-      dot.style.background = "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
-      dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
-      dot.style.marginLeft = "4px"; // ← ขยับซ้ายเพิ่มจาก 10px เป็น 4px
-      cell.appendChild(dot);
-      adrLane.appendChild(cell);
+      dot.style.background = "linear-gradient(180deg,#fb7185,#f97316)";
+      dot.style.boxShadow = "0 8px 18px rgba(244,63,94,.25)";
+      dot.style.justifySelf = "center";
+      dot.style.alignSelf = "center";
+      dot.style.transform = "translateX(-8px)";
+      dot.style.gridColumn = `${startIdx + 1} / ${startIdx + 2}`;
+      dot.style.gridRow = `${idx + 1}`;
+      adrLane.appendChild(dot);
       return;
     }
 
-    // แสดงเป็นแถบตามเดิม
     const bar = document.createElement("div");
     bar.className = "p5-bar p5-bar-adr";
     bar.textContent = a.symptom || `ADR ${idx + 1}`;
@@ -558,6 +544,9 @@ function drawTimeline() {
     bar.style.width = "100%";
     bar.style.gridColumn = `${startIdx + 1} / ${endIdx + 2}`;
     bar.style.gridRow = `${idx + 1}`;
+
+    // ถ้าไม่มีวันหาย → ให้ปลายแถบสั้นเข้ามานิดเดียว
+    if (!a.endDate) bar.style.marginRight = "8px";
 
     adrLane.appendChild(bar);
   });
