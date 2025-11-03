@@ -22,6 +22,36 @@
     };
   }
 
+  // ====================== Naranjo helper (ใช้โครงเดียวกับหน้า 4) ======================
+  const P6_NARANJO_QUESTIONS = [
+    { idx: 0,  yes: +1, no: 0,  dk: 0 },
+    { idx: 1,  yes: +2, no: -1, dk: 0 },
+    { idx: 2,  yes: +1, no: 0,  dk: 0 },
+    { idx: 3,  yes: +2, no: -1, dk: 0 },
+    { idx: 4,  yes: -1, no: +2, dk: 0 },
+    { idx: 5,  yes: -1, no: +1, dk: 0 },
+    { idx: 6,  yes: +1, no: 0,  dk: 0 },
+    { idx: 7,  yes: +1, no: 0,  dk: 0 },
+    { idx: 8,  yes: +1, no: 0,  dk: 0 },
+    { idx: 9,  yes: +1, no: 0,  dk: 0 },
+  ];
+  function p6_calcNaranjoScore(drug) {
+    if (!drug || !drug.answers) return 0;
+    let total = 0;
+    for (const q of P6_NARANJO_QUESTIONS) {
+      const picked = drug.answers[q.idx];
+      if (!picked) continue;
+      total += q[picked] ?? 0;
+    }
+    return total;
+  }
+  function p6_interp(score) {
+    if (score >= 9) return "แน่นอน (Definite)";
+    if (score >= 5) return "น่าจะเป็น (Probable)";
+    if (score >= 1) return "อาจเป็นไปได้ (Possible)";
+    return "ไม่น่าจะเป็น (Doubtful)";
+  }
+
   // ====================== ส่วนที่ 2 (placeholder) ======================
   function renderSection2(drugNames) {
     return `
@@ -67,13 +97,27 @@
   function getNaranjoFromPage4() {
     const d = window.drugAllergyData || {};
     const p4 = d.page4 || {};
-    return p4.naranjo || null;
+    const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
+
+    if (!drugs.length) return null;
+
+    // ตอนนี้สรุปเฉพาะ "ยาแรก" เพื่อให้มีผลแสดงทันที
+    const drug0 = drugs[0];
+    const total = p6_calcNaranjoScore(drug0);
+    return {
+      name: drug0.name || "ยา 1",
+      total,
+      interpretation: p6_interp(total),
+    };
   }
 
   function getTimelineFromPage5() {
     const d = window.drugAllergyData || {};
     const p5 = d.page5 || {};
-    return p5.timeline || null;
+    const drugLines = Array.isArray(p5.drugLines) ? p5.drugLines : [];
+    const adrLines  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+    if (!drugLines.length && !adrLines.length) return null;
+    return { drugs: drugLines, adrs: adrLines };
   }
 
   function renderSection4() {
@@ -93,7 +137,7 @@
             naranjo
               ? `
                 <div class="p6-naranjo-item">
-                  <div class="p6-naranjo-name">ยา 1</div>
+                  <div class="p6-naranjo-name">${naranjo.name}</div>
                   <div class="p6-naranjo-score">${naranjo.total ?? 0}</div>
                 </div>
                 <p class="p6-muted">สรุป: ${naranjo.interpretation || "ยังไม่ได้สรุป"}</p>
@@ -206,12 +250,10 @@
     }
 
     // ดึงชื่อยาพอให้ส่วนที่ 2 มีอะไรโชว์ (ตอนนี้ยังเป็นตัวอย่าง)
-    const drugNames =
-      (window.drugAllergyData.page4 && window.drugAllergyData.page4.drugs) ||
-      (window.drugAllergyData.page5 && window.drugAllergyData.page5.drugs) ||
-      [];
+    const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
+    const drugNames = Array.isArray(p4.drugs) ? p4.drugs.map(d => d.name).filter(Boolean) : [];
 
-    root.innerHTML = `
+    const html = `
       <div class="p6-wrapper">
         ${section1HTML}
         ${renderSection2(drugNames)}
@@ -223,7 +265,15 @@
         </div>
       </div>
     `;
+    root.innerHTML = html;
   }
+
+  // ฟังอีเวนต์อัปเดตจากหน้าอื่น ๆ (เช่น หน้า 4/5)
+  document.addEventListener("da:update", function () {
+    if (typeof window.renderPage6 === "function") {
+      window.renderPage6();
+    }
+  });
 
   window.renderPage6 = renderPage6;
 })();
