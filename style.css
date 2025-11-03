@@ -1535,4 +1535,24 @@ body {
   }
   .pType-toast { display: none !important; }
 }
+/* ================= Type ADR — Tooltip ================ */
+.pType-badge-tip{cursor:help;position:relative}
+.pType-pop{
+  position:absolute; z-index:9999; max-width:320px;
+  background:#fff; color:#0f172a;
+  border:1px solid rgba(148,163,184,.35);
+  border-radius:12px; padding:10px 12px;
+  box-shadow:0 16px 40px rgba(2,6,23,.18);
+  font-size:.92rem; line-height:1.45;
+}
+.pType-pop h5{margin:.1rem 0 .35rem;font-size:.95rem}
+.pType-pop ul{margin:.3rem 0 0 1.1rem;padding:0}
+.pType-pop li{margin:.2rem 0}
+.pType-pop .pType-pop-arrow{
+  position:absolute; width:0;height:0;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-top:10px solid #fff;
+  filter: drop-shadow(0 -1px 0 rgba(148,163,184,.35));
+}
 
