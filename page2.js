@@ -1,14 +1,14 @@
-// page2.js
+// page2.js (REPLACE WHOLE FILE)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // สีหลักของส่วนที่ 1 (ให้เหมือนช่อง "ความผิดปกติทางตา")
+  // โทนสีหลักของส่วนที่ 1 (ให้เหมือนบล็อกที่ผู้ใช้ชอบ)
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
-  const COMMON_BORDER = "rgba(59, 130, 246, .5)";
+  const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
-  // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ (ลำดับ 1→9)
+  // ส่วนที่ 1: อาการระบบอื่นๆ (เรียง 1→9 จากบนลงล่าง)
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -157,7 +157,6 @@
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
 
-          <!-- เปลี่ยน layout ให้เรียงบนลงล่าง -->
           <div style="display:flex;flex-direction:column;gap:1rem;">
             ${FEATURE_GROUPS.map(group => {
               const saved = d[group.key] || {};
@@ -217,19 +216,21 @@
           </div>
         </section>
 
-        <!-- ปุ่มด้านล่าง -->
-        <div class="p2-actions" style="margin-top:1.1rem;display:flex;flex-direction:column;gap:.6rem;">
-          <button id="p2_save" style="background:linear-gradient(120deg,#2563eb 0%,#7c3aed 50%,#9333ea 100%);color:#fff;border:none;border-radius:1rem;padding:.8rem 1.2rem;font-size:1rem;font-weight:600;box-shadow:0 8px 20px rgba(79,70,229,.25);cursor:pointer;">
-            บันทึกข้อมูลและไปหน้า 3
-          </button>
-          <button id="p2_clear" style="background:#ef4444;color:#fff;border:none;border-radius:1rem;padding:.7rem 1.2rem;font-size:.93rem;font-weight:600;box-shadow:0 6px 14px rgba(248,113,113,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.35rem;">
+        <!-- ปุ่มด้านล่าง: จัดแบบซ้าย/ขวา ตามภาพตัวอย่าง และยังมี popup -->
+        <div class="p2-actions" style="margin-top:1.1rem;display:flex;align-items:center;justify-content:space-between;">
+          <button id="p2_clear"
+            style="background:#ef4444;color:#fff;border:none;padding:.65rem 1rem;border-radius:1rem;font-weight:700;cursor:pointer;box-shadow:0 10px 20px rgba(239,68,68,.25);">
             🗑️ ล้างข้อมูลหน้านี้
+          </button>
+          <button id="p2_save"
+            style="background:linear-gradient(120deg,#6366f1 0%,#7c3aed 60%,#9333ea 100%);color:#fff;border:none;padding:.75rem 1.15rem;border-radius:1rem;font-weight:800;cursor:pointer;box-shadow:0 12px 26px rgba(99,102,241,.28);">
+            บันทึกข้อมูลและไปหน้า 3
           </button>
         </div>
       </div>
     `;
 
-    // ผูก event ส่วนที่ 1
+    // ── ผูก event ส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -244,7 +245,7 @@
       });
     });
 
-    // ผูก event ส่วนที่ 2
+    // ── ผูก event ส่วนที่ 2
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
       const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
@@ -257,14 +258,15 @@
       input.addEventListener("input", savePage2);
     });
 
-    // ปุ่มล้าง
+    // ── ปุ่มล้าง (popup)
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage2();
+      alert("ล้างข้อมูลหน้า 2 แล้ว");
     });
 
-    // ปุ่มบันทึกและไปหน้า 3 (มี popup)
+    // ── ปุ่มบันทึกและไปหน้า 3 (popup)
     document.getElementById("p2_save").addEventListener("click", () => {
       savePage2();
       window.drugAllergyData.page2.__saved = true;
@@ -304,5 +306,6 @@
     }
   }
 
+  // export
   window.renderPage2 = renderPage2;
 })();
