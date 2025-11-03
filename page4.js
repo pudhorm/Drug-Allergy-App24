@@ -7,6 +7,19 @@
     };
   }
 
+  // === เพิ่ม: ตัวช่วยยิงอีเวนต์อัปเดตให้หน้า 6 รู้ตัว ===
+  function emitUpdate(source) {
+    try {
+      document.dispatchEvent(
+        new CustomEvent("da:update", {
+          detail: { source: source || "page4", ts: Date.now() },
+        })
+      );
+    } catch (e) {
+      // เงียบไว้ ไม่ให้พังหน้า
+    }
+  }
+
   const NARANJO_QUESTIONS = [
     {
       text: "1. มีรายงานการแพ้ยานี้มาก่อนหรือไม่?",
@@ -252,7 +265,8 @@
         inp.addEventListener("input", () => {
           const idx = Number(inp.dataset.drugName);
           store.drugs[idx].name = inp.value;
-          save();
+          save();            // บันทึก
+          emitUpdate("page4"); // แจ้งหน้า 6 ให้รู้ตัว
         });
       });
 
@@ -263,6 +277,7 @@
           if (!store.drugs.length) store.drugs.push({ name: "", answers: {} });
           renderDrugCards();
           save();
+          emitUpdate("page4");
         });
       });
 
@@ -279,6 +294,7 @@
             drug.answers[qIdx] = choice;
           }
           save();
+          emitUpdate("page4");
           renderDrugCards();
         });
       });
@@ -289,11 +305,13 @@
       store.drugs.push({ name: "", answers: {} });
       renderDrugCards();
       save();
+      emitUpdate("page4");
     });
 
     // ปุ่มบันทึกและไปหน้า 5 — แสดง popup
     root.querySelector("#p4_save_next").addEventListener("click", () => {
       save();
+      emitUpdate("page4"); // ให้หน้า 6 (และส่วนอื่น) รีคอมพิวต์ได้ทันที
       alert("บันทึกหน้า 4 แล้ว");
       const btn = document.querySelector('.tabs button[data-target="page5"]');
       if (btn) btn.click();
@@ -304,11 +322,13 @@
       store.drugs = [{ name: "", answers: {} }];
       renderDrugCards();
       save();
+      emitUpdate("page4");
       alert("ล้างข้อมูลหน้า 4 แล้ว");
     });
 
     function save() {
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      // ไม่ alert ที่นี่ เพื่อไม่รบกวน UX; หน้าที่ต้องแจ้งจะทำเอง
     }
 
     renderDrugCards();
