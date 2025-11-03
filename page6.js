@@ -1,4 +1,4 @@
-// page6.js — แสดงผลทั้งหน้า 6 + พิมพ์ทั้งหน้าแบบไม่ตัด Timeline (label ทุก 4 วัน, scale อัตโนมัติ)
+// page6.js — แสดงผลทั้งหน้า 6 + ปุ่มพิมพ์ทั้งหน้า (แก้ SyntaxError และไม่แตะตรรกะ Timeline เดิม)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
 
@@ -106,7 +106,7 @@
     };
   }
 
-  // ----- Visual timeline (หน้าจอหลัก) — อย่าแตะตรรกะ -----
+  // ----- Visual timeline (หน้าจอหลัก) — (ห้ามแก้ตรรกะ) -----
   function p6DrawVisualTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
@@ -351,16 +351,15 @@
 
 // ====== พิมพ์หน้า 6 — แสดงทั้งหน้า + วาด Timeline ใหม่ (label ทุก 4 วัน, scale อัตโนมัติ) ======
 function p6PrintTimeline() {
-  // 1) เก็บ snapshot ของ “ทั้งหน้า 6”
   const root = document.getElementById("p6Root");
   const pageSnapshot = root ? root.outerHTML : "";
 
-  // 2) ดึงข้อมูลสำหรับสรุป/วาด timeline (ห้ามแตะตรรกะเดิม)
+  // ดึงข้อมูลหน้า 5 เพื่อทำ "สรุป" ล่วงหน้า (หลีกเลี่ยง template ซ้อน)
   const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
   const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
   const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
 
-  function fmtDateTH(str) {
+  function fmtDateTHLocal(str) {
     if (!str) return "—";
     const pure = String(str).trim().split(" ")[0];
     let d;
@@ -369,9 +368,49 @@ function p6PrintTimeline() {
     if (!d) return str;
     return d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" });
   }
-  function fmtTime(str) { if (!str) return ""; const t = String(str).slice(0,5); return t + " น."; }
+  function fmtTimeLocal(str) { if (!str) return ""; const t = String(str).slice(0,5); return t + " น."; }
 
-  // 3) เปิดหน้าต่างพิมพ์
+  const summaryHTML = `
+    <section class="p6-print-summary">
+      <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
+      <div class="sec">
+        <h4>💊 รายการยา</h4>
+        ${
+          drugs.length
+            ? `<ol>
+                ${drugs.map(d=>{
+                  const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
+                  const sD=fmtDateTHLocal(d.startDate);
+                  const sT=fmtTimeLocal(d.startTime);
+                  const eD=fmtDateTHLocal(d.stopDate);
+                  const eT=fmtTimeLocal(d.stopTime);
+                  return `<li><strong>${name}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หยุด ${eD}${eT?" "+eT:""}</li>`;
+                }).join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มีรายการยา —</p>`
+        }
+      </div>
+      <div class="sec">
+        <h4>🧪 ADR</h4>
+        ${
+          adrs.length
+            ? `<ol>
+                ${adrs.map(a=>{
+                  const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
+                  const sD=fmtDateTHLocal(a.startDate);
+                  const sT=fmtTimeLocal(a.startTime);
+                  const eD=fmtDateTHLocal(a.endDate);
+                  const eT=fmtTimeLocal(a.endTime);
+                  return `<li><strong>${sym}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หาย ${eD}${eT?" "+eT:""}</li>`;
+                }).join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มี ADR —</p>`
+        }
+      </div>
+    </section>
+  `;
+
+  // เปิดหน้าต่างพิมพ์
   const win = window.open("", "_blank", "width=1200,height=800");
   win.document.write(`
     <html>
@@ -384,12 +423,9 @@ function p6PrintTimeline() {
                  -webkit-print-color-adjust: exact !important;
                  print-color-adjust: exact !important; }
 
-          /* ซ่อนปุ่ม/แท็บ/ตัวควบคุม ใน snapshot */
           .tabs, .p6-footer-btns, .p6-btn, .p6-btn-group, button { display:none !important; }
-          /* ซ่อน Visual Timeline ใน snapshot เพื่อไม่ให้ซ้ำ */
           .p6-visual-box { display:none !important; }
 
-          /* กล่องหัวข้อสรุป + Timeline พิมพ์ */
           .p6-print-summary {
             border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px;
             margin:12px 0 14px; background:#fafafa;
@@ -400,7 +436,6 @@ function p6PrintTimeline() {
           .p6-print-summary li { margin:2px 0; }
           .p6-print-summary .muted { color:#6b7280; margin:0; }
 
-          /* สไตล์ส่วน timeline ที่วาดใหม่ */
           .p6-visual-box-print { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
           #printTimelineScroll { overflow:visible; width:auto; max-width:none; display:inline-block; background:#fff; }
           #printDateRow, #printDrugLane, #printAdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
@@ -418,39 +453,8 @@ function p6PrintTimeline() {
         </style>
       </head>
       <body>
-        <!-- Snapshot ของหน้า 6 ทั้งหน้า -->
         ${pageSnapshot}
-
-        <!-- สรุปอ่านง่าย + Timeline เวอร์ชันพิมพ์ (label ทุก 4 วัน / scale อัตโนมัติ) -->
-        <section class="p6-print-summary">
-          <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
-          <div class="sec">
-            <h4>💊 รายการยา</h4>
-            ${
-              drugs.length
-                ? `<ol>${drugs.map(d=>{
-                    const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
-                    const sD=fmtDateTH(d.startDate), sT=${"`"}\${(d.startTime||"").slice(0,5)}${"`"}; 
-                    const eD=fmtDateTH(d.stopDate),  eT=${"`"}\${(d.stopTime||"").slice(0,5)}${"`"};
-                    return \`<li><strong>\${name}</strong> — เริ่ม \${sD}\${sT?" "+sT+" น.":""} · หยุด \${eD}\${eT?" "+eT+" น.":""}</li>\`;
-                  }).join("")}</ol>`
-                : `<p class="muted">— ไม่มีรายการยา —</p>`
-            }
-          </div>
-          <div class="sec">
-            <h4>🧪 ADR</h4>
-            ${
-              adrs.length
-                ? `<ol>${adrs.map(a=>{
-                    const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
-                    const sD=fmtDateTH(a.startDate), sT=${"`"}\${(a.startTime||"").slice(0,5)}${"`"};
-                    const eD=fmtDateTH(a.endDate),  eT=${"`"}\${(a.endTime||"").slice(0,5)}${"`"};
-                    return \`<li><strong>\${sym}</strong> — เริ่ม \${sD}\${sT?" "+sT+" น.":""} · หาย \${eD}\${eT?" "+eT+" น.":""}</li>\`;
-                  }).join("")}</ol>`
-                : `<p class="muted">— ไม่มี ADR —</p>`
-            }
-          </div>
-        </section>
+        ${summaryHTML}
 
         <div class="p6-visual-box-print">
           <h4 style="margin:0 0 8px;font-size:1.05rem;font-weight:700;color:#111827;">Visual Timeline</h4>
