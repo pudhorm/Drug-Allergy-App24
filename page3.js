@@ -1,4 +1,4 @@
-// page3.js
+// page3.js (REPLACE WHOLE FILE)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
@@ -149,16 +149,10 @@
                         </div>
                         <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
                           <input type="text" placeholder="ค่า"
-                            data-type="value"
-                            data-group="${group.key}"
-                            data-item="${item.key}"
-                            value="${value}"
+                            data-type="value" data-group="${group.key}" data-item="${item.key}" value="${value}"
                             style="flex:0 0 110px;border:1px solid rgba(13,148,136,.35);border-radius:.5rem;padding:.3rem .4rem;font-size:.8rem;min-width:100px;${checked ? "" : "background:#fff;"}">
                           <input type="text" placeholder="รายละเอียดเพิ่มเติม"
-                            data-type="detail"
-                            data-group="${group.key}"
-                            data-item="${item.key}"
-                            value="${detail}"
+                            data-type="detail" data-group="${group.key}" data-item="${item.key}" value="${detail}"
                             style="flex:1 1 auto;border:1px solid rgba(13,148,136,.15);border-radius:.5rem;padding:.3rem .4rem;font-size:.78rem;${checked ? "" : "background:#fff;"}">
                         </div>
                       </div>
@@ -170,13 +164,15 @@
           `;
         }).join("")}
 
-        <!-- ปุ่มท้ายหน้า (ไม่ลอย) -->
-        <div style="margin-top:1.3rem;display:flex;flex-direction:column;gap:.85rem;">
-          <button id="p3-save-next" style="background:linear-gradient(90deg,#2563eb 0%,#7c3aed 100%);color:#fff;border:none;padding:.85rem 1.2rem;border-radius:1.4rem;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 10px 22px rgba(76,81,191,.35);">
-            บันทึกข้อมูลและไปหน้า 4
-          </button>
-          <button id="p3-clear" style="background:#ef4444;color:#fff;border:none;padding:.75rem 1.2rem;border-radius:1.4rem;font-weight:600;font-size:.95rem;cursor:pointer;box-shadow:0 8px 16px rgba(239,68,68,.25);">
+        <!-- ปุ่มท้ายหน้า: จัดตำแหน่งซ้าย-ขวา + สไตล์เหมือนรูปตัวอย่าง -->
+        <div style="margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;">
+          <button id="p3-clear"
+            style="background:#ef4444;color:#fff;border:none;padding:.65rem 1rem;border-radius:1rem;font-weight:700;cursor:pointer;box-shadow:0 10px 20px rgba(239,68,68,.25);">
             🗑️ ล้างข้อมูลหน้านี้
+          </button>
+          <button id="p3-save-next"
+            style="background:linear-gradient(120deg,#6366f1 0%,#7c3aed 60%,#9333ea 100%);color:#fff;border:none;padding:.75rem 1.15rem;border-radius:1rem;font-weight:800;cursor:pointer;box-shadow:0 12px 26px rgba(99,102,241,.28);">
+            บันทึกข้อมูลและไปหน้า 4
           </button>
         </div>
       </div>
@@ -189,32 +185,32 @@
         const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
         const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
         if (!cb || !valInput || !detailInput) return;
+
         cb.addEventListener("change", savePage3);
         valInput.addEventListener("input", savePage3);
         detailInput.addEventListener("input", savePage3);
       });
     });
 
-    // ปุ่มล้าง  ✅ เพิ่ม popup เหมือนหน้าอื่น
+    // ปุ่มล้าง (แสดง popup)
     const clearBtn = root.querySelector("#p3-clear");
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
         window.drugAllergyData.page3 = {};
-        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-        renderPage3(); // วาดใหม่ให้โล่ง
+        renderPage3();
         alert("ล้างข้อมูลหน้า 3 แล้ว");
       });
     }
 
-    // ปุ่มบันทึกและไปหน้า 4  **ธง __saved = true + popup**
+    // ปุ่มบันทึกและไปหน้า 4 (แสดง popup)
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
         savePage3();
-        window.drugAllergyData.page3.__saved = true; // บันทึกแล้ว
+        window.drugAllergyData.page3.__saved = true;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         alert("บันทึกหน้า 3 แล้ว");
-        // ไปหน้า 4
+
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
