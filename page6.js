@@ -4,13 +4,12 @@
     window.drugAllergyData = {};
   }
 
-  // ====================== ตัวช่วยดูว่าครบ 3 หน้าไหม ======================
+  // ====================== ตัวช่วยดูว่าครบ 3 หน้าไหม (ดูเฉพาะ __saved เท่านั้น) ======================
   function checkCorePagesReady() {
     const d = window.drugAllergyData || {};
-    // ถ้าภายหลังคุณให้หน้า 1-3 เขียน __saved = true ก็จะจับได้นิ่งขึ้น
-    const p1 = d.page1 && (d.page1.__saved === true || Object.keys(d.page1).length > 0);
-    const p2 = d.page2 && (d.page2.__saved === true || Object.keys(d.page2).length > 0);
-    const p3 = d.page3 && (d.page3.__saved === true || Object.keys(d.page3).length > 0);
+    const p1 = !!(d.page1 && d.page1.__saved === true);
+    const p2 = !!(d.page2 && d.page2.__saved === true);
+    const p3 = !!(d.page3 && d.page3.__saved === true);
 
     const missing = [];
     if (!p1) missing.push("หน้า 1 ผิวหนัง");
@@ -66,8 +65,6 @@
 
   // ====================== ส่วนที่ 4 (Naranjo + Timeline) ======================
   function getNaranjoFromPage4() {
-    // ตอนนี้ยังไม่มีโครงสร้างตายตัวจากหน้า 4
-    // เลยใส่ placeholder เผื่อมี window.drugAllergyData.page4.naranjo
     const d = window.drugAllergyData || {};
     const p4 = d.page4 || {};
     return p4.naranjo || null;
