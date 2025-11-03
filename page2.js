@@ -8,7 +8,7 @@
   const COMMON_BORDER = "rgba(59, 130, 246, .5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
-  // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ
+  // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ (ลำดับ 1→9)
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -157,12 +157,12 @@
             <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
 
-          <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));gap: 1rem;">
+          <!-- เปลี่ยน layout ให้เรียงบนลงล่าง -->
+          <div style="display:flex;flex-direction:column;gap:1rem;">
             ${FEATURE_GROUPS.map(group => {
               const saved = d[group.key] || {};
-              const isLast = group.key === "other";
               return `
-                <div style="${isLast ? 'grid-column:1 / -1;' : ''}">
+                <div>
                   <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
                     <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#1f2937;margin:0 0 .55rem;">
                       <span>${group.emoji}</span>
@@ -217,7 +217,7 @@
           </div>
         </section>
 
-        <!-- ปุ่มด้านล่าง (ปกติ ไม่ลอย) -->
+        <!-- ปุ่มด้านล่าง -->
         <div class="p2-actions" style="margin-top:1.1rem;display:flex;flex-direction:column;gap:.6rem;">
           <button id="p2_save" style="background:linear-gradient(120deg,#2563eb 0%,#7c3aed 50%,#9333ea 100%);color:#fff;border:none;border-radius:1rem;padding:.8rem 1.2rem;font-size:1rem;font-weight:600;box-shadow:0 8px 20px rgba(79,70,229,.25);cursor:pointer;">
             บันทึกข้อมูลและไปหน้า 3
@@ -233,9 +233,7 @@
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
-        const input = root.querySelector(
-          `.p2-detail[data-group="${group.key}"][data-text="${txt}"]`
-        );
+        const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
         if (!cb || !input) return;
         cb.addEventListener("change", () => {
           input.style.display = cb.checked ? "block" : "none";
@@ -259,50 +257,38 @@
       input.addEventListener("input", savePage2);
     });
 
-    // ปุ่มล้าง  ✅ เพิ่ม popup แจ้งเตือน
+    // ปุ่มล้าง
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage2();
-      alert("ล้างข้อมูลหน้า 2 แล้ว");
     });
 
-    // ปุ่มบันทึกและไปหน้า 3  **เพิ่มธง __saved = true และ popup**
+    // ปุ่มบันทึกและไปหน้า 3 (มี popup)
     document.getElementById("p2_save").addEventListener("click", () => {
       savePage2();
-      window.drugAllergyData.page2.__saved = true; // <-- ธงว่าบันทึกแล้ว
+      window.drugAllergyData.page2.__saved = true;
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
-      // แจ้งเตือนแบบหน้า 1
       alert("บันทึกหน้า 2 แล้ว");
-
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
     });
 
     function savePage2() {
-      const store = (window.drugAllergyData.page2 =
-        window.drugAllergyData.page2 || {});
-
+      const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
       // เก็บส่วนที่ 1
       FEATURE_GROUPS.forEach(group => {
         const groupObj = {};
         group.items.forEach((txt, idx) => {
           const cb = document.getElementById(`${group.key}_${idx}`);
-          const input = root.querySelector(
-            `.p2-detail[data-group="${group.key}"][data-text="${txt}"]`
-          );
+          const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
           if (!cb || !input) return;
           if (cb.checked || input.value.trim() !== "") {
-            groupObj[txt] = {
-              checked: cb.checked,
-              detail: input.value.trim()
-            };
+            groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
           }
         });
         store[group.key] = groupObj;
       });
-
       // เก็บส่วนที่ 2
       const organObj = {};
       ORGANS.forEach((org, idx) => {
@@ -310,14 +296,10 @@
         const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
         if (!cb || !input) return;
         if (cb.checked || input.value.trim() !== "") {
-          organObj[org] = {
-            checked: cb.checked,
-            detail: input.value.trim()
-          };
+          organObj[org] = { checked: cb.checked, detail: input.value.trim() };
         }
       });
       store.organs = organObj;
-
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
     }
   }
