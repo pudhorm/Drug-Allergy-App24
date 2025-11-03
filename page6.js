@@ -1,4 +1,4 @@
-// page6.js — แสดงผลทั้งหน้า 6 + ปุ่มพิมพ์ทั้งหน้า (แก้ SyntaxError และไม่แตะตรรกะ Timeline เดิม)
+// page6.js — หน้า 6 (อัปเดตส่วนที่ 1 เป็น Type of ADR) — โค้ดส่วนอื่นคงเดิม
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
 
@@ -61,7 +61,7 @@
     return `${start} → ${end}`;
   }
 
-  // ----- section 2/3 -----
+  // ----- ส่วนที่ 2 / 3 -----
   function renderSection2(drugNames) {
     return `
       <div class="p6-block sec2">
@@ -106,7 +106,7 @@
     };
   }
 
-  // ----- Visual timeline (หน้าจอหลัก) — (ห้ามแก้ตรรกะ) -----
+  // ----- Visual timeline (หน้าจอหลัก) — **ห้ามแก้ตรรกะ** -----
   function p6DrawVisualTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
@@ -278,28 +278,53 @@
 
     const status = checkCorePagesReady();
 
-    let section1HTML = "";
-    if (!status.ready) {
-      section1HTML = `
-        <div class="p6-block sec1">
-          <div class="p6-head"><div class="p6-emoji">🤖</div><div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div></div>
-          <p class="p6-muted">ต้องกดปุ่ม <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า (หน้า 1 ผิวหนัง, หน้า 2 ระบบอื่นๆ, หน้า 3 Lab) ก่อน</p>
-          <div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(", ")}</div>
+    // ====== ส่วนที่ 1 (ใหม่): Type of ADR ======
+    const subtypesList = `
+      <ul class="p6-muted" style="margin-top:.35rem;">
+        <li>Urticaria</li>
+        <li>Anaphylaxis</li>
+        <li>Angioedema</li>
+        <li>Maculopapular rash</li>
+        <li>Fixed drug eruption</li>
+        <li>Acute Generalized Exanthematous Pustulosis (AGEP)</li>
+        <li>Stevens–Johnson Syndrome (SJS)</li>
+        <li>Toxic Epidermal Necrolysis (TEN)</li>
+        <li>Drug Reaction with Eosinophilia and Systemic Symptoms (DRESS)</li>
+        <li>Erythema multiforme (EM)</li>
+        <li>Photosensitivity drug eruption</li>
+        <li>Exfoliative dermatitis</li>
+        <li>Eczematous drug eruption</li>
+        <li>Bullous Drug Eruption</li>
+        <li>Serum sickness</li>
+        <li>Vasculitis</li>
+        <li>Hemolytic anemia</li>
+        <li>Pancytopenia</li>
+        <li>Neutropenia</li>
+        <li>Thrombocytopenia</li>
+        <li>Nephritis</li>
+      </ul>
+    `;
+
+    const section1HTML = `
+      <div class="p6-block sec1">
+        <div class="p6-head">
+          <div class="p6-emoji">🤖</div>
+          <div class="p6-head-title">ส่วนที่ 1: Type of ADR (Non-immunologic type &amp; Immunologic type)</div>
         </div>
-      `;
-    } else {
-      section1HTML = `
-        <div class="p6-block sec1">
-          <div class="p6-head"><div class="p6-emoji">🤖</div><div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div></div>
-          <div class="p6-subcard"><div class="p6-sub-title">1.1 Pharmacological effects (Rawlins &amp; Thompson)</div>
-            <p class="p6-muted">จะคำนวณจริงหลังตั้ง “สมองประเมิน” โดยใช้ข้อมูลหน้า 1–3</p>
-          </div>
-          <div class="p6-subcard"><div class="p6-sub-title">1.2 Immunologic / Non-immunologic</div>
-            <p class="p6-muted">จะแบ่งย่อยตาม Gell &amp; Coombs 4 ชนิดหลังตั้งกฎ</p>
-          </div>
+        <div class="p6-subcard">
+          <div class="p6-sub-title">ชนิดย่อยที่ใช้ในการจัดประเภท</div>
+          ${subtypesList}
         </div>
-      `;
-    }
+        ${
+          status.ready
+            ? `<p class="p6-muted" style="margin-top:.35rem;">
+                 ระบบจะประเมินจากข้อมูลที่กดบันทึกครบหน้า 1–3 แล้วสรุปว่า<strong>เข้ากับชนิดย่อยใด</strong>โดยอัตโนมัติ (ผลจริงจะปรากฏที่นี่เมื่อใส่ “สมองประเมิน”)
+               </p>`
+            : `<div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(", ")}</div>
+               <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า (หน้า 1 ผิวหนัง, หน้า 2 ระบบอื่นๆ, หน้า 3 Lab) ก่อน จึงจะเริ่มประเมินชนิดย่อยได้</p>`
+        }
+      </div>
+    `;
 
     const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
     const drugNames = Array.isArray(p4.drugs) ? p4.drugs.map(d=>d.name).filter(Boolean) : [];
@@ -349,12 +374,11 @@
 })();
 
 
-// ====== พิมพ์หน้า 6 — แสดงทั้งหน้า + วาด Timeline ใหม่ (label ทุก 4 วัน, scale อัตโนมัติ) ======
+// ====== พิมพ์หน้า 6 — (ตรรกะพิมพ์/สเกล timeline คงเดิมจากเวอร์ชันก่อนหน้า) ======
 function p6PrintTimeline() {
   const root = document.getElementById("p6Root");
   const pageSnapshot = root ? root.outerHTML : "";
 
-  // ดึงข้อมูลหน้า 5 เพื่อทำ "สรุป" ล่วงหน้า (หลีกเลี่ยง template ซ้อน)
   const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
   const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
   const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
@@ -410,7 +434,6 @@ function p6PrintTimeline() {
     </section>
   `;
 
-  // เปิดหน้าต่างพิมพ์
   const win = window.open("", "_blank", "width=1200,height=800");
   win.document.write(`
     <html>
@@ -477,11 +500,6 @@ function p6PrintTimeline() {
             const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
             const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
 
-            const dateRow = document.getElementById("printDateRow");
-            const drugLane = document.getElementById("printDrugLane");
-            const adrLane  = document.getElementById("printAdrLane");
-            const box      = document.getElementById("printTimelineScroll");
-
             function parseDate(str){
               if(!str) return null;
               const pure=String(str).trim().split(" ")[0];
@@ -489,6 +507,11 @@ function p6PrintTimeline() {
               if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
               return null;
             }
+
+            const dateRow = document.getElementById("printDateRow");
+            const drugLane = document.getElementById("printDrugLane");
+            const adrLane  = document.getElementById("printAdrLane");
+            const box      = document.getElementById("printTimelineScroll");
 
             const MS_DAY = 24*60*60*1000;
             const today = new Date(); const today0=new Date(today.getFullYear(),today.getMonth(),today.getDate());
@@ -501,7 +524,6 @@ function p6PrintTimeline() {
             const maxDate = today0;
             const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
 
-            // header วัน
             const PRINT_DAY_W = 45;
             dateRow.style.display="grid";
             dateRow.style.gridTemplateColumns="repeat("+totalDays+", "+PRINT_DAY_W+"px)";
@@ -513,7 +535,6 @@ function p6PrintTimeline() {
               dateRow.appendChild(cell);
             }
 
-            // lanes
             const ROW_H=40;
             function prepLane(el,rows){
               el.innerHTML="";
@@ -552,15 +573,13 @@ function p6PrintTimeline() {
               adrLane.appendChild(bar);
             });
 
-            // แสดง label ทุก ๆ 4 วัน + ต้น/ท้าย
-            (function thinLabels(){
-              const cells = Array.from(dateRow.children);
-              const lastIdx = cells.length - 1;
-              cells.forEach(function (cell, i) {
-                if (i === 0 || i === lastIdx) return;
-                if (i % 4 !== 0) cell.textContent = "";
-              });
-            })();
+            // Label ทุก 4 วัน + ต้น/ท้าย
+            const cells = Array.from(dateRow.children);
+            const lastIdx = cells.length - 1;
+            cells.forEach(function (cell, i) {
+              if (i === 0 || i === lastIdx) return;
+              if (i % 4 !== 0) cell.textContent = "";
+            });
 
             // scale ให้พอดีกระดาษ
             const maxWidth = Math.min(1120, window.innerWidth - 80);
