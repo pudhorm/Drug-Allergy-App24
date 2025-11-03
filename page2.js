@@ -259,11 +259,12 @@
       input.addEventListener("input", savePage2);
     });
 
-    // ปุ่มล้าง
+    // ปุ่มล้าง  ✅ เพิ่ม popup แจ้งเตือน
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage2();
+      alert("ล้างข้อมูลหน้า 2 แล้ว");
     });
 
     // ปุ่มบันทึกและไปหน้า 3  **เพิ่มธง __saved = true และ popup**
