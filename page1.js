@@ -376,7 +376,7 @@
         <select id="p1_distribution">
           <option value="">เลือก...</option>
           <option value="สมมาตร" ${d.distribution === "สมมาตร" ? "selected" : ""}>สมมาตร</option>
-          <option value="ไม่สมมาตร" ${d.distribution === "ไม่สมมาตร" ? "selected" : ""}>ไม่สมมาตร</option>
+          <option value="ไม่สมมาตร" ${d.distribution === "ไม่สมาตร" ? "selected" : ""}>ไม่สมมาตร</option>
           <option value="อื่นๆ" ${d.distribution === "อื่นๆ" ? "selected" : ""}>อื่นๆ</option>
         </select>
       </label>
@@ -615,6 +615,9 @@
       // ----- เวลา -----
       store.onset = document.getElementById("p1_onset").value;
       store.onsetOther = document.getElementById("p1_onset_other").value;
+
+      // ✅ ธงว่าหน้า 1 กดบันทึกแล้ว
+      store.__saved = true;
 
       if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
