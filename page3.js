@@ -3,7 +3,7 @@
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
 
-  // โครงแบบเดียวกับรูป: CBC, LFT, RFT, Electrolytes, UA, ปอด, หัวใจ, Immunology
+  // โครง Lab เป็นกลุ่มๆ
   const LAB_GROUPS = [
     {
       key: "cbc",
@@ -129,11 +129,7 @@
                 <span>${group.title}</span>
               </h3>
 
-              <div style="
-                display:grid;
-                grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-                gap:.55rem 1.1rem;
-              ">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:.55rem 1.1rem;">
                 ${group.items.map((item) => {
                   const fieldId = `${group.key}_${item.key}`;
                   const checked = groupData[item.key]?.checked ? "checked" : "";
@@ -164,7 +160,7 @@
           `;
         }).join("")}
 
-        <!-- ปุ่มท้ายหน้า: จัดตำแหน่งซ้าย-ขวา + สไตล์เหมือนรูปตัวอย่าง -->
+        <!-- ปุ่มท้ายหน้า -->
         <div style="margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;">
           <button id="p3-clear"
             style="background:#ef4444;color:#fff;border:none;padding:.65rem 1rem;border-radius:1rem;font-weight:700;cursor:pointer;box-shadow:0 10px 20px rgba(239,68,68,.25);">
@@ -178,7 +174,7 @@
       </div>
     `;
 
-    // ผูก event ทั้งหมด
+    // bind inputs
     LAB_GROUPS.forEach(group => {
       group.items.forEach(item => {
         const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
@@ -192,7 +188,7 @@
       });
     });
 
-    // ปุ่มล้าง (แสดง popup)
+    // ล้างข้อมูล + popup
     const clearBtn = root.querySelector("#p3-clear");
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
@@ -202,7 +198,7 @@
       });
     }
 
-    // ปุ่มบันทึกและไปหน้า 4 (แสดง popup)
+    // บันทึกและไปหน้า 4 + popup + เรนเดอร์หน้า 4 ทันที
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
@@ -211,6 +207,7 @@
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         alert("บันทึกหน้า 3 แล้ว");
 
+        // เปลี่ยนแท็บไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
@@ -218,7 +215,25 @@
           btn4.classList.add("active");
           document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
           page4.classList.add("visible");
+        } else if (btn4) {
+          btn4.click();
         }
+
+        // เรียก renderPage4() ทันที + เผื่อ DOM ยังไม่พร้อม ให้ retry สั้นๆ
+        const callRender = () => { if (typeof window.renderPage4 === "function") window.renderPage4(); };
+        callRender();
+        let tries = 0;
+        const iv = setInterval(() => {
+          const el = document.getElementById("page4");
+          if (el) {
+            clearInterval(iv);
+            callRender();
+          } else if (++tries > 10) {
+            clearInterval(iv);
+          }
+        }, 30);
+        // เผื่อกรณี animation frame
+        requestAnimationFrame(callRender);
       });
     }
 
