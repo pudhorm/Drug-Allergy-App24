@@ -158,6 +158,7 @@ window.renderPage5 = function () {
         stopDate: "",
         stopTime: ""
       });
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       window.renderPage5();
     });
   }
@@ -173,6 +174,7 @@ window.renderPage5 = function () {
         endDate: "",
         endTime: ""
       });
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       window.renderPage5();
     });
   }
@@ -187,41 +189,52 @@ window.renderPage5 = function () {
       } else if (kind === "adr") {
         window.drugAllergyData.page5.adrLines.splice(idx, 1);
       }
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       window.renderPage5();
     });
   });
+
+  // ---- helper กันพังเวลาวาด timeline ----
+  function safeDrawTimeline() {
+    try { drawTimeline(); } catch (e) { console.error("[page5] drawTimeline error:", e); }
+  }
 
   // ผูก input ของยา
   pageEl.querySelectorAll(".p5-drug-card").forEach((card) => {
     const idx = Number(card.dataset.idx);
     const nameInput = card.querySelector(".p5-drug-name");
     const startInput = card.querySelector(".p5-drug-start");
-    const startTimeInput = card.querySelector(".p5-drug-start-time");  // ✅ เพิ่ม
+    const startTimeInput = card.querySelector(".p5-drug-start-time");
     const stopInput = card.querySelector(".p5-drug-stop");
-    const stopTimeInput = card.querySelector(".p5-drug-stop-time");    // ✅ เพิ่ม
+    const stopTimeInput = card.querySelector(".p5-drug-stop-time");
 
     if (nameInput)
       nameInput.addEventListener("input", (e) => {
         window.drugAllergyData.page5.drugLines[idx].name = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
     if (startInput)
       startInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].startDate = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
-    if (startTimeInput)                               // ✅ ใหม่
+    if (startTimeInput)
       startTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].startTime = e.target.value;
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
     if (stopInput)
       stopInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopDate = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
-    if (stopTimeInput)                                // ✅ ใหม่
+    if (stopTimeInput)
       stopTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.drugLines[idx].stopTime = e.target.value;
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
   });
 
@@ -230,52 +243,61 @@ window.renderPage5 = function () {
     const idx = Number(card.dataset.idx);
     const symInput = card.querySelector(".p5-adr-symptom");
     const startInput = card.querySelector(".p5-adr-start");
-    const startTimeInput = card.querySelector(".p5-adr-start-time");  // ✅ เพิ่ม
+    const startTimeInput = card.querySelector(".p5-adr-start-time");
     const endInput = card.querySelector(".p5-adr-end");
-    const endTimeInput = card.querySelector(".p5-adr-end-time");      // ✅ เพิ่ม
+    const endTimeInput = card.querySelector(".p5-adr-end-time");
 
     if (symInput)
       symInput.addEventListener("input", (e) => {
         window.drugAllergyData.page5.adrLines[idx].symptom = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
     if (startInput)
       startInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].startDate = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
-    if (startTimeInput)                               // ✅ ใหม่
+    if (startTimeInput)
       startTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].startTime = e.target.value;
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
     if (endInput)
       endInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].endDate = e.target.value;
-        drawTimeline();
+        safeDrawTimeline();
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
-    if (endTimeInput)                                 // ✅ ใหม่
+    if (endTimeInput)
       endTimeInput.addEventListener("change", (e) => {
         window.drugAllergyData.page5.adrLines[idx].endTime = e.target.value;
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       });
   });
 
-
-  // ปุ่มไปหน้า 6
+  // ปุ่มไปหน้า 6  ✅ ตั้งธง __saved และ popup
   const go6 = document.getElementById("p5GoSummary");
   if (go6) {
     go6.addEventListener("click", () => {
+      window.drugAllergyData.page5.__saved = true;
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      alert("บันทึกหน้า 5 แล้ว");
       const tabBtn = document.querySelector('.tabs button[data-target="page6"]');
       if (tabBtn) tabBtn.click();
       if (window.renderPage6) window.renderPage6();
     });
   }
 
-  // ปุ่มล้างเฉพาะหน้า 5
+  // ปุ่มล้างเฉพาะหน้า 5  ✅ popup และบันทึก
   const clearBtn = document.getElementById("p5Clear");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       window.renderPage5();
+      alert("ล้างข้อมูลหน้า 5 แล้ว");
     });
   }
 
@@ -285,8 +307,8 @@ window.renderPage5 = function () {
     printBtn.addEventListener("click", p5PrintTimeline);
   }
 
-  // วาด timeline ครั้งแรก
-  drawTimeline();
+  // วาด timeline ครั้งแรก (กันพังด้วย safeDrawTimeline)
+  (function () { try { drawTimeline(); } catch(e) { console.error("[page5] first draw error:", e); } })();
 
   // อัปเดตกล่องวันที่/เวลาหลัง DOM เสร็จ
   setTimeout(p5UpdateNowBox, 50);
@@ -514,8 +536,8 @@ function p5PrintTimeline() {
     return d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" });
   }
   function fmtTime(str) {
-    if (!str) return "";               // ถ้าไม่กรอก ไม่ต้องโชว์เลย
-    const t = String(str).slice(0,5);  // 09:30
+    if (!str) return "";
+    const t = String(str).slice(0,5);
     return t + " น.";
   }
 
@@ -574,27 +596,15 @@ function p5PrintTimeline() {
         <title>พิมพ์หน้า 5 Timeline</title>
         <style>
           * { box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
-          body {
-            margin:0; padding:12px 16px 16px; background:#fff;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* ซ่อนปุ่มด้านล่าง + ปุ่มเพิ่มตอนปริ้น */
-          .p5-footer-btns,
-          .p5-btn-group {
-            display:none !important;
-          }
-
-          /* ซ่อนฟอร์มแบบ card แล้วแทนด้วยสรุปด้านบน */
+          body { margin:0; padding:12px 16px 16px; background:#fff;
+                 -webkit-print-color-adjust: exact !important;
+                 print-color-adjust: exact !important; }
+          .p5-footer-btns, .p5-btn-group { display:none !important; }
           .p5-form-block { display:none !important; }
 
           .p5-print-summary {
-            border:1px solid #e5e7eb;
-            border-radius:12px;
-            padding:12px 14px;
-            margin-bottom:14px;
-            background:#fafafa;
+            border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px;
+            margin-bottom:14px; background:#fafafa;
           }
           .p5-print-summary h3 { margin:0 0 8px; }
           .p5-print-summary h4 { margin:10px 0 6px; }
@@ -602,7 +612,6 @@ function p5PrintTimeline() {
           .p5-print-summary li { margin:2px 0; }
           .p5-print-summary .muted { color:#6b7280; margin:0; }
 
-          /* timeline ให้มีสีเหมือนเดิม */
           .p5-timeline-box { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
           #p5TimelineScroll { overflow:visible !important; width:auto !important; max-width:none !important; display:inline-block; background:#fff; }
           #p5DateRow, #p5DrugLane, #p5AdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
@@ -610,12 +619,8 @@ function p5PrintTimeline() {
           .p5-lane { display:flex; gap:10px; align-items:flex-start; margin-top:6px; }
           .p5-lane-label { width:38px; flex:0 0 38px; font-weight:700; color:#06705d; padding-top:10px; }
           .p5-lane-adr { color:#c53030; }
-          .p5-bar {
-            height:34px; border-radius:9999px;
-            display:flex; align-items:center; justify-content:center;
-            color:#fff; font-weight:600; white-space:nowrap;
-            box-shadow:0 8px 22px rgba(15,23,42,.12); font-size:12px;
-          }
+          .p5-bar { height:34px; border-radius:9999px; display:flex; align-items:center; justify-content:center;
+                    color:#fff; font-weight:600; white-space:nowrap; box-shadow:0 8px 22px rgba(15,23,42,.12); font-size:12px; }
           .p5-bar-drug { background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%); }
           .p5-bar-adr  { background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%); }
 
@@ -628,7 +633,6 @@ function p5PrintTimeline() {
         ${pageHTML}
         <script>
           (function () {
-            // บีบสเกล timeline ให้เห็นครบ
             const box = document.getElementById("p5TimelineScroll");
             const dateRow = document.getElementById("p5DateRow");
             const drugLane = document.getElementById("p5DrugLane");
