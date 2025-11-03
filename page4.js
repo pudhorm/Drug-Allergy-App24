@@ -291,18 +291,22 @@
       save();
     });
 
-    // ปุ่มบันทึกและไปหน้า 5
+    // ปุ่มบันทึกและไปหน้า 5  ✅ เพิ่มธง __saved และ popup
     root.querySelector("#p4_save_next").addEventListener("click", () => {
       save();
+      window.drugAllergyData.page4.__saved = true;
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      alert("บันทึกหน้า 4 แล้ว");
       const btn = document.querySelector('.tabs button[data-target="page5"]');
       if (btn) btn.click();
     });
 
-    // ปุ่มล้าง
+    // ปุ่มล้าง  ✅ เพิ่ม popup
     root.querySelector("#p4_clear").addEventListener("click", () => {
       store.drugs = [{ name: "", answers: {} }];
       renderDrugCards();
       save();
+      alert("ล้างข้อมูลหน้า 4 แล้ว");
     });
 
     function save() {
