@@ -14,7 +14,6 @@
 <!-- กัน error favicon 404 -->
 <link rel="icon" href="data:," />
 
-
   <!-- ✨ เพิ่มเฉพาะนี้: กระจายปุ่มเมนูให้เต็มแถว -->
   <style>
     nav.tabs {
@@ -56,11 +55,13 @@
   <span class="bubble-dot dot8"></span>
 </header>
 
-
-
   <!-- เมนูเลือกหน้า -->
   <nav class="tabs">
-    <button data-target="page1" class="active">หน้า 1 ผิวหนัง</button>
+    <!-- ⬇️ เพิ่มหน้า Type of ADR ให้อยู่ก่อนหน้า 1 และทำให้เป็น active แทน -->
+    <button data-target="pageTypeADR" class="active">Type of ADR</button>
+
+    <!-- ปุ่มเดิม (เอา active ออกจากหน้า 1) -->
+    <button data-target="page1">หน้า 1 ผิวหนัง</button>
     <button data-target="page2">หน้า 2 ระบบอื่น</button>
     <button data-target="page3">หน้า 3 Lab</button>
     <button data-target="page4">หน้า 4 Naranjo</button>
@@ -69,8 +70,12 @@
   </nav>
 
   <main>
+    <!-- ⬇️ เพิ่ม section ของหน้า Type of ADR และทำให้เป็นหน้าเริ่มต้น (visible) -->
+    <section id="pageTypeADR" class="page visible"></section>
+
     <!-- หน้า 1–4 ให้ไฟล์ JS ของคุณสร้างเอง -->
-    <section id="page1" class="page visible"></section>
+    <!-- เอา visible ออกจากหน้า 1 -->
+    <section id="page1" class="page"></section>
     <section id="page2" class="page"></section>
     <section id="page3" class="page"></section>
     <section id="page4" class="page"></section>
@@ -128,10 +133,14 @@
     </section>
   </main>
 
-   <!-- ต้องมาก่อนทุกไฟล์อื่น -->
+  <!-- ต้องมาก่อนทุกไฟล์อื่น -->
   <script src="ephemeral-mode.js"></script>
   <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
   <script src="data.js"></script>
+
+  <!-- ⬇️ เพิ่มโหลดไฟล์หน้า Type of ADR -->
+  <script src="pageTypeADR.js"></script>
+
   <script src="page1.js"></script>
   <script src="page2.js"></script>
   <script src="page3.js"></script>
@@ -143,6 +152,9 @@
     // ปุ่มเมนูทุกปุ่ม
     const tabBtns = document.querySelectorAll(".tabs button");
     const pages = document.querySelectorAll(".page");
+
+    // ⬇️ เพิ่มสถานะเรนเดอร์ของหน้า Type of ADR
+    let pageTypeRendered = false;
 
     let page2Rendered = false;
     let page3Rendered = false;
@@ -160,6 +172,12 @@
       pages.forEach((p) => p.classList.remove("visible"));
       const targetPage = document.getElementById(targetId);
       if (targetPage) targetPage.classList.add("visible");
+
+      // ⬇️ เรียกเรนเดอร์เฉพาะครั้งแรกของหน้า Type of ADR
+      if (targetId === "pageTypeADR" && window.renderPageTypeADR && !pageTypeRendered) {
+        window.renderPageTypeADR();
+        pageTypeRendered = true;
+      }
 
       if (targetId === "page2" && window.renderPage2 && !page2Rendered) {
         window.renderPage2();
@@ -190,8 +208,14 @@
       });
     });
 
-    // หน้า 1 โหลดครั้งแรก
-        if (window.renderPage1) {
+    // ⬇️ เรนเดอร์หน้า Type of ADR เป็นหน้าแรก (ถ้ามีไฟล์)
+    if (window.renderPageTypeADR) {
+      window.renderPageTypeADR();
+      pageTypeRendered = true;
+    }
+
+    // หน้า 1 โหลดครั้งแรก (คงโค้ดเดิมไว้)
+    if (window.renderPage1) {
       window.renderPage1();
     } else {
       document.getElementById("page1").innerHTML = "<p>โหลดหน้า 1 ไม่ได้</p>";
@@ -199,4 +223,3 @@
   </script>
 </body>
 </html>
-
