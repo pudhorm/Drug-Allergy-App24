@@ -1,18 +1,17 @@
-/* ephemeral-mode.js — เปิดโหมดไม่จำค่าเมื่อรีเฟรช */
+// ephemeral-mode.js
 (function () {
-  // ล้าง localStorage ทุกครั้งที่โหลดเว็บ
-  try { localStorage.removeItem("drugAllergyData"); } catch (e) {}
+  try {
+    // ล้างที่เก็บชั่วคราว/ถาวร
+    localStorage.removeItem("drugAllergyData");
+    sessionStorage.clear();
 
-  // โครงเก็บข้อมูลกลางใหม่ทุกครั้ง
-  window.drugAllergyData = {};
+    // ตัดการรีสโตร์/การบันทึกทั้งหมด
+    window.loadDrugAllergyData = function () { return {}; };
+    window.saveDrugAllergyData = function () { /* no-op: ไม่บันทึก */ };
 
-  // ปิดการบันทึกถาวรทั้งหมด
-  window.saveDrugAllergyData = function () {
-    // no-op: ไม่บันทึกลง storage ใดๆ
-  };
-
-  // ปิดการโหลดข้อมูลเก่าทั้งหมด
-  window.loadDrugAllergyData = function () {
-    return {}; // บังคับให้ว่างเสมอ
-  };
+    // รีเซ็ตตัวแปรกลาง ให้เริ่มใหม่ทุกครั้ง
+    window.drugAllergyData = {};
+  } catch (e) {
+    console.warn("ephemeral-mode init error:", e);
+  }
 })();
