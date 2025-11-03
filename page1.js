@@ -502,11 +502,12 @@
       if (f) handleFile(f);
     });
 
-    // ปุ่มล้าง
+    // ปุ่มล้าง  ✅ เพิ่ม popup แจ้งเตือนหลังล้าง
     document.getElementById("p1_clear").addEventListener("click", () => {
       window.drugAllergyData.page1 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage1();
+      alert("ล้างข้อมูลหน้า 1 แล้ว");
     });
 
     // ปุ่มบันทึก
