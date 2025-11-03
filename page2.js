@@ -267,15 +267,18 @@
     });
 
     // ปุ่มบันทึกและไปหน้า 3
-    document.getElementById("p2_save").addEventListener("click", () => {
-      savePage2();
-      const btn3 = document.querySelector('.tabs button[data-target="page3"]');
-      if (btn3) btn3.click();
-    });
+document.getElementById("p2_save").addEventListener("click", () => {
+  // บันทึกข้อมูลหน้าที่ 2
+  savePage2();
+  // ปักธงว่ากดบันทึกหน้า 2 แล้ว
+  window.drugAllergyData.page2.__saved = true;
+  if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-    function savePage2() {
-      const store = (window.drugAllergyData.page2 =
-        window.drugAllergyData.page2 || {});
+  // ไปหน้า 3
+  const btn3 = document.querySelector('.tabs button[data-target="page3"]');
+  if (btn3) btn3.click();
+});
+
 
       // เก็บส่วนที่ 1
       FEATURE_GROUPS.forEach(group => {
