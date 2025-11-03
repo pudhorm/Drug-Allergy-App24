@@ -340,7 +340,7 @@ window.renderPage5 = function () {
   setTimeout(p5UpdateNowBox, 50);
 };
 
-// 3) ฟังก์ชันวาด timeline (ตัวเดิมของคุณ + เพิ่มเงื่อนไข "วันเดียวกันให้เป็นจุด")
+// 3) ฟังก์ชันวาด timeline (ตัวเดิม + กรณีวันเดียวกันแสดง “จุด” และขยับซ้ายเล็กน้อย)
 function drawTimeline() {
   const dateRow = document.getElementById("p5DateRow");
   const drugLane = document.getElementById("p5DrugLane");
@@ -459,7 +459,7 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
-    // 🔵 กรณีเริ่มและหยุด "วันเดียวกัน" (ฟิลด์ startDate/stopDate ถูกกรอกจริงทั้งคู่) ให้แสดงเป็นจุด
+    // 🔵 จุดกรณีวันเดียวกัน (ขยับซ้ายเล็กน้อย)
     const isSameDayExplicit =
       d.startDate && d.stopDate &&
       parseDate(d.startDate) && parseDate(d.stopDate) &&
@@ -471,8 +471,7 @@ function drawTimeline() {
       cell.style.gridRow = `${idx + 1}`;
       cell.style.display = "flex";
       cell.style.alignItems = "center";
-      cell.style.justifyContent = "center";
-
+      cell.style.justifyContent = "flex-start"; // ⇦ ขยับซ้าย
       const dot = document.createElement("div");
       dot.title = d.name || `ยาตัวที่ ${idx + 1}`;
       dot.style.width = "16px";
@@ -480,7 +479,7 @@ function drawTimeline() {
       dot.style.borderRadius = "9999px";
       dot.style.background = "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)";
       dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
-
+      dot.style.marginLeft = "10px"; // ⇦ ระยะเลื่อนซ้ายเล็กน้อย
       cell.appendChild(dot);
       drugLane.appendChild(cell);
       return;
@@ -523,7 +522,7 @@ function drawTimeline() {
     const startIdx = dayIndexOf(start);
     const endIdx = dayIndexOf(end);
 
-    // 🟠 กรณีเกิดและหาย "วันเดียวกัน" (มี startDate & endDate) → แสดงจุด
+    // 🟠 จุดกรณีวันเดียวกัน (ขยับซ้ายเล็กน้อย)
     const isSameDayExplicit =
       a.startDate && a.endDate &&
       parseDate(a.startDate) && parseDate(a.endDate) &&
@@ -535,8 +534,7 @@ function drawTimeline() {
       cell.style.gridRow = `${idx + 1}`;
       cell.style.display = "flex";
       cell.style.alignItems = "center";
-      cell.style.justifyContent = "center";
-
+      cell.style.justifyContent = "flex-start"; // ⇦ ขยับซ้าย
       const dot = document.createElement("div");
       dot.title = a.symptom || `ADR ${idx + 1}`;
       dot.style.width = "16px";
@@ -544,7 +542,7 @@ function drawTimeline() {
       dot.style.borderRadius = "9999px";
       dot.style.background = "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
       dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
-
+      dot.style.marginLeft = "10px"; // ⇦ ระยะเลื่อนซ้ายเล็กน้อย
       cell.appendChild(dot);
       adrLane.appendChild(cell);
       return;
