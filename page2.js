@@ -77,7 +77,7 @@
     },
     {
       key: "eye",
-      title: "5. ความผิดปกติทางตา",   // เปลี่ยนชื่อแล้ว
+      title: "5. ความผิดปกติทางตา",
       emoji: "👁️",
       bg: COMMON_BG,
       border: COMMON_BORDER,
@@ -266,19 +266,19 @@
       renderPage2();
     });
 
-    // ปุ่มบันทึกและไปหน้า 3
-document.getElementById("p2_save").addEventListener("click", () => {
-  // บันทึกข้อมูลหน้าที่ 2
-  savePage2();
-  // ปักธงว่ากดบันทึกหน้า 2 แล้ว
-  window.drugAllergyData.page2.__saved = true;
-  if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+    // ปุ่มบันทึกและไปหน้า 3  **เพิ่มธง __saved = true**
+    document.getElementById("p2_save").addEventListener("click", () => {
+      savePage2();
+      window.drugAllergyData.page2.__saved = true; // <-- ธงว่าบันทึกแล้ว
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-  // ไปหน้า 3
-  const btn3 = document.querySelector('.tabs button[data-target="page3"]');
-  if (btn3) btn3.click();
-});
+      const btn3 = document.querySelector('.tabs button[data-target="page3"]');
+      if (btn3) btn3.click();
+    });
 
+    function savePage2() {
+      const store = (window.drugAllergyData.page2 =
+        window.drugAllergyData.page2 || {});
 
       // เก็บส่วนที่ 1
       FEATURE_GROUPS.forEach(group => {
