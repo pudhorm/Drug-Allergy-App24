@@ -266,11 +266,14 @@
       renderPage2();
     });
 
-    // ปุ่มบันทึกและไปหน้า 3  **เพิ่มธง __saved = true**
+    // ปุ่มบันทึกและไปหน้า 3  **เพิ่มธง __saved = true และ popup**
     document.getElementById("p2_save").addEventListener("click", () => {
       savePage2();
       window.drugAllergyData.page2.__saved = true; // <-- ธงว่าบันทึกแล้ว
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
+      // แจ้งเตือนแบบหน้า 1
+      alert("บันทึกหน้า 2 แล้ว");
 
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
