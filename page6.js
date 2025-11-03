@@ -1,4 +1,4 @@
-// page6.js
+// page6.js  — แสดงผล Naranjo หลายตัว + Timeline (ลิสต์ + Visual) + ปุ่มพิมพ์แบบเห็นแถบครบ
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
 
@@ -144,6 +144,7 @@
     const maxDate = today0;
     const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
 
+    // header วัน
     dateRow.style.display="grid";
     dateRow.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
     for(let i=0;i<totalDays;i++){
@@ -154,6 +155,7 @@
       dateRow.appendChild(cell);
     }
 
+    // lanes
     const ROW_H=46;
     function prepLane(el,rows){
       el.style.display="grid";
@@ -206,7 +208,7 @@
 
   // ---------------- Section 4: Naranjo (หลายตัว) + Timeline ----------------
   function renderSection4() {
-    const naranjoList = getNaranjoListFromPage4(); // << เปลี่ยนเป็นหลายตัว
+    const naranjoList = getNaranjoListFromPage4();
     const { drugs, adrs } = getPage5Data();
 
     const drugList = drugs.length
@@ -315,16 +317,17 @@
         ${renderSection3()}
         ${renderSection4()}
         <div class="p6-footer-btns">
-          <button class="p6-btn p6-btn-print" onclick="window.print()">🖨️ Print / PDF</button>
+          <button class="p6-btn p6-btn-print" onclick="p6PrintTimeline()">🖨️ Print / PDF</button>
           <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
         </div>
       </div>
     `;
 
+    // วาด Visual Timeline หลัง DOM พร้อม
     setTimeout(() => { try { p6DrawVisualTimeline(); } catch(e){ console.error("[page6] draw timeline:", e); } }, 0);
   }
 
-  // ---------------- styles (เล็กน้อย) ----------------
+  // ---------------- styles (เล็กน้อยสำหรับ Visual Timeline) ----------------
   (function injectP6Styles(){
     if (document.getElementById("p6-visual-style")) return;
     const css = `
@@ -353,3 +356,146 @@
 
   window.renderPage6 = renderPage6;
 })();
+
+
+// ====== พิมพ์หน้า 6 ให้เห็น Timeline ครบความกว้าง (ตรรกะเดียวกับหน้า 5) ======
+function p6PrintTimeline() {
+  const page = document.getElementById("p6Root");
+  if (!page) { window.print(); return; }
+
+  // ดึงข้อมูลจากหน้า 5 (สรุปข้อความ)
+  const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
+  const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
+  const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+
+  function fmtDateTH(str) {
+    if (!str) return "—";
+    const pure = String(str).trim().split(" ")[0];
+    let d;
+    if (pure.includes("-")) { const [y,m,dd] = pure.split("-").map(Number); if (y && m && dd) d = new Date(y, m-1, dd); }
+    else if (pure.includes("/")) { const [dd,m,y] = pure.split("/").map(Number); if (y && m && dd) d = new Date(y, m-1, dd); }
+    if (!d) return str;
+    return d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" });
+  }
+  function fmtTime(str) { if (!str) return ""; const t = String(str).slice(0,5); return t + " น."; }
+
+  const summaryHTML = `
+    <section class="p6-print-summary">
+      <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
+      <div class="sec">
+        <h4>💊 รายการยา</h4>
+        ${
+          drugs.length
+            ? `<ol>
+                ${drugs.map(d=>{
+                  const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
+                  const sD=fmtDateTH(d.startDate), sT=fmtTime(d.startTime);
+                  const eD=fmtDateTH(d.stopDate),  eT=fmtTime(d.stopTime);
+                  return `<li><strong>${name}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หยุด ${eD}${eT?" "+eT:""}</li>`;
+                }).join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มีรายการยา —</p>`
+        }
+      </div>
+      <div class="sec">
+        <h4>🧪 ADR</h4>
+        ${
+          adrs.length
+            ? `<ol>
+                ${adrs.map(a=>{
+                  const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
+                  const sD=fmtDateTH(a.startDate), sT=fmtTime(a.startTime);
+                  const eD=fmtDateTH(a.endDate),  eT=fmtTime(a.endTime);
+                  return `<li><strong>${sym}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หาย ${eD}${eT?" "+eT:""}</li>`;
+                }).join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มี ADR —</p>`
+        }
+      </div>
+    </section>
+  `;
+
+  const pageHTML = page.outerHTML;
+  const win = window.open("", "_blank", "width=1200,height=800");
+
+  win.document.write(`
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>พิมพ์หน้า 6 Timeline</title>
+        <style>
+          * { box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+          body { margin:0; padding:12px 16px 16px; background:#fff;
+                 -webkit-print-color-adjust: exact !important;
+                 print-color-adjust: exact !important; }
+          .p6-footer-btns, .p6-btn, .p6-btn-group { display:none !important; }
+
+          .p6-print-summary {
+            border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px;
+            margin-bottom:14px; background:#fafafa;
+          }
+          .p6-print-summary h3 { margin:0 0 8px; }
+          .p6-print-summary h4 { margin:10px 0 6px; }
+          .p6-print-summary ol { margin:0 0 6px 18px; padding:0; }
+          .p6-print-summary li { margin:2px 0; }
+          .p6-print-summary .muted { color:#6b7280; margin:0; }
+
+          .p6-visual-box { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
+          #p6TimelineScroll { overflow:visible !important; width:auto !important; max-width:none !important; display:inline-block; background:#fff; }
+          #p6DateRow, #p6DrugLane, #p6AdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
+          .p6-date-cell { border-bottom:1px solid #edf2f7; font-size:11px; font-weight:600; white-space:nowrap; padding-bottom:2px; text-align:left; }
+          .p6-lane { display:flex; gap:10px; align-items:flex-start; margin-top:6px; }
+          .p6-lane-label { width:38px; flex:0 0 38px; font-weight:700; color:#06705d; padding-top:10px; }
+          .p6-lane-adr { color:#c53030 !important; }
+          .p6-bar { height:34px; border-radius:9999px; display:flex; align-items:center; justify-content:center;
+                    color:#fff; font-weight:600; white-space:nowrap; box-shadow:0 8px 22px rgba(15,23,42,.12); font-size:12px; }
+          .p6-bar-drug { background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%); }
+          .p6-bar-adr  { background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%); }
+
+          @page { size:A4 landscape; margin:8mm; }
+          @media print { body { background:#fff; } }
+        </style>
+      </head>
+      <body>
+        ${summaryHTML}
+        ${pageHTML}
+        <script>
+          (function () {
+            const box = document.getElementById("p6TimelineScroll");
+            const dateRow = document.getElementById("p6DateRow");
+            const drugLane = document.getElementById("p6DrugLane");
+            const adrLane  = document.getElementById("p6AdrLane");
+            if (box && dateRow && drugLane && adrLane) {
+              const dayCount = dateRow.children.length || 1;
+              const PRINT_DAY_W = 45; // ความกว้างต่อวันในโหมดพิมพ์ (เท่า page5)
+              const cols = "repeat(" + dayCount + ", " + PRINT_DAY_W + "px)";
+              dateRow.style.gridTemplateColumns = cols;
+              drugLane.style.gridTemplateColumns = cols;
+              adrLane.style.gridTemplateColumns  = cols;
+
+              // ลด label วันให้ไม่ถี่เกิน — แสดงทุกๆ 4 วัน เหมือนหน้า 5
+              const cells = Array.from(dateRow.children);
+              const lastIdx = cells.length - 1;
+              cells.forEach(function (cell, i) {
+                if (i === 0 || i === lastIdx) return;
+                if (i % 4 !== 0) cell.textContent = "";
+              });
+
+              // ถ้ากว้างเกินหน้ากระดาษ ให้ scale ลงให้พอดี
+              const maxWidth = 1000; // px ประมาณ A4 แนวนอน
+              const totalWidth = dayCount * PRINT_DAY_W + 60;
+              if (totalWidth > maxWidth) {
+                const scale = maxWidth / totalWidth;
+                box.style.transform = "scale(" + scale.toFixed(3) + ")";
+                box.style.transformOrigin = "top left";
+              }
+            }
+            window.print();
+            setTimeout(function(){ window.close(); }, 500);
+          })();
+        </script>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
