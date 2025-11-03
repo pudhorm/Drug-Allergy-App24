@@ -1,155 +1,148 @@
 // ====================== pageTypeADR.js ======================
 (function () {
-  // กำหนดชนิด A–F + สีของแต่ละกรอบ
-  const TYPES = [
-    { code: "A", title: "Type A — dose-related (Augmented)", color: "#3b82f6" },     // ฟ้า
-    { code: "B", title: "Type B — Non-dose related (Bizarre)", color: "#10b981" },   // เขียว
-    { code: "C", title: "Type C — dose- & time-related (Chronic)", color: "#8b5cf6" },// ม่วง
-    { code: "D", title: "Type D — Time-related (Delayed)", color: "#f59e0b" },       // เหลืองส้ม
-    { code: "E", title: "Type E — Withdrawal (End of use)", color: "#ec4899" },      // ชมพู
-    { code: "F", title: "Type F — Unexpected failure (Failure)", color: "#ef4444" }, // แดง
-  ];
-
-  function renderPageTypeADR() {
+  // สร้าง renderer ไว้ให้ router เรียกใช้
+  window.renderPageTypeADR = function () {
     const root = document.getElementById("pageTypeADR");
     if (!root) return;
 
     root.innerHTML = `
-      <div class="typeadr-wrap">
-        <div class="typeadr-head">
-          <div class="typeadr-emoji">🧪</div>
-          <h2>Type of ADR</h2>
-          <span class="typeadr-sub">Non-immunologic &amp; Immunologic — หน้านี้ไม่เชื่อมข้อมูลกับหน้าอื่น</span>
+      <div class="pType-wrapper">
+        <h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>
+
+        <div class="pType-grid">
+          ${cardHTML("A", "Type A — dose-related (Augmented)", "typeA")}
+          ${cardHTML("B", "Type B — non-dose-related (Bizarre)", "typeB")}
+          ${cardHTML("C", "Type C — dose-related & time-related (Chronic)", "typeC")}
+          ${cardHTML("D", "Type D — time-related (Delayed)", "typeD")}
+          ${cardHTML("E", "Type E — withdrawal (End of use)", "typeE")}
+          ${cardHTML("F", "Type F — unexpected failure of therapy (Failure)", "typeF")}
         </div>
 
-        <div class="typeadr-grid">
-          ${TYPES.map((t, i) => `
-            <label class="typeadr-card" data-code="${t.code}" style="--cardColor:${t.color}">
-              <input type="checkbox" class="typeadr-check" data-code="${t.code}" ${i===0?"":""}/>
-              <div class="typeadr-badge">Type ${t.code}</div>
-              <div class="typeadr-title">${t.title}</div>
-              <div class="typeadr-slot">— ใส่เนื้อหารายละเอียดของ Type ${t.code} ภายหลัง —</div>
-            </label>
-          `).join("")}
+        <div class="pType-result" id="pTypeResult">
+          <h4>ผลที่เลือก</h4>
+          <div class="pType-selected" id="pTypeSelected">
+            <span class="pType-chip">ยังไม่ได้เลือก</span>
+          </div>
         </div>
 
-        <div class="typeadr-result" id="typeadrResult">
-          <div class="typeadr-result-title">ผลที่เลือก:</div>
-          <div class="typeadr-result-chip" id="typeadrResultChip">— ยังไม่เลือก —</div>
-        </div>
-
-        <div class="typeadr-footer">
-          <button id="typeadrConfirm" class="typeadr-confirm">กดยืนยันผล</button>
+        <div class="pType-actions">
+          <button class="pType-confirm-btn" id="pTypeConfirm">กดยืนยันผล</button>
         </div>
       </div>
 
-      <!-- Modal -->
-      <div id="typeadrModal" class="typeadr-modal" aria-hidden="true">
-        <div class="typeadr-modal-backdrop"></div>
-        <div class="typeadr-modal-card" role="dialog" aria-modal="true">
-          <div class="typeadr-modal-icon" id="typeadrModalIcon">!</div>
-          <div class="typeadr-modal-title" id="typeadrModalTitle">แจ้งเตือน</div>
-          <div class="typeadr-modal-body" id="typeadrModalBody">ข้อความแจ้งเตือน</div>
-          <div class="typeadr-modal-actions">
-            <button class="typeadr-modal-close" id="typeadrModalClose">ปิด</button>
+      <div class="pType-toast" id="pTypeToast" role="alert" aria-live="polite"></div>
+    `;
+
+    // ── Hook events ──────────────────────────────────────────
+    const checkboxes = root.querySelectorAll('.pType-option input[type="checkbox"]');
+    const cards = root.querySelectorAll(".pType-card");
+    const selectedBox = root.querySelector("#pTypeSelected");
+    const confirmBtn = root.querySelector("#pTypeConfirm");
+    const toast = root.querySelector("#pTypeToast");
+
+    // id ของการ์ด => input
+    const mapCodeToEls = {};
+    checkboxes.forEach((cb) => {
+      const code = cb.value;
+      mapCodeToEls[code] = {
+        input: cb,
+        card: root.querySelector(`.pType-card[data-code="${code}"]`),
+      };
+      cb.addEventListener("change", onChange);
+    });
+
+    function onChange() {
+      // toggle กรอบที่ถูกติ๊ก
+      Object.values(mapCodeToEls).forEach(({ input, card }) => {
+        if (!card) return;
+        if (input.checked) {
+          card.classList.add("is-selected");
+        } else {
+          card.classList.remove("is-selected");
+        }
+      });
+      renderSelected();
+    }
+
+    function renderSelected() {
+      const chosen = getChosen();
+      if (!chosen.length) {
+        selectedBox.innerHTML = `<span class="pType-chip">ยังไม่ได้เลือก</span>`;
+        return;
+      }
+      selectedBox.innerHTML = chosen
+        .map((c) => `<span class="pType-chip">${codeToFull(c)}</span>`)
+        .join(" ");
+    }
+
+    function getChosen() {
+      const arr = [];
+      for (const code of ["A", "B", "C", "D", "E", "F"]) {
+        const el = mapCodeToEls[code];
+        if (el?.input?.checked) arr.push(code);
+      }
+      return arr;
+    }
+
+    function codeToFull(code) {
+      switch (code) {
+        case "A": return "Type A — Augmented";
+        case "B": return "Type B — Bizarre";
+        case "C": return "Type C — Chronic";
+        case "D": return "Type D — Delayed";
+        case "E": return "Type E — End of use";
+        case "F": return "Type F — Failure";
+        default:  return code;
+      }
+    }
+
+    function showToast(kind, msg) {
+      // kind: 'success' | 'danger'
+      toast.classList.remove("success", "danger", "show");
+      void toast.offsetWidth; // reflow ให้อนิเมชันทำงานใหม่
+      toast.textContent = msg;
+      toast.classList.add(kind === "success" ? "success" : "danger", "show");
+      // ซ่อนเองอัตโนมัติ
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
+    }
+
+    // กติกา popup ตามที่กำหนด:
+    // - ถ้าเลือกเฉพาะ Type B (และไม่เลือก A/C/D/E/F) => popup สีเขียว "ทำต่อหน้าถัดไปได้"
+    // - ถ้าเลือก A/C/D/E/F (หรือ B ร่วมกับตัวอื่น ๆ) => popup สีแดง "ไม่ทำต่อหน้าถัดไป"
+    confirmBtn.addEventListener("click", () => {
+      const chosen = getChosen();
+      const hasB = chosen.includes("B");
+      const hasOthers = chosen.some((c) => c !== "B");
+
+      if (hasB && !hasOthers) {
+        showToast("success", "✅ ได้ Type B — ทำต่อหน้าถัดไปได้");
+      } else if (!chosen.length) {
+        showToast("danger", "โปรดเลือกอย่างน้อย 1 ประเภทก่อน");
+      } else {
+        showToast("danger", "⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
+      }
+    });
+  };
+
+  // ── helpers ────────────────────────────────────────────────
+  function cardHTML(code, title, themeClass) {
+    // ใช้ checkbox (หลายตัวเลือกได้) ตามที่ผู้ใช้ขอ
+    return `
+      <div class="pType-card ${themeClass}" data-code="${code}">
+        <div class="pType-head">
+          <div class="pType-name">${title}</div>
+          <div class="pType-badge">Type ${code}</div>
+        </div>
+        <div class="pType-body">
+          <!-- พื้นที่รายละเอียดในอนาคต (ผู้ใช้จะเติมเอง) -->
+          <div class="pType-option">
+            <input id="pType-${code}" type="checkbox" value="${code}" />
+            <label for="pType-${code}">เลือก Type ${code}</label>
           </div>
         </div>
       </div>
     `;
-
-    // logic เลือกแบบ single-select (ติ๊กได้ทีละ type)
-    const checks = Array.from(root.querySelectorAll(".typeadr-check"));
-    const chip  = root.querySelector("#typeadrResultChip");
-    function updateResult() {
-      const picked = checks.find(c => c.checked);
-      if (!picked) {
-        chip.style.background = "#e5e7eb";
-        chip.style.color = "#111827";
-        chip.textContent = "— ยังไม่เลือก —";
-        return;
-      }
-      const t = TYPES.find(x => x.code === picked.dataset.code);
-      chip.style.background = t.color;
-      chip.style.color = "#fff";
-      chip.textContent = `Type ${t.code} — ${t.title}`;
-    }
-    checks.forEach(c => {
-      c.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          // ยกเลิกตัวอื่น ให้เหลือเลือกเดียว
-          checks.forEach(o => { if (o !== e.target) o.checked = false; });
-          // ไฮไลต์การ์ด
-          highlightCards();
-        } else {
-          // ถ้ากดยกเลิกตัวเดิม ให้ไม่มีตัวเลือก
-          highlightCards();
-        }
-        updateResult();
-      });
-    });
-
-    function highlightCards() {
-      const cards = Array.from(root.querySelectorAll(".typeadr-card"));
-      cards.forEach((card) => {
-        const code = card.dataset.code;
-        const checked = checks.find(c => c.dataset.code === code)?.checked;
-        if (checked) card.classList.add("selected");
-        else card.classList.remove("selected");
-      });
-    }
-    highlightCards();
-    updateResult();
-
-    // ปุ่มยืนยันผล → popup
-    const btnConfirm = root.querySelector("#typeadrConfirm");
-    const modal = root.querySelector("#typeadrModal");
-    const mIcon = root.querySelector("#typeadrModalIcon");
-    const mTitle = root.querySelector("#typeadrModalTitle");
-    const mBody  = root.querySelector("#typeadrModalBody");
-    const mClose = root.querySelector("#typeadrModalClose");
-
-    function openModal(kind, msg) {
-      // kind: "ok" | "warn"
-      modal.setAttribute("aria-hidden", "false");
-      modal.classList.add("show");
-      if (kind === "ok") {
-        modal.classList.remove("is-warn");
-        modal.classList.add("is-ok");
-        mIcon.textContent = "✓";
-        mTitle.textContent = "ดำเนินการต่อได้";
-      } else {
-        modal.classList.remove("is-ok");
-        modal.classList.add("is-warn");
-        mIcon.textContent = "!";
-        mTitle.textContent = "ไม่ควรทำต่อ";
-      }
-      mBody.textContent = msg;
-    }
-    function closeModal() {
-      modal.classList.remove("show");
-      modal.setAttribute("aria-hidden", "true");
-    }
-    mClose.addEventListener("click", closeModal);
-    modal.querySelector(".typeadr-modal-backdrop").addEventListener("click", closeModal);
-
-    btnConfirm.addEventListener("click", () => {
-      const picked = checks.find(c => c.checked)?.dataset.code || null;
-      if (!picked) {
-        openModal("warn", "กรุณาเลือก Type อย่างน้อย 1 รายการก่อนยืนยันผล");
-        return;
-      }
-      // เงื่อนไขป็อปอัพ:
-      // A, C, D, E, F → popup สีแดง (warn) บอกว่า “ไม่ทำต่อหน้าถัดไป”
-      // B → popup สีเขียว (ok) บอกว่า “ทำต่อหน้าถัดไปได้”
-      if (picked === "B") {
-        openModal("ok", "เป็น Type B (Bizarre) สามารถทำต่อหน้าถัดไปได้");
-      } else {
-        openModal("warn", `เป็น Type ${picked} — ไม่ทำต่อหน้าถัดไป`);
-      }
-    });
   }
-
-  // export + auto-render
-  window.renderPageTypeADR = renderPageTypeADR;
-  if (document.getElementById("pageTypeADR")) renderPageTypeADR();
 })();
