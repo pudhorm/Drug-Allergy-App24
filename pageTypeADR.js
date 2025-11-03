@@ -1,4 +1,4 @@
-// ====================== pageTypeADR.js ======================
+// ====================== pageTypeADR.js (FULL) ======================
 (function () {
   // สร้าง renderer ให้ router เรียกใช้
   window.renderPageTypeADR = function () {
@@ -10,7 +10,7 @@
         <h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>
 
         <div class="pType-grid">
-          ${cardHTML("A","Type A — dose-related (Augmented)","typeA", true)}
+          ${cardHTML("A","Type A — dose-related (Augmented)","typeA")}
           ${cardHTML("B","Type B — non-dose-related (Bizarre)","typeB")}
           ${cardHTML("C","Type C — dose-related & time-related (Chronic)","typeC")}
           ${cardHTML("D","Type D — time-related (Delayed)","typeD")}
@@ -50,22 +50,70 @@
       cb.addEventListener("change", onChange);
     });
 
-    // ── popover: ทำเฉพาะ Type A ตามที่ขอ ─────────────────────
-    const tipA = mapCodeToEls["A"]?.badge;
-    if (tipA) {
-      tipA.classList.add("pType-badge-tip");
-      const contentA = `
-        <h5>Type A — Augmented</h5>
-        <ul>
-          <li>สัมพันธ์กับฤทธิ์ทางเภสัชวิทยา (SE, drug overdose, drug–drug interaction)</li>
-          <li>ทำนายผลได้</li>
-          <li>อัตราการเสียชีวิตต่ำ</li>
-          <li>ดีขึ้นชัดเจนเมื่อ “ลดขนาด/หยุดยา” (de-challenge)</li>
-          <li>เช่น bleeding จาก warfarin, digoxin toxicity, serotonin syndrome จาก SSRIs</li>
-        </ul>
-      `;
-      bindPopover(tipA, contentA);
-    }
+    // ── popover ข้อความสำหรับ A–F ───────────────────────────────
+    const badgeA = mapCodeToEls["A"]?.badge;
+    const badgeB = mapCodeToEls["B"]?.badge;
+    const badgeC = mapCodeToEls["C"]?.badge;
+    const badgeD = mapCodeToEls["D"]?.badge;
+    const badgeE = mapCodeToEls["E"]?.badge;
+    const badgeF = mapCodeToEls["F"]?.badge;
+
+    if (badgeA) bindPopover(badgeA, `
+      <h5>Type A — Augmented</h5>
+      <ul>
+        <li>สัมพันธ์กับฤทธิ์ทางเภสัชวิทยา (SE, drug overdose, drug–drug interaction)</li>
+        <li>ทำนายผลได้</li>
+        <li>อัตราการเสียชีวิตต่ำ</li>
+        <li>ดีขึ้นชัดเจนเมื่อ “ลดขนาด/หยุดยา” (de-challenge)</li>
+        <li>เช่น bleeding จาก warfarin, digoxin toxicity, serotonin syndrome จาก SSRIs</li>
+      </ul>
+    `);
+
+    if (badgeB) bindPopover(badgeB, `
+      <h5>Type B — Bizarre</h5>
+      <ul>
+        <li>ไม่สัมพันธ์กับฤทธิ์ทางเภสัชวิทยา</li>
+        <li>ไม่สามารถทำนายได้</li>
+        <li>อัตราการเสียชีวิตสูง</li>
+        <li>เช่น Penicillin hypersensitivity, Pseudoallergy</li>
+      </ul>
+    `);
+
+    if (badgeC) bindPopover(badgeC, `
+      <h5>Type C — Chronic</h5>
+      <ul>
+        <li>พบได้น้อย</li>
+        <li>มีความสัมพันธ์กับขนาดยาที่สะสมเป็นระยะเวลานาน แล้วเริ่มแสดงอาการค่อยเป็นค่อยไป</li>
+        <li>เช่น retinopathy จาก chloroquine, ONJ จากยา bisphosphonates</li>
+      </ul>
+    `);
+
+    if (badgeD) bindPopover(badgeD, `
+      <h5>Type D — Delayed</h5>
+      <ul>
+        <li>พบได้น้อย</li>
+        <li>ปฏิกิริยาเกิดช้า ๆ หลังหยุดยา</li>
+        <li>เช่น ยาที่เหนี่ยวนำให้เกิดมะเร็ง</li>
+      </ul>
+    `);
+
+    if (badgeE) bindPopover(badgeE, `
+      <h5>Type E — End of use</h5>
+      <ul>
+        <li>ปฏิกิริยาที่เกิดหลังหยุดยา/ขาดยา เมื่อใช้ยามาสักระยะหนึ่ง</li>
+        <li>เช่น withdrawal จาก Benzodiazepines</li>
+      </ul>
+    `);
+
+    if (badgeF) bindPopover(badgeF, `
+      <h5>Type F — Failure</h5>
+      <ul>
+        <li>อาการไม่พึงประสงค์จากความล้มเหลวของการรักษา</li>
+        <li>มักเกิดจากปฏิกิริยาระหว่างยา</li>
+        <li>เช่น การใช้ยาคุมร่วมกับยาที่เป็น enzyme inducer</li>
+      </ul>
+    `);
+    // ─────────────────────────────────────────────────────────
 
     function bindPopover(anchor, html) {
       let pop;
@@ -77,16 +125,16 @@
         pop.innerHTML = html + `<div class="pType-pop-arrow"></div>`;
         document.body.appendChild(pop);
 
-        // ตำแหน่ง: ก้อนเมฆอยู่เหนือ badge กลางๆ
+        // จัดตำแหน่งเหนือ badge
         const r = anchor.getBoundingClientRect();
         const pw = pop.offsetWidth;
         const ph = pop.offsetHeight;
-
         let left = r.left + window.scrollX + r.width/2 - pw/2;
         const top  = r.top  + window.scrollY - ph - 12;
 
         // กันตกขอบ
-        left = Math.max(8 + window.scrollX, Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - 8));
+        left = Math.max(8 + window.scrollX,
+                Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - 8));
 
         pop.style.left = left + "px";
         pop.style.top  = top  + "px";
@@ -107,17 +155,14 @@
       anchor.addEventListener("mouseleave", hide);
       anchor.addEventListener("focus", show);
       anchor.addEventListener("blur", hide);
-      // รองรับแตะบนมือถือ: toggle
+      // มือถือ: toggle
       anchor.addEventListener("click", (e) => {
         e.preventDefault();
         if (pop) hide(); else show();
       });
-
-      // ซ่อนเมื่อสกรอลล์/รีไซส์
       window.addEventListener("scroll", hide, { passive: true });
       window.addEventListener("resize", hide);
     }
-    // ─────────────────────────────────────────────────────────
 
     function onChange() {
       Object.values(mapCodeToEls).forEach(({ input, card }) => {
@@ -146,6 +191,7 @@
       });
       return arr;
     }
+
     function codeToFull(code) {
       switch (code) {
         case "A": return "Type A — Augmented";
@@ -182,14 +228,13 @@
     });
   };
 
-  // HTML ของการ์ด; ใส่ data-tooltip เฉพาะ Type A (สำหรับ mouse cursor)
-  function cardHTML(code, title, themeClass, withBadgeTip=false) {
-    const badgeAttrs = withBadgeTip ? 'aria-label="แสดงรายละเอียด" tabindex="0"' : "";
+  // HTML การ์ด
+  function cardHTML(code, title, themeClass) {
     return `
       <div class="pType-card ${themeClass}" data-code="${code}">
         <div class="pType-head">
           <div class="pType-name">${title}</div>
-          <div class="pType-badge" ${badgeAttrs}>Type ${code}</div>
+          <button type="button" class="pType-badge" aria-label="รายละเอียด Type ${code}">Type ${code}</button>
         </div>
         <div class="pType-body">
           <div class="pType-option">
