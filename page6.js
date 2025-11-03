@@ -1,28 +1,21 @@
 // page6.js
 (function () {
-  if (!window.drugAllergyData) {
-    window.drugAllergyData = {};
-  }
+  if (!window.drugAllergyData) window.drugAllergyData = {};
 
-  // ====================== ตัวช่วยดูว่าครบ 3 หน้าไหม (ดูเฉพาะ __saved เท่านั้น) ======================
+  // ---------------- core ready check (เหมือนเดิม) ----------------
   function checkCorePagesReady() {
     const d = window.drugAllergyData || {};
     const p1 = !!(d.page1 && d.page1.__saved === true);
     const p2 = !!(d.page2 && d.page2.__saved === true);
     const p3 = !!(d.page3 && d.page3.__saved === true);
-
     const missing = [];
     if (!p1) missing.push("หน้า 1 ผิวหนัง");
     if (!p2) missing.push("หน้า 2 ระบบอื่นๆ");
     if (!p3) missing.push("หน้า 3 Lab");
-
-    return {
-      ready: p1 && p2 && p3,
-      missing,
-    };
+    return { ready: p1 && p2 && p3, missing };
   }
 
-  // ====================== Naranjo helper (ใช้โครงเดียวกับหน้า 4) ======================
+  // ---------------- Naranjo helpers (ตรงกับหน้า 4) ----------------
   const P6_NARANJO_QUESTIONS = [
     { idx: 0,  yes: +1, no: 0,  dk: 0 },
     { idx: 1,  yes: +2, no: -1, dk: 0 },
@@ -52,208 +45,267 @@
     return "ไม่น่าจะเป็น (Doubtful)";
   }
 
-  // ====================== ส่วนที่ 2 (placeholder) ======================
+  // ---------------- format วันที่/เวลา (ใช้ในลิสต์) ----------------
+  function fmtDateTH(str) {
+    if (!str) return "—";
+    const pure = String(str).trim().split(" ")[0];
+    let d;
+    if (pure.includes("-")) { const [y,m,dd]=pure.split("-").map(Number); if (y&&m&&dd) d=new Date(y,m-1,dd); }
+    else if (pure.includes("/")) { const [dd,m,y]=pure.split("/").map(Number); if (y&&m&&dd) d=new Date(y,m-1,dd); }
+    if (!d) return str;
+    return d.toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"});
+  }
+  function fmtTime(str){ if(!str) return ""; const t=String(str).slice(0,5); return t+" น."; }
+  function rangeStr(sD,sT,eD,eT){
+    const start=`${fmtDateTH(sD)}${sT?(" "+fmtTime(sT)):""}`;
+    const end = eD ? `${fmtDateTH(eD)}${eT?(" "+fmtTime(eT)):""}` : "ปัจจุบัน";
+    return `${start} → ${end}`;
+  }
+
+  // ---------------- section 2 & 3 (เหมือนเดิม) ----------------
   function renderSection2(drugNames) {
     return `
       <div class="p6-block sec2">
-        <div class="p6-head">
-          <div class="p6-emoji">💊</div>
-          <div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div>
-        </div>
+        <div class="p6-head"><div class="p6-emoji">💊</div><div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div></div>
         <div class="p6-subcard">
           <div class="p6-sub-title">ยาที่ผู้ป่วยได้รับ:</div>
-          <p class="p6-muted">
-            ${drugNames && drugNames.length ? drugNames.join(", ") : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"}
-          </p>
+          <p class="p6-muted">${drugNames && drugNames.length ? drugNames.join(", ") : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"}</p>
         </div>
-        <div class="p6-subcard">
-          <div class="p6-sub-title">รายงานการแพ้:</div>
-          <p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p>
-        </div>
+        <div class="p6-subcard"><div class="p6-sub-title">รายงานการแพ้:</div><p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p></div>
       </div>
     `;
   }
-
-  // ====================== ส่วนที่ 3 (เหลือเฉพาะการรักษาเฉพาะ) ======================
   function renderSection3() {
     return `
       <div class="p6-block sec3">
-        <div class="p6-head">
-          <div class="p6-emoji">💉</div>
-          <div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div>
-        </div>
-        <div class="p6-subcard">
-          <div class="p6-sub-title">การรักษาเฉพาะ:</div>
-          <p class="p6-muted">
-            ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ที่เราจะใส่ทีหลัง โดยอิงชนิดการแพ้ที่ได้จากส่วนที่ 1
-            เช่น ถ้าเป็น Immediate/Type I → ให้ Antihistamine, ถ้ารุนแรง → Epinephrine, ถ้าเป็น DRESS → systemic steroid ฯลฯ
-          </p>
+        <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
+        <div class="p6-subcard"><div class="p6-sub-title">การรักษาเฉพาะ:</div>
+          <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
         </div>
       </div>
     `;
   }
 
-  // ====================== ส่วนที่ 4 (Naranjo + Timeline) ======================
+  // ---------------- ข้อมูลจากหน้า 4/5 ----------------
   function getNaranjoFromPage4() {
-    const d = window.drugAllergyData || {};
-    const p4 = d.page4 || {};
+    const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
     const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
-
     if (!drugs.length) return null;
-
-    // ตอนนี้สรุปเฉพาะ "ยาแรก" เพื่อให้มีผลแสดงทันที
-    const drug0 = drugs[0];
-    const total = p6_calcNaranjoScore(drug0);
+    const d0 = drugs[0];
+    const total = p6_calcNaranjoScore(d0);
+    return { name: d0.name || "ยา 1", total, interpretation: p6_interp(total) };
+  }
+  function getPage5Data() {
+    const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
     return {
-      name: drug0.name || "ยา 1",
-      total,
-      interpretation: p6_interp(total),
+      drugs: Array.isArray(p5.drugLines) ? p5.drugLines : [],
+      adrs:  Array.isArray(p5.adrLines)  ? p5.adrLines  : []
     };
   }
 
-  function getTimelineFromPage5() {
-    const d = window.drugAllergyData || {};
-    const p5 = d.page5 || {};
-    const drugLines = Array.isArray(p5.drugLines) ? p5.drugLines : [];
-    const adrLines  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
-    if (!drugLines.length && !adrLines.length) return null;
-    return { drugs: drugLines, adrs: adrLines };
+  // ---------------- Visual Timeline (เหมือนหน้า 5) ----------------
+  function p6DrawVisualTimeline() {
+    const dateRow = document.getElementById("p6DateRow");
+    const drugLane = document.getElementById("p6DrugLane");
+    const adrLane  = document.getElementById("p6AdrLane");
+    const sc       = document.getElementById("p6TimelineScroll");
+    if (!dateRow || !drugLane || !adrLane) return;
+
+    const { drugs, adrs } = getPage5Data();
+
+    // เคลียร์
+    dateRow.innerHTML = "";
+    drugLane.innerHTML = "";
+    adrLane.innerHTML = "";
+
+    if (!drugs.length && !adrs.length) return;
+
+    const MS_DAY = 24*60*60*1000;
+    const DAY_W  = 120;
+
+    // parse date helper
+    function parseDate(str){
+      if(!str) return null;
+      const pure=String(str).trim().split(" ")[0];
+      if(pure.includes("-")){ const [y,m,d]=pure.split("-").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+      return null;
+    }
+
+    const today = new Date(); const today0=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+
+    // หา minDate จากยา/ADR
+    let minDate = null;
+    drugs.forEach(d=>{ const s=parseDate(d.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+    adrs.forEach(a=>{ const s=parseDate(a.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+    if(!minDate) minDate = today0;
+
+    const maxDate = today0;
+    const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
+
+    // header วัน
+    dateRow.style.display="grid";
+    dateRow.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
+    for(let i=0;i<totalDays;i++){
+      const d = new Date(minDate.getFullYear(),minDate.getMonth(),minDate.getDate()+i);
+      const cell=document.createElement("div");
+      cell.className="p6-date-cell";
+      cell.textContent = d.toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+      dateRow.appendChild(cell);
+    }
+
+    // เตรียมเลน
+    const ROW_H=46;
+    function prepLane(el,rows){
+      el.style.display="grid";
+      el.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
+      el.style.gridAutoRows=ROW_H+"px";
+      el.style.rowGap="6px";
+      el.style.height=(Math.max(rows,1)*(ROW_H+6))+"px";
+      el.innerHTML="";
+    }
+    prepLane(drugLane, drugs.length);
+    prepLane(adrLane,  adrs.length);
+    adrLane.style.marginTop="10px";
+
+    function dayIndexOf(date){ return Math.floor((date - minDate)/MS_DAY); }
+
+    // วาดยา
+    drugs.forEach((d,idx)=>{
+      const start=parseDate(d.startDate); if(!start) return;
+      let end;
+      if (d.stopDate){ const e=parseDate(d.stopDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
+      else end=maxDate;
+      if (end<start) end=start;
+      if (end>maxDate) end=maxDate;
+
+      const bar=document.createElement("div");
+      bar.className="p6-bar p6-bar-drug";
+      bar.textContent = (d.name && d.name.trim()) ? d.name.trim() : `ยาตัวที่ ${idx+1}`;
+      bar.style.gridColumn = `${dayIndexOf(start)+1} / ${dayIndexOf(end)+2}`;
+      bar.style.gridRow = `${idx+1}`;
+      drugLane.appendChild(bar);
+    });
+
+    // วาด ADR
+    adrs.forEach((a,idx)=>{
+      const start=parseDate(a.startDate); if(!start) return;
+      let end;
+      if (a.endDate){ const e=parseDate(a.endDate); end = e? new Date(e.getFullYear(),e.getMonth(),e.getDate()-1): maxDate; }
+      else end=maxDate;
+      if (end<start) end=start;
+      if (end>maxDate) end=maxDate;
+
+      const bar=document.createElement("div");
+      bar.className="p6-bar p6-bar-adr";
+      bar.textContent = (a.symptom && a.symptom.trim()) ? a.symptom.trim() : `ADR ${idx+1}`;
+      bar.style.gridColumn = `${dayIndexOf(start)+1} / ${dayIndexOf(end)+2}`;
+      bar.style.gridRow = `${idx+1}`;
+      adrLane.appendChild(bar);
+    });
+
+    // เลื่อนให้เห็นวันล่าสุด
+    if (sc) sc.scrollLeft = sc.scrollWidth;
   }
 
+  // ---------------- Section 4: Naranjo + Timeline (ลิสต์ + Visual) ----------------
   function renderSection4() {
     const naranjo = getNaranjoFromPage4();
-    const timeline = getTimelineFromPage5();
+    const { drugs, adrs } = getPage5Data();
+
+    // ลิสต์อ่านง่าย
+    const drugList = drugs.length
+      ? `<ol class="p6-list">${drugs.map((d,i)=>`<li><strong>${(d.name||'').trim()||('ยาตัวที่ '+(i+1))}</strong> — ${rangeStr(d.startDate,d.startTime,d.stopDate,d.stopTime)}</li>`).join("")}</ol>`
+      : `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
+
+    const adrList = adrs.length
+      ? `<ol class="p6-list">${adrs.map((a,i)=>`<li><strong>${(a.symptom||'').trim()||('ADR '+(i+1))}</strong> — ${rangeStr(a.startDate,a.startTime,a.endDate,a.endTime)}</li>`).join("")}</ol>`
+      : `<p class="p6-muted">— ไม่มี ADR —</p>`;
+
+    // กล่อง Visual Timeline (DOM โครงเดียวกับหน้า 5 แต่ใช้ id ของหน้า 6)
+    const visualBox = `
+      <div class="p6-visual-box">
+        <h4 class="p6-visual-title">Visual Timeline</h4>
+        <div id="p6TimelineScroll" class="p6-timeline-scroll">
+          <div id="p6DateRow"></div>
+          <div class="p6-lane">
+            <div class="p6-lane-label">ยา</div>
+            <div id="p6DrugLane"></div>
+          </div>
+          <div class="p6-lane">
+            <div class="p6-lane-label p6-lane-adr">ADR</div>
+            <div id="p6AdrLane"></div>
+          </div>
+        </div>
+      </div>
+    `;
 
     return `
       <div class="p6-block sec4">
-        <div class="p6-head">
-          <div class="p6-emoji">📊</div>
-          <div class="p6-head-title">ส่วนที่ 4: ผลการประเมิน Naranjo และ Timeline</div>
-        </div>
+        <div class="p6-head"><div class="p6-emoji">📊</div><div class="p6-head-title">ส่วนที่ 4: ผลการประเมิน Naranjo และ Timeline</div></div>
 
         <div class="p6-subcard">
           <div class="p6-sub-title">ผลประเมิน Naranjo Adverse Drug Reaction Probability Scale</div>
           ${
             naranjo
-              ? `
-                <div class="p6-naranjo-item">
-                  <div class="p6-naranjo-name">${naranjo.name}</div>
-                  <div class="p6-naranjo-score">${naranjo.total ?? 0}</div>
-                </div>
-                <p class="p6-muted">สรุป: ${naranjo.interpretation || "ยังไม่ได้สรุป"}</p>
-              `
+              ? `<div class="p6-naranjo-item"><div class="p6-naranjo-name">${naranjo.name}</div><div class="p6-naranjo-score">${naranjo.total}</div></div>
+                 <p class="p6-muted">สรุป: ${naranjo.interpretation}</p>`
               : `<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>`
           }
         </div>
 
         <div class="p6-subcard">
           <div class="p6-sub-title">Timeline แสดงความสัมพันธ์ระหว่างยาและอาการ</div>
-          ${
-            timeline
-              ? `<div class="p6-timeline-box"><pre style="white-space:pre-wrap;margin:0;font-size:.8rem;">${JSON.stringify(
-                  timeline,
-                  null,
-                  2
-                )}</pre></div>`
-              : `<div class="p6-empty">ไม่มีข้อมูล Timeline (กรุณากรอกข้อมูลในหน้า 5 แล้วกดบันทึก)</div>`
-          }
+          <div class="p6-timeline-readable">
+            <div class="p6-sub-sub">
+              <div class="p6-sub-title" style="margin-bottom:.35rem;">💊 รายการยา</div>
+              ${drugList}
+            </div>
+            <div class="p6-sub-sub" style="margin-top:.65rem;">
+              <div class="p6-sub-title" style="margin-bottom:.35rem;">🧪 ADR</div>
+              ${adrList}
+            </div>
+          </div>
+          ${visualBox}
         </div>
       </div>
     `;
   }
 
-  // ====================== เรนเดอร์หลักของหน้า 6 ======================
+  // ---------------- render main ----------------
   function renderPage6() {
     const root = document.getElementById("p6Root");
     if (!root) return;
 
     const status = checkCorePagesReady();
 
-    // ส่วนที่ 1 ถ้ายังไม่ครบ 3 หน้า
     let section1HTML = "";
     if (!status.ready) {
       section1HTML = `
         <div class="p6-block sec1">
-          <div class="p6-head">
-            <div class="p6-emoji">🤖</div>
-            <div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div>
-          </div>
-          <p class="p6-muted">
-            ต้องกดปุ่ม <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า (หน้า 1 ผิวหนัง, หน้า 2 ระบบอื่นๆ, หน้า 3 Lab) ก่อน
-            ระบบจึงจะเริ่มประเมินชนิดการแพ้ยาให้ได้
-          </p>
-          <div class="p6-empty">
-            ยังขาดข้อมูลจาก: ${status.missing.join(", ")}
-          </div>
-          <div class="p6-subcard" style="margin-top:.6rem;">
-            <div class="p6-sub-title">ข้อมูลที่ใช้ประเมิน</div>
-            <p class="p6-muted">
-              • หน้า 1 ผิวหนัง<br>
-              • หน้า 2 ระบบอื่นๆ<br>
-              • หน้า 3 Lab
-            </p>
-          </div>
+          <div class="p6-head"><div class="p6-emoji">🤖</div><div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div></div>
+          <p class="p6-muted">ต้องกดปุ่ม <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า (หน้า 1 ผิวหนัง, หน้า 2 ระบบอื่นๆ, หน้า 3 Lab) ก่อน</p>
+          <div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(", ")}</div>
         </div>
       `;
     } else {
-      // ครบ 3 หน้าแล้ว → แสดงโครงการประเมินตามที่สั่ง
       section1HTML = `
         <div class="p6-block sec1">
-          <div class="p6-head">
-            <div class="p6-emoji">🤖</div>
-            <div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div>
+          <div class="p6-head"><div class="p6-emoji">🤖</div><div class="p6-head-title">ส่วนที่ 1: สรุปผลการวิเคราะห์อัตโนมัติ</div></div>
+          <div class="p6-subcard"><div class="p6-sub-title">1.1 Pharmacological effects (Rawlins &amp; Thompson)</div>
+            <p class="p6-muted">จะคำนวณจริงหลังตั้ง “สมองประเมิน” โดยใช้ข้อมูลหน้า 1–3</p>
           </div>
-
-          <!-- 1.1 Rawlins & Thompson -->
-          <div class="p6-subcard">
-            <div class="p6-sub-title">1.1 Pharmacological effects (Rawlins &amp; Thompson)</div>
-            <p class="p6-muted">
-              ระบบจะพิจารณาจากข้อมูลหน้า 1–3 แล้วจัดเข้ากลุ่ม Type A–F โดยอัตโนมัติภายหลังจากที่เรากำหนด “สมองประเมิน” แล้ว
-            </p>
-            <ul class="p6-muted" style="margin-top:.35rem;">
-              <li>Type A – Augmented</li>
-              <li>Type B – Bizarre</li>
-              <li>Type C – Chronic</li>
-              <li>Type D – Delayed</li>
-              <li>Type E – End of use</li>
-              <li>Type F – Failure</li>
-            </ul>
-          </div>
-
-          <!-- 1.2 Immunologic / Non-immunologic -->
-          <div class="p6-subcard">
-            <div class="p6-sub-title">1.2 Immunologic type &amp; Non-immunologic type</div>
-            <p class="p6-muted">
-              ขั้นแรกระบบจะดูว่าลักษณะอาการสอดคล้องกับการแพ้ที่ผ่านระบบภูมิคุ้มกันหรือไม่
-              ถ้าใช่ → จะจัดเป็น Immunologic type แล้วแตกย่อยตาม Gell &amp; Coombs 4 ชนิด
-            </p>
-            <ul class="p6-muted" style="margin-top:.35rem;">
-              <li>Type I — IgE-mediated, immediate</li>
-              <li>Type II — Cytotoxic</li>
-              <li>Type III — Immune-complex</li>
-              <li>Type IV — T-cell / Delayed-type</li>
-            </ul>
-            <p class="p6-muted" style="margin-top:.35rem;">
-              ตอนนี้ยังเป็นโครงแสดงผล — เดี๋ยวตอนเรา “ใส่สมอง” ให้กดบันทึกหน้า 1–3 แล้วระบบจะเติมผลจริงตรงนี้ให้อัตโนมัติ
-            </p>
-          </div>
-
-          <!-- ข้อมูลที่ใช้ประเมิน -->
-          <div class="p6-subcard">
-            <div class="p6-sub-title">ข้อมูลที่ใช้ประเมิน</div>
-            <p class="p6-muted">
-              ✓ หน้า 1 ผิวหนัง &nbsp; ✓ หน้า 2 ระบบอื่นๆ &nbsp; ✓ หน้า 3 Lab
-            </p>
+          <div class="p6-subcard"><div class="p6-sub-title">1.2 Immunologic / Non-immunologic</div>
+            <p class="p6-muted">จะแบ่งย่อยตาม Gell &amp; Coombs 4 ชนิดหลังตั้งกฎ</p>
           </div>
         </div>
       `;
     }
 
-    // ดึงชื่อยาพอให้ส่วนที่ 2 มีอะไรโชว์ (ตอนนี้ยังเป็นตัวอย่าง)
     const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
-    const drugNames = Array.isArray(p4.drugs) ? p4.drugs.map(d => d.name).filter(Boolean) : [];
+    const drugNames = Array.isArray(p4.drugs) ? p4.drugs.map(d=>d.name).filter(Boolean) : [];
 
-    const html = `
+    root.innerHTML = `
       <div class="p6-wrapper">
         ${section1HTML}
         ${renderSection2(drugNames)}
@@ -265,15 +317,34 @@
         </div>
       </div>
     `;
-    root.innerHTML = html;
+
+    // วาด Visual Timeline หลัง DOM พร้อม
+    setTimeout(() => { try { p6DrawVisualTimeline(); } catch(e){ console.error("[page6] draw timeline:", e); } }, 0);
   }
 
-  // ฟังอีเวนต์อัปเดตจากหน้าอื่น ๆ (เช่น หน้า 4/5)
-  document.addEventListener("da:update", function () {
-    if (typeof window.renderPage6 === "function") {
-      window.renderPage6();
-    }
-  });
+  // ---------------- styles เฉพาะบล็อก timeline (เล็กน้อย) ----------------
+  (function injectP6Styles(){
+    if (document.getElementById("p6-visual-style")) return;
+    const css = `
+      .p6-visual-box{background:#fff;border:1px solid #edf2f7;border-radius:16px;padding:14px;margin-top:10px;}
+      .p6-visual-title{margin:0 0 8px;font-size:1.05rem;font-weight:700;color:#111827;}
+      .p6-timeline-scroll{overflow:auto;padding-bottom:6px}
+      .p6-date-cell{border-bottom:1px solid #edf2f7;font-size:12px;font-weight:600;white-space:nowrap;padding-bottom:2px;text-align:left}
+      .p6-lane{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+      .p6-lane-label{width:38px;flex:0 0 38px;font-weight:700;color:#06705d;padding-top:10px}
+      .p6-lane-label.p6-lane-adr{color:#c53030}
+      .p6-bar{height:34px;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;white-space:nowrap;box-shadow:0 8px 22px rgba(15,23,42,.12);font-size:12px}
+      .p6-bar-drug{background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)}
+      .p6-bar-adr{background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%)}
+      .p6-list{margin:0 0 6px 18px;padding:0}
+    `;
+    const tag=document.createElement("style");
+    tag.id="p6-visual-style"; tag.textContent=css;
+    document.head.appendChild(tag);
+  })();
+
+  // ฟังอีเวนต์จากหน้า 4/5 แล้วเรนเดอร์ใหม่
+  document.addEventListener("da:update", () => { if (window.renderPage6) window.renderPage6(); });
 
   window.renderPage6 = renderPage6;
 })();
