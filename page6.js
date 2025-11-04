@@ -312,7 +312,7 @@
           <div class="p6-head-title">ส่วนที่ 1: Type of ADR (Non-immunologic type &amp; Immunologic type)</div>
         </div>
         <div class="p6-subcard">
-          <div class="p6-sub-title">ชนิดย่อยที่ใช้ในการจัดประเภท</div>
+          <div class="p6-sub-title">อาการ/อาการแสดงทางคลินิกของการแพ้ยา</div>
           ${subtypesList}
         </div>
         ${
