@@ -255,6 +255,11 @@
           }
         });
         store[group.key] = groupObj;
+        // ✅ mark ว่าหน้า 3 บันทึกแล้ว + อัปเดตศูนย์กลาง + แจ้งทุกหน้าว่าอัปเดต
+store.__saved = true;
+window.drugAllergyData = window.drugAllergyData || {};
+window.drugAllergyData.page3 = Object.assign({}, store);
+document.dispatchEvent(new Event("da:update"));
       });
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
     }
