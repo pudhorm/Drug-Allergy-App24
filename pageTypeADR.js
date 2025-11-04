@@ -6,6 +6,9 @@
      if (!root) return;
  
      root.innerHTML = `
+     // ซ่อน/ลบบล็อก "ผลที่เลือก", "ผลการประเมินเบื้องต้น", และ toast ทันทีหากยังมีอยู่
+root.querySelectorAll('.pType-result, .pType-actions, .pType-toast').forEach(n => n.remove());
+
        <div class="pType-wrapper">
          <h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>
  
