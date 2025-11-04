@@ -17,15 +17,15 @@ function p5EmitUpdate(source) {
   if (!root.page5) {
     root.page5 = {
       drugLines: [],
-      adrLines: []
+      adrLines: [],
+      pharmacistNote: "",   // ← เพิ่มสำหรับบันทึก
+      doctorNote: ""        // ← เพิ่มสำหรับบันทึก
     };
   } else {
-    root.page5.drugLines = Array.isArray(root.page5.drugLines)
-      ? root.page5.drugLines
-      : [];
-    root.page5.adrLines = Array.isArray(root.page5.adrLines)
-      ? root.page5.adrLines
-      : [];
+    root.page5.drugLines = Array.isArray(root.page5.drugLines) ? root.page5.drugLines : [];
+    root.page5.adrLines   = Array.isArray(root.page5.adrLines)  ? root.page5.adrLines  : [];
+    if (typeof root.page5.pharmacistNote !== "string") root.page5.pharmacistNote = "";
+    if (typeof root.page5.doctorNote !== "string")     root.page5.doctorNote     = "";
   }
 })();
 
@@ -34,7 +34,7 @@ window.renderPage5 = function () {
   const pageEl = document.getElementById("page5");
   if (!pageEl) return;
 
-  const { drugLines, adrLines } = window.drugAllergyData.page5;
+  const { drugLines, adrLines, pharmacistNote, doctorNote } = window.drugAllergyData.page5;
 
   pageEl.innerHTML = `
     <div class="p5-wrapper">
@@ -139,6 +139,17 @@ window.renderPage5 = function () {
             <div id="p5AdrLane"></div>
           </div>
         </div>
+      </div>
+
+      <!-- ✅ บล็อกบันทึกหมายเหตุ ใต้ Visual Timeline -->
+      <div class="p5-form-block" style="margin-top:1rem;">
+        <h3 style="margin:0 0 .6rem;">Pharmacist Note</h3>
+        <textarea id="p5PharmacistNote" rows="6" style="width:100%;resize:vertical;border:1px solid rgba(148,163,184,.5);border-radius:.65rem;padding:.65rem;font-size:.95rem;">${(pharmacistNote || "").replace(/</g,"&lt;")}</textarea>
+      </div>
+
+      <div class="p5-form-block" style="margin-top:.6rem;">
+        <h3 style="margin:0 0 .6rem;">Doctor Note</h3>
+        <textarea id="p5DoctorNote" rows="6" style="width:100%;resize:vertical;border:1px solid rgba(148,163,184,.5);border-radius:.65rem;padding:.65rem;font-size:.95rem;">${(doctorNote || "").replace(/</g,"&lt;")}</textarea>
       </div>
 
       <!-- ปุ่มล่าง -->
@@ -301,7 +312,25 @@ window.renderPage5 = function () {
       });
   });
 
-  // ปุ่มไปหน้า 6  ✅ ตั้งธง __saved และพาไป+คำนวณ
+  // ✅ ผูก textarea หมายเหตุให้บันทึกลง data
+  const pharmNoteEl = document.getElementById("p5PharmacistNote");
+  if (pharmNoteEl) {
+    pharmNoteEl.addEventListener("input", (e) => {
+      window.drugAllergyData.page5.pharmacistNote = e.target.value;
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
+    });
+  }
+  const docNoteEl = document.getElementById("p5DoctorNote");
+  if (docNoteEl) {
+    docNoteEl.addEventListener("input", (e) => {
+      window.drugAllergyData.page5.doctorNote = e.target.value;
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      p5EmitUpdate("page5");
+    });
+  }
+
+  // ✅ ปุ่มไปหน้า 6  (ตั้งธง __saved)
   const go6 = document.getElementById("p5GoSummary");
   if (go6) {
     go6.addEventListener("click", () => {
@@ -311,15 +340,15 @@ window.renderPage5 = function () {
       alert("บันทึกหน้า 5 แล้ว");
       const tabBtn = document.querySelector('.tabs button[data-target="page6"]');
       if (tabBtn) tabBtn.click();
-      if (window.renderPage6) window.renderPage6(); // เผื่อ router ไม่ยิงอัตโนมัติ
+      if (window.renderPage6) window.renderPage6();
     });
   }
 
-  // ปุ่มล้างเฉพาะหน้า 5  ✅ popup และบันทึก
+  // ปุ่มล้างเฉพาะหน้า 5
   const clearBtn = document.getElementById("p5Clear");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
-      window.drugAllergyData.page5 = { drugLines: [], adrLines: [] };
+      window.drugAllergyData.page5 = { drugLines: [], adrLines: [], pharmacistNote: "", doctorNote: "" };
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       p5EmitUpdate("page5");
       window.renderPage5();
@@ -327,13 +356,13 @@ window.renderPage5 = function () {
     });
   }
 
-  // ✅ ปุ่มพิมพ์ timeline
+  // ปุ่มพิมพ์ timeline
   const printBtn = document.getElementById("p5Print");
   if (printBtn) {
     printBtn.addEventListener("click", p5PrintTimeline);
   }
 
-  // วาด timeline ครั้งแรก (กันพังด้วย safeDrawTimeline)
+  // วาด timeline ครั้งแรก
   (function () { try { drawTimeline(); } catch(e) { console.error("[page5] first draw error:", e); } })();
 
   // อัปเดตกล่องวันที่/เวลาหลัง DOM เสร็จ
