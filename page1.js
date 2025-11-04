@@ -620,6 +620,11 @@
       // ✅ ธงว่าหน้า 1 กดบันทึกแล้ว
       store.__saved = true;
 
+      // 🔽 เพิ่ม 3 บรรทัดนี้
+window.drugAllergyData = window.drugAllergyData || {};
+window.drugAllergyData.page1 = Object.assign({}, store);
+document.dispatchEvent(new Event("da:update"));
+
       if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
