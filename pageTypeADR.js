@@ -1,4 +1,4 @@
-// ====================== pageTypeADR.js (CLEANED: no result/confirm/toast) ======================
+// ====================== pageTypeADR.js (FULL REPLACE) ======================
 (function () {
   // สร้าง renderer ให้ router เรียกใช้
   window.renderPageTypeADR = function () {
@@ -17,19 +17,27 @@
           ${cardHTML("E","Type E — withdrawal (End of use)","typeE")}
           ${cardHTML("F","Type F — unexpected failure of therapy (Failure)","typeF")}
         </div>
+
+        <div class="pType-actions">
+          <button class="pType-confirm-btn" id="pTypeConfirm">กดยืนยันผล</button>
+        </div>
       </div>
+
+      <div class="pType-toast" id="pTypeToast" role="alert" aria-live="polite"></div>
     `;
 
     // ---------- hooks ----------
     const checkboxes = root.querySelectorAll('.pType-option input[type="checkbox"]');
+    const confirmBtn = root.querySelector("#pTypeConfirm");
+    const toast = root.querySelector("#pTypeToast");
 
     const mapCodeToEls = {};
     checkboxes.forEach((cb) => {
       const code = cb.value;
       mapCodeToEls[code] = {
         input: cb,
-        card: root.querySelector(`.pType-card[data-code="${code}"]`),
-        badge: root.querySelector(`.pType-card[data-code="${code}"] .pType-badge`)
+        card: root.querySelector(\`.pType-card[data-code="\${code}"]\`),
+        badge: root.querySelector(\`.pType-card[data-code="\${code}"] .pType-badge\`)
       };
       cb.addEventListener("change", onChange);
     });
@@ -46,10 +54,9 @@
       <h5>Type A — Augmented</h5>
       <ul>
         <li>สัมพันธ์กับฤทธิ์ทางเภสัชวิทยา (SE, drug overdose, drug–drug interaction)</li>
-        <li>ทำนายผลได้</li>
-        <li>อัตราการเสียชีวิตต่ำ</li>
-        <li>ดีขึ้นชัดเจนเมื่อ “ลดขนาด/หยุดยา” (de-challenge)</li>
-        <li>เช่น bleeding จาก warfarin, digoxin toxicity, serotonin syndrome จาก SSRIs</li>
+        <li>ทำนายผลได้ / อัตราการเสียชีวิตต่ำ</li>
+        <li>ดีขึ้นเมื่อ “ลดขนาด/หยุดยา” (de-challenge)</li>
+        <li>เช่น bleeding จาก warfarin, digoxin toxicity</li>
       </ul>
     `);
 
@@ -57,8 +64,7 @@
       <h5>Type B — Bizarre</h5>
       <ul>
         <li>ไม่สัมพันธ์กับฤทธิ์ทางเภสัชวิทยา</li>
-        <li>ไม่สามารถทำนายได้</li>
-        <li>อัตราการเสียชีวิตสูง</li>
+        <li>ทำนายไม่ได้ / อัตราการเสียชีวิตสูง</li>
         <li>เช่น Penicillin hypersensitivity, Pseudoallergy</li>
       </ul>
     `);
@@ -66,9 +72,8 @@
     if (badgeC) bindPopover(badgeC, `
       <h5>Type C — Chronic</h5>
       <ul>
-        <li>พบได้น้อย</li>
-        <li>มีความสัมพันธ์กับขนาดยาที่สะสมเป็นระยะเวลานาน แล้วเริ่มแสดงอาการค่อยเป็นค่อยไป</li>
-        <li>เช่น retinopathy จาก chloroquine, ONJ จากยา bisphosphonates</li>
+        <li>พบได้น้อย / เกี่ยวกับขนาดสะสมระยะยาว</li>
+        <li>อาการค่อยเป็นค่อยไป</li>
       </ul>
     `);
 
@@ -77,14 +82,13 @@
       <ul>
         <li>พบได้น้อย</li>
         <li>ปฏิกิริยาเกิดช้า ๆ หลังหยุดยา</li>
-        <li>เช่น ยาที่เหนี่ยวนำให้เกิดมะเร็ง</li>
       </ul>
     `);
 
     if (badgeE) bindPopover(badgeE, `
       <h5>Type E — End of use</h5>
       <ul>
-        <li>ปฏิกิริยาที่เกิดหลังหยุดยา/ขาดยา เมื่อใช้ยามาสักระยะหนึ่ง</li>
+        <li>ปฏิกิริยาที่เกิดหลังหยุดยา/ขาดยา</li>
         <li>เช่น withdrawal จาก Benzodiazepines</li>
       </ul>
     `);
@@ -93,8 +97,7 @@
       <h5>Type F — Failure</h5>
       <ul>
         <li>อาการไม่พึงประสงค์จากความล้มเหลวของการรักษา</li>
-        <li>มักเกิดจากปฏิกิริยาระหว่างยา</li>
-        <li>เช่น การใช้ยาคุมร่วมกับยาที่เป็น enzyme inducer</li>
+        <li>มักเกิดจากปฏิกิริยาระหว่างยา (เช่น enzyme inducer ทำให้ยาคุมล้มเหลว)</li>
       </ul>
     `);
     // ─────────────────────────────────────────────────────────
@@ -164,17 +167,28 @@
       return arr;
     }
 
-    function codeToFull(code) {
-      switch (code) {
-        case "A": return "Type A — Augmented";
-        case "B": return "Type B — Bizarre";
-        case "C": return "Type C — Chronic";
-        case "D": return "Type D — Delayed";
-        case "E": return "Type E — End of use";
-        case "F": return "Type F — Failure";
-        default:  return code;
-      }
+    function showToast(kind, msg) {
+      toast.classList.remove("success","danger","show");
+      void toast.offsetWidth; // รีสตาร์ท animation
+      toast.textContent = msg;
+      toast.classList.add(kind === "success" ? "success" : "danger","show");
+      setTimeout(()=>toast.classList.remove("show"), 2200);
     }
+
+    // Logic ของปุ่มยืนยันตามที่กำหนด
+    confirmBtn.addEventListener("click", () => {
+      const chosen = getChosen();
+      const hasB = chosen.includes("B");
+      const hasOthers = chosen.some((c)=>c!=="B");
+
+      if (hasB && !hasOthers) {
+        showToast("success","✅ ได้ Type B — ทำต่อหน้าถัดไปได้");
+      } else if (!chosen.length) {
+        showToast("danger","โปรดเลือกอย่างน้อย 1 ประเภทก่อน");
+      } else {
+        showToast("danger","⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
+      }
+    });
   };
 
   // HTML การ์ด
