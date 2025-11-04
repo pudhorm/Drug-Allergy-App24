@@ -19,14 +19,23 @@
         '<div class="pType-actions">',
           '<button class="pType-confirm-btn" id="pTypeConfirm">กดยืนยันผล</button>',
         '</div>',
-      '</div>',
-      '<div class="pType-toast" id="pTypeToast" role="alert" aria-live="polite"></div>'
+      '</div>'
     ].join("");
+
+    // ถ้ายังไม่มี toast ในหน้า สร้างให้
+    var toast = document.getElementById("pTypeToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "pTypeToast";
+      toast.className = "pType-toast";
+      toast.setAttribute("role", "alert");
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
 
     // ---------- hooks ----------
     var checkboxes = root.querySelectorAll('.pType-option input[type="checkbox"]');
     var confirmBtn = root.querySelector("#pTypeConfirm");
-    var toast = root.querySelector("#pTypeToast");
 
     var mapCodeToEls = {};
     Array.prototype.forEach.call(checkboxes, function (cb) {
@@ -165,11 +174,14 @@
     }
 
     function showToast(kind, msg) {
-      toast.classList.remove("success","danger","show");
-      void toast.offsetWidth; // รีสตาร์ท animation
-      toast.textContent = msg;
-      toast.classList.add(kind === "success" ? "success" : "danger","show");
-      setTimeout(function(){ toast.classList.remove("show"); }, 2200);
+      // หา toast อีกครั้งเผื่อผู้ใช้ย้าย DOM
+      var t = document.getElementById("pTypeToast") || toast;
+      if (!t) { alert(msg); return; } // fallback
+      t.classList.remove("success","danger","show");
+      void t.offsetWidth; // รีสตาร์ท animation
+      t.textContent = msg;
+      t.classList.add(kind === "success" ? "success" : "danger","show");
+      setTimeout(function(){ t.classList.remove("show"); }, 2200);
     }
 
     // Logic ของปุ่มยืนยันตามที่กำหนด
