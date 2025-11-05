@@ -1,4 +1,4 @@
-// page1.js (REPLACE WHOLE FILE)
+// ===================== page1.js (REPLACE WHOLE FILE)
 (function () {
   // ----- ตัวเลือกพื้นฐาน -----
   const SHAPES = [
@@ -95,6 +95,20 @@
   // ----- ตัวช่วยทำ checkbox -----
   function cb(id, label, checked) {
     return `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked ? "checked" : ""}><span>${label}</span></label>`;
+  }
+
+  // ===== FIX: ทำให้ดรอปดาวน์ตัวเลือกมองเห็นได้ชัด (ไม่แตะเนื้อหาเดิม) =====
+  function injectSelectFixOnce() {
+    if (document.getElementById("p1-select-visibility-fix")) return;
+    const style = document.createElement("style");
+    style.id = "p1-select-visibility-fix";
+    style.textContent = `
+      /* เฉพาะหน้า 1 */
+      .p1-section-onset { overflow: visible !important; }
+      #page1 select option { color: #111827 !important; background:#ffffff !important; }
+      #page1 select { color:#111827; }
+    `;
+    document.head.appendChild(style);
   }
 
   // ========================== render ==========================
@@ -428,6 +442,9 @@
 </div>
 `;
 
+    // ===== เรียกใช้ CSS แก้ dropdown ให้เห็นตัวเลือกชัด =====
+    injectSelectFixOnce();
+
     // ================== ผูก event ==================
 
     // อายุ: โชว์/ซ่อนช่องอื่นๆ
@@ -464,6 +481,9 @@
     onsetSel.addEventListener("change", () => {
       onsetOther.style.display = onsetSel.value === "other" ? "block" : "none";
     });
+    // ยก z-index ให้เมนูช่วงเวลาเผื่อโดนเลเยอร์อื่นบัง (ไม่แตะ DOM เดิม)
+    onsetSel.style.position = "relative";
+    onsetSel.style.zIndex = "10000";
 
     // อัปโหลดรูป
     const fileInput = document.getElementById("p1_file");
