@@ -413,6 +413,28 @@
         </div>
       </div>
     `;
+// ⬇️ ใส่ทันทีหลังปิด backtick ของ root.innerHTML (ก่อน const btnBrain …)
+requestAnimationFrame(() => {
+  // สร้าง alias #brainBox ถ้ายังไม่มี และวางถัดจาก #p6BrainBox
+  let alias = document.getElementById("brainBox");
+  if (!alias) {
+    const box = document.getElementById("p6BrainBox");
+    alias = document.createElement("div");
+    alias.id = "brainBox";
+    alias.style.display = "none";
+    if (box && box.parentNode) {
+      box.parentNode.insertBefore(alias, box.nextSibling);
+    } else {
+      document.body.appendChild(alias);
+    }
+  }
+
+  // ใส่ค่าทดสอบให้ mirror เห็น (เปลี่ยนเป็นผลจริงภายหลังได้)
+  alias.innerHTML = "<div>✅ test mirror</div>";
+
+  // แจ้งบริดจ์ให้ซิงค์ไป #p6BrainBox
+  document.dispatchEvent(new Event("da:update"));
+});
 
     // 🔔 ยิง da:update หลังเรนเดอร์ครั้งแรกเท่านั้น (ป้องกันลูป renderPage6 <-> da:update)
     if (!window.__p6_renderedOnce) {
