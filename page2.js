@@ -302,12 +302,19 @@
         }
       });
       store.organs = organObj;
-      // ✅ mark ว่าหน้า 2 ถูกบันทึกแล้ว + กระจายข้อมูลเข้าศูนย์กลาง + แจ้งทุกหน้าให้รีเฟรช
-store.__saved = true;
-store.__ts = Date.now();
+    // --- finalize & save (PAGE 2) ---
+store.__saved = true; // ติดธงว่าเซฟแล้ว
+
+// ถ้ามีฟังก์ชันบันทึกเดิม ให้เรียกได้ตามปกติ
+if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
+// อัปเดตตัวแปรกลาง + ยิงสัญญาณให้หน้าที่เกี่ยวข้องรีเฟรช
 window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page2 = (structuredClone ? structuredClone(store) : JSON.parse(JSON.stringify(store)));
+window.drugAllergyData.page2 = Object.assign({}, store);
+window.drugAllergyData.page2.__ts = Date.now();
+
 document.dispatchEvent(new Event("da:update"));
+
 if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
   }
