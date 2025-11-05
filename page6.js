@@ -685,3 +685,22 @@ function p6PrintTimeline() {
   `);
   win.document.close();
 }
+// === page6.js: AUTO-REFRESH ON DATA UPDATE ===============================
+
+// ให้หน้า 6 คำนวณใหม่ทุกครั้งที่มีการอัปเดตข้อมูลจากหน้า 1–3
+(function initDaAutoRefresh() {
+  if (window.__daAutoRefreshBound) return;   // กันผูกซ้ำ
+  window.__daAutoRefreshBound = true;
+
+  document.addEventListener("da:update", () => {
+    // คำนวณกฎ/คะแนนใหม่ ถ้ามีฟังก์ชัน brain
+    if (typeof window.evaluateDrugAllergy === "function") {
+      try { window.evaluateDrugAllergy(); } catch (e) { console.warn(e); }
+    }
+
+    // เรนเดอร์หน้า 6 ใหม่
+    if (typeof window.renderPage6 === "function") {
+      try { window.renderPage6(); } catch (e) { console.warn(e); }
+    }
+  });
+})();
