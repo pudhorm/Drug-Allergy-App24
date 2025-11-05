@@ -1210,3 +1210,41 @@ function p6PrintTimeline() {
   });
   setTimeout(localBrainCompute, 0);
 })();
+<!-- APPEND-ONLY HOTFIX for page6.js — put at very end -->
+<script>
+(function () {
+  // เผย localBrainCompute ให้เรียกซ้ำได้
+  try { if (window.__p6LocalBrainCompute == null && typeof localBrainCompute === "function") {
+    window.__p6LocalBrainCompute = localBrainCompute;
+  } } catch(_) {}
+
+  // ฟังก์ชัน mirror ผลจาก #brainBox → #p6BrainBox ถ้ามี
+  function __p6MirrorNow() {
+    var dest = document.getElementById("p6BrainBox");
+    if (!dest) return;
+    var src =
+      document.getElementById("brainBox") ||
+      document.getElementById("resultBox") ||
+      document.querySelector("[data-brain-output]") ||
+      document.querySelector(".brain-output");
+    if (src && src.innerHTML && dest.innerHTML !== src.innerHTML) {
+      dest.innerHTML = src.innerHTML;
+      return;
+    }
+    // ถ้ายังไม่มีผลจากสมอง ให้ใช้ local fallback คำนวณใส่กล่องโดยตรง
+    if (typeof window.__p6LocalBrainCompute === "function") {
+      window.__p6LocalBrainCompute();
+    }
+  }
+
+  // เรียก mirror หลังเรนเดอร์หน้า 6 ทุกครั้ง
+  document.addEventListener("da:update", function () {
+    // หน่วงนิดเพื่อให้ DOM และสมองเขียนเสร็จ
+    setTimeout(__p6MirrorNow, 50);
+    requestAnimationFrame(__p6MirrorNow);
+  });
+
+  // เรียกครั้งแรกเผื่อหน้า 6 ถูกเปิดไว้แล้ว
+  setTimeout(__p6MirrorNow, 0);
+})();
+</script>
