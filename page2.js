@@ -304,12 +304,12 @@
       store.organs = organObj;
       // ✅ mark ว่าหน้า 2 ถูกบันทึกแล้ว + กระจายข้อมูลเข้าศูนย์กลาง + แจ้งทุกหน้าให้รีเฟรช
 store.__saved = true;
+store.__ts = Date.now();
 window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page2 = Object.assign({}, store);
+window.drugAllergyData.page2 = (structuredClone ? structuredClone(store) : JSON.parse(JSON.stringify(store)));
 document.dispatchEvent(new Event("da:update"));
+if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-    }
   }
 
   // export
