@@ -1,9 +1,9 @@
-// page3.js (REPLACE WHOLE FILE)
+// page3.js (DROP-IN REPLACEMENT — safer & debounced)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
 
-  // โครง Lab เป็นกลุ่มๆ
+  // โครง Lab เป็นกลุ่มๆ (เหมือนเดิม)
   const LAB_GROUPS = [
     {
       key: "cbc",
@@ -104,6 +104,7 @@
     }
   ];
 
+  // ---------- RENDER ----------
   function renderPage3() {
     const root = document.getElementById("page3");
     if (!root) return;
@@ -131,7 +132,7 @@
 
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:.55rem 1.1rem;">
                 ${group.items.map((item) => {
-                  const fieldId = `${group.key}_${item.key}`;
+                  const fieldId = \`${group.key}_${item.key}\`;
                   const checked = groupData[item.key]?.checked ? "checked" : "";
                   const value = groupData[item.key]?.value || "";
                   const detail = groupData[item.key]?.detail || "";
@@ -146,10 +147,10 @@
                         <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
                           <input type="text" placeholder="ค่า"
                             data-type="value" data-group="${group.key}" data-item="${item.key}" value="${value}"
-                            style="flex:0 0 110px;border:1px solid rgba(13,148,136,.35);border-radius:.5rem;padding:.3rem .4rem;font-size:.8rem;min-width:100px;${checked ? "" : "background:#fff;"}">
+                            style="flex:0 0 110px;border:1px solid rgba(13,148,136,.35);border-radius:.5rem;padding:.3rem .4rem;font-size:.8rem;min-width:100px;">
                           <input type="text" placeholder="รายละเอียดเพิ่มเติม"
                             data-type="detail" data-group="${group.key}" data-item="${item.key}" value="${detail}"
-                            style="flex:1 1 auto;border:1px solid rgba(13,148,136,.15);border-radius:.5rem;padding:.3rem .4rem;font-size:.78rem;${checked ? "" : "background:#fff;"}">
+                            style="flex:1 1 auto;border:1px solid rgba(13,148,136,.15);border-radius:.5rem;padding:.3rem .4rem;font-size:.78rem;">
                         </div>
                       </div>
                     </label>
@@ -174,19 +175,9 @@
       </div>
     `;
 
-    // bind inputs
-    LAB_GROUPS.forEach(group => {
-      group.items.forEach(item => {
-        const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
-        const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
-        const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
-        if (!cb || !valInput || !detailInput) return;
-
-        cb.addEventListener("change", savePage3);
-        valInput.addEventListener("input", savePage3);
-        detailInput.addEventListener("input", savePage3);
-      });
-    });
+    // ===== Event Delegation: input/change ทั้งหน้าผูกไว้ที่ root เดียว =====
+    root.addEventListener("input", onAnyInputOrChange, { passive: true });
+    root.addEventListener("change", onAnyInputOrChange, { passive: true });
 
     // ล้างข้อมูล + popup
     const clearBtn = root.querySelector("#p3-clear");
@@ -200,16 +191,16 @@
       });
     }
 
-    // บันทึกและไปหน้า 4 + popup + เรนเดอร์หน้า 4 ทันที
+    // บันทึกและไปหน้า 4 (เรียกครั้งเดียว, ตัด setInterval/RAF ที่ซ้ำซ้อน)
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
-        savePage3();
+        flushSave(); // เซฟทันทีหนึ่งครั้ง (ไม่รอ debounce)
         window.drugAllergyData.page3.__saved = true;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         alert("บันทึกหน้า 3 แล้ว");
 
-        // เปลี่ยนแท็บไปหน้า 4
+        // สลับแท็บไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
@@ -221,25 +212,30 @@
           btn4.click();
         }
 
-        // เรียก renderPage4()
-        const callRender = () => { if (typeof window.renderPage4 === "function") window.renderPage4(); };
-        callRender();
-        let tries = 0;
-        const iv = setInterval(() => {
-          const el = document.getElementById("page4");
-          if (el) {
-            clearInterval(iv);
-            callRender();
-          } else if (++tries > 10) {
-            clearInterval(iv);
-          }
-        }, 30);
-        requestAnimationFrame(callRender);
+        // ให้หน้า 4 เรนเดอร์ "ครั้งเดียว" หลัง DOM พร้อม
+        setTimeout(() => {
+          if (typeof window.renderPage4 === "function") window.renderPage4();
+        }, 0);
       });
     }
   }
 
-  // ---------- SAVE ----------
+  // ---------- SAVE (debounced) ----------
+  let saveTimer = null;
+  function onAnyInputOrChange(ev) {
+    const t = ev.target;
+    if (!(t instanceof HTMLElement)) return;
+    if (!t.hasAttribute("data-group") || !t.hasAttribute("data-item")) return;
+    // debounce บันทึก ลดการทำงานถี่ ๆ ขณะพิมพ์
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(savePage3, 120);
+  }
+
+  function flushSave() {
+    clearTimeout(saveTimer);
+    savePage3();
+  }
+
   function savePage3() {
     const root = document.getElementById("page3");
     if (!root) return;
@@ -264,15 +260,13 @@
       store[group.key] = groupObj;
     });
 
-    // --- finalize & save (PAGE 3) ---
-    store.__saved = true; // ติดธงว่าเซฟแล้ว
+    // finalize & save (PAGE 3)
+    store.__saved = true;
+    store.__ts = Date.now();
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-    window.drugAllergyData = window.drugAllergyData || {};
-    window.drugAllergyData.page3 = Object.assign({}, store);
-    window.drugAllergyData.page3.__ts = Date.now();
-
+    // แจ้งส่วนอื่น ๆ (หน้า 6 เป็นต้น)
     document.dispatchEvent(new Event("da:update"));
   }
 
