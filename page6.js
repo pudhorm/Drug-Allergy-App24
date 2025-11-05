@@ -766,3 +766,53 @@ function p6PrintTimeline() {
     setTimeout(forceRecomputeAndRender, 30);
   }
 })();
+// === page6 bridge: mirror brain.js output (#brainBox) -> #p6BrainBox ===
+(function () {
+  if (window.__p6BridgeBound) return;
+  window.__p6BridgeBound = true;
+
+  function ensureBridge() {
+    var box = document.getElementById("p6BrainBox");
+    if (!box) return;
+
+    // สร้าง alias #brainBox (ตัวที่ brain.js เขียนใส่) ถ้ายังไม่มี
+    var alias = document.getElementById("brainBox");
+    if (!alias) {
+      alias = document.createElement("div");
+      alias.id = "brainBox";
+      alias.style.display = "none";            // ซ่อนไว้
+      // วางไว้ถัดจาก p6BrainBox เพื่อให้อยู่ใกล้ ๆ กัน
+      box.parentNode.insertBefore(alias, box.nextSibling);
+    }
+
+    // สะท้อนเนื้อหา alias -> box เสมอ
+    if (window.__p6BrainMirror) window.__p6BrainMirror.disconnect();
+    window.__p6BrainMirror = new MutationObserver(function () {
+      box.innerHTML = alias.innerHTML;
+    });
+    window.__p6BrainMirror.observe(alias, { subtree: true, childList: true, characterData: true });
+
+    // เผื่อ alias มีค่าอยู่แล้ว ให้ก๊อปทันที
+    if (alias.innerHTML && box.innerHTML !== alias.innerHTML) {
+      box.innerHTML = alias.innerHTML;
+    }
+  }
+
+  // ผูกเหตุการณ์ให้ bridge ทำงานทั้งตอนโหลดและทุกครั้งที่มีข้อมูลอัปเดต
+  document.addEventListener("DOMContentLoaded", ensureBridge);
+  window.addEventListener("load", ensureBridge);
+  document.addEventListener("da:update", ensureBridge);
+
+  // ให้ปุ่มรีเฟรชของหน้า 6 เรียก brain อีกที (และ bridge จะสะท้อนผล)
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") {
+      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
+      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
+      // กันแคชบางตัว
+      try { delete window.__brainCache; delete window.brainCache; } catch(_) {}
+    }
+  });
+
+  // เรียกหนึ่งครั้งเผื่อ DOM พร้อมแล้ว
+  setTimeout(ensureBridge, 0);
+})();
