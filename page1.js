@@ -617,16 +617,23 @@
       store.onset = document.getElementById("p1_onset").value;
       store.onsetOther = document.getElementById("p1_onset_other").value;
 
-      // ✅ ธงว่าหน้า 1 กดบันทึกแล้ว
-      store.__saved = true;
+// ✅ หน้าที่ 1 กดบันทึกแล้ว
+store.__saved = true;
+store.__ts = Date.now(); // กันผลค้าง/แคช
 
-      // 🔽 เพิ่ม 3 บรรทัดนี้
 window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page1 = Object.assign({}, store);
+// ใช้ deep clone แทน Object.assign
+window.drugAllergyData.page1 = (window.structuredClone
+  ? structuredClone(store)
+  : JSON.parse(JSON.stringify(store)));
+
 document.dispatchEvent(new Event("da:update"));
 
-      if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
-      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
+if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
+// alert(...) และเปลี่ยนหน้า ต่อเหมือนเดิม
+
 
       alert("บันทึกหน้า 1 แล้ว");
 
