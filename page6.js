@@ -885,3 +885,75 @@ function p6PrintTimeline() {
   window.addEventListener("load", ensureBridge);
   setTimeout(ensureBridge, 0);
 })();
+// === p6 ANY-SOURCE BRIDGE (APPEND AT END OF FILE) ======================
+(function () {
+  if (window.__p6AnyBridgeBound) return;
+  window.__p6AnyBridgeBound = true;
+
+  const DEST_ID = "p6BrainBox";
+  const CANDIDATE_SELECTORS = [
+    "#brainBox",          // ตัวเดิมที่ตั้งใจให้ brain.js เขียน
+    "#resultBox",         // บางเวอร์ชันใช้ id นี้
+    "#result",            // บางสคริปต์เก่า
+    "#p6BrainSrc",        // เผื่อผู้ใช้กำหนดไว้เอง
+    "[data-brain-output]",// กรณีใช้ data-attr
+    ".brain-output"       // กรณีใช้ class ทั่วไป
+  ];
+
+  let mirrorObs = null;
+
+  function copyFrom(src) {
+    const dest = document.getElementById(DEST_ID);
+    if (!dest || !src) return;
+    if (dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
+  }
+
+  function bindTo(src) {
+    if (!src) return;
+    if (mirrorObs) try { mirrorObs.disconnect(); } catch (_) {}
+    mirrorObs = new MutationObserver(() => copyFrom(src));
+    mirrorObs.observe(src, { childList: true, characterData: true, subtree: true });
+    copyFrom(src);
+  }
+
+  function scanAndBind() {
+    const dest = document.getElementById(DEST_ID);
+    if (!dest) return;
+
+    // หา source ตัวแรกที่มีอยู่จริงใน DOM
+    let src = null;
+    for (const sel of CANDIDATE_SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) { src = el; break; }
+    }
+
+    // ถ้ายังไม่เจอ ให้สร้าง dummy #brainBox ไว้รองรับ brain.js
+    if (!src) {
+      let dummy = document.getElementById("brainBox");
+      if (!dummy) {
+        dummy = document.createElement("div");
+        dummy.id = "brainBox";
+        dummy.style.display = "none";
+        dest.parentNode.insertBefore(dummy, dest.nextSibling);
+      }
+      src = dummy;
+    }
+
+    bindTo(src);
+  }
+
+  // สั่งสแกนเมื่อ:
+  document.addEventListener("da:update", scanAndBind);
+  document.addEventListener("DOMContentLoaded", scanAndBind);
+  window.addEventListener("load", scanAndBind);
+  setTimeout(scanAndBind, 0);
+
+  // ให้ปุ่มรีเฟรชหน้า 6 สั่งสแกน/คัดลอกทันทีด้วย
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") {
+      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
+      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
+      scanAndBind();
+    }
+  });
+})();
