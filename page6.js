@@ -957,3 +957,63 @@ function p6PrintTimeline() {
     }
   });
 })();
+// === p6 HARD-INVALIDATE & FORCE-RECALC (APPEND AT END OF FILE) =========
+(function () {
+  if (window.__p6HardInvalidateBound) return;
+  window.__p6HardInvalidateBound = true;
+
+  function hardInvalidate() {
+    // ล้างแคช/ตัวแปรที่ brain อาจใช้
+    try { delete window.__brainCache; } catch(_) {}
+    try { delete window.brainCache; } catch(_) {}
+    try { delete window.brainLastInput; } catch(_) {}
+    try { localStorage.removeItem('brainCache'); } catch(_) {}
+    window.__brainEpoch = (window.__brainEpoch || 0) + 1;
+  }
+
+  function forceRecalcAndMirror() {
+    // บังคับคำนวณใหม่
+    if (typeof window.evaluateDrugAllergy === "function") {
+      try { window.evaluateDrugAllergy({ force:true, epoch: window.__brainEpoch }); } catch(e){ console.warn(e); }
+    }
+    if (typeof window.brainComputeAndRender === "function") {
+      try { window.brainComputeAndRender({ force:true, epoch: window.__brainEpoch }); } catch(e){ console.warn(e); }
+    }
+    // ซิงก์ผลไป #p6BrainBox อีกรอบ (ครอบคลุมหลาย selector)
+    (function mirrorNow(){
+      var dest = document.getElementById("p6BrainBox");
+      if (!dest) return;
+      var src =
+        document.querySelector("#brainBox") ||
+        document.querySelector("#resultBox") ||
+        document.querySelector("#result") ||
+        document.querySelector("[data-brain-output]") ||
+        document.querySelector(".brain-output");
+      if (src && dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
+    })();
+  }
+
+  // ยิงทุกครั้งที่ข้อมูลจากหน้า 1–3 อัปเดต
+  document.addEventListener("da:update", function () {
+    hardInvalidate();
+    // รอ DOM/brain เขียนผลเสี้ยววินาทีแล้วค่อย mirror
+    requestAnimationFrame(forceRecalcAndMirror);
+    setTimeout(forceRecalcAndMirror, 50);
+    setTimeout(forceRecalcAndMirror, 120);
+  });
+
+  // ให้ปุ่มรีเฟรชบนหน้า 6 บังคับล้างแคชด้วย
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") {
+      hardInvalidate();
+      forceRecalcAndMirror();
+    }
+  });
+
+  // helper ดีบัก: เรียกในคอนโซลได้
+  window.__debugBrainOnce = function(){
+    hardInvalidate();
+    forceRecalcAndMirror();
+    console.log("[p6] forced recompute @epoch", window.__brainEpoch, window.drugAllergyData);
+  };
+})();
