@@ -1,474 +1,569 @@
-/* brain.rules.js — กฎประเมินเบื้องต้นสำหรับหน้า 6
-   หมายเหตุ:
-   - โค้ดตั้งใจให้ "ทนทาน" ต่อโครงสร้างข้อมูลต่างเวอร์ชัน: ถ้าคีย์ไม่ตรงจะพยายามหาแบบหลวมๆ
-   - ถ้า field บางตัวไม่มี ระบบจะให้ 0 คะแนนในส่วนนั้น (ไม่เด้ง error)
-*/
+// ============================ brain.rules.js ============================
+// ตั้งกติกา "สมอง" สำหรับหน้า 6: เกณฑ์ Gate + คะแนน + คำอธิบาย
+// ไม่แตะต้อง brain.js — เพียงประกาศ window.brainRules ให้ brain.js ไปใช้เอง
+// ปลอดภัยกับหลายโครงสร้างข้อมูล (รองรับชื่อฟิลด์ซ้ำรูปแบบจากหน้า 1–3)
+//
+// อ้างอิงกรอบเกณฑ์ (โดยย่อ):
+// - Urticaria/Angioedema: EAACI/GA2LEN/EuroGuiDerm/APAAACI 2022; drug-induced frame
+// - Anaphylaxis: WAO/EAACI/AAAAI 2020+ (3 criteria window)
+// - DRESS: RegiSCAR (Kardaun et al.); timing 2–6 สัปดาห์ + ผิวหนัง + สัญญาณระบบ/เลือด + อวัยวะอย่างน้อย 1
+// - AGEP: EuroSCAR (Sidoroff et al.) — ตุ่มหนองเล็กจำนวนมากบนพื้น erythema, ไข้, neutrophilia
+// - SJS/TEN: Bastuji-Garin (นิยาม %BSA <10 / >30), mucosal ≥2 แห่ง (SJS ชัด), สัญญาณนำ 1–3 วัน
+// - EM: targetoid 3 ชั้น, ผิวหนัง + เยื่อบุ (minor vs major)
+// - FDE: วงกลม/รี สีแดงจัด/ม่วงคล้ำ กลับตำแหน่งเดิม, timing re-exposure <24h
+// - MP rash (MPE): maculo+papular สมมาตร, itching มักมี, timing ~2 สัปดาห์, eos อาจสูง >5%
+// - Photosensitivity: ตำแหน่งโดนแดด, phototoxic vs photoallergic timing
+// - Bullous Drug Eruption: bullae ตึง, เจ็บแสบ, ตำแหน่งลำตัว/แขนขา
+// - Cytopenias/Nephritis/Serum-sickness-like: cutoff ตามที่ผู้ใช้ให้
+//
+// ======================================================================
 
-/* ---------- helpers ---------- */
-function arr(x){ return Array.isArray(x) ? x : (x == null ? [] : [x]); }
-function str(x){ return (x == null ? "" : String(x)).trim(); }
-function num(x){ var n = Number(x); return isNaN(n) ? null : n; }
-function includesAny(list, options){
-  list = arr(list).map(String);
-  return options.some(o => list.some(v => v.includes(o)));
-}
-function has(list, key){ return arr(list).some(v => String(v).includes(key)); }
-function scoreIf(cond, pts){ return cond ? pts : 0; }
+// ----------------------------- helpers --------------------------------
+(function initBrainRules() {
+  const g = (window.drugAllergyData || {});
+  // ดึงหน้า
+  const P1 = g.page1 || {};
+  const P2 = g.page2 || {};
+  const P3 = g.page3 || {};
 
-/* ค้นค่าตาม path ปลอดภัย */
-function getPath(o, path){
-  try { return path.split(".").reduce((a,k)=> (a && a[k] != null) ? a[k] : undefined, o); }
-  catch(e){ return undefined; }
-}
+  // ---- safe pickers ----
+  const arr = (v) => Array.isArray(v) ? v : (v == null ? [] : [v]).filter(Boolean);
+  const has = (obj, k) => !!(obj && Object.prototype.hasOwnProperty.call(obj, k));
 
-/* หา value แบบหลวมๆ ใน object ลึกๆ จากชื่อคีย์ (regex) */
-function deepFindNumber(obj, re){
-  let out = null;
-  function walk(o){
-    if (!o || typeof o !== "object") return;
-    for (const k of Object.keys(o)){
-      const v = o[k];
-      if (re.test(k) && (typeof v === "number" || /^[\d.+-]+$/.test(String(v)))) {
-        const n = Number(v);
-        if (!isNaN(n)) { out = n; return; }
-      }
-      if (v && typeof v === "object") walk(v);
-      if (out != null) return;
-    }
-  }
-  walk(obj);
-  return out;
-}
-function deepHas(obj, re, expected=true){
-  let hit = false;
-  function walk(o){
-    if (!o || typeof o !== "object") return;
-    for (const k of Object.keys(o)){
-      const v = o[k];
-      if (re.test(k)) {
-        if (typeof v === "boolean") { hit = (v === expected); return; }
-        if (typeof v === "string") { hit = expected ? v !== "" : v === ""; return; }
-        if (typeof v === "number") { hit = expected ? true : false; return; }
-      }
-      if (v && typeof v === "object") walk(v);
-      if (hit) return;
-    }
-  }
-  walk(obj);
-  return hit;
-}
-
-/* รวมข้อมูลจากหน้า 1–3 ให้ชื่ออ่านง่าย */
-function norm(d){
-  const p1 = d.page1 || d.skin || d.pageSkin || {};
-  const skin = p1.skin || p1;
-  const p2 = d.page2 || {};
-  const p3 = d.page3 || {};
-
-  // หน้า 1 (ผิวหนัง)
-  const shapes = arr(skin.rashShape || skin.shape || []);
-  const colors = arr(skin.rashColor || skin.color || []);
-  const blisters = arr(skin.blister || skin.blisters || []);
-  const borders = arr(skin.border || []);
-  const itch = str(skin.itch || "");
-  const pain = str(skin.pain || "");  // อาจเป็น "ปวด/แสบ/เจ็บ" คั่นด้วยเครื่องหมาย
-  const swelling = str(skin.swelling || "");
-  const peeling = str(skin.peeling || "");   // เช่น "ผิวหนังหลุดลอกตรงกลางผื่น", "ไม่เกิน 10% BSA", "เกิน 30% BSA"
-  const onset = str(skin.onset || skin.timeline || "");
-  const symmetry = str(skin.distributionSymmetry || skin.symmetry || "");
-  const positions = arr(skin.positions || skin.locs || []);
-  const fever = str(skin.fever || ""); // บางเวอร์ชั่นอาจใส่ไว้หน้า 2/3
-
-  // หน้า 2 (ระบบอื่นๆ)
-  const resp = p2.respiratory || p2.lungs || {};
-  const circ = p2.circulation || p2.cardiac || {};
-  const gi   = p2.gi || p2.gastro || {};
-  const other= p2.other || {};
-
-  const wheeze = !!(resp.wheeze || deepHas(p2, /wheeze|วี๊ด/i));
-  const dyspnea = !!(resp.dyspnea || resp.difficult || deepHas(p2, /dyspnea|หายใจลำบาก|หอบ/i));
-  const diarrhea = !!(gi.diarrhea || deepHas(p2, /ท้องเสีย|diarr/i));
-  const abdCramp = !!(gi.cramp || deepHas(p2, /ปวดบิด|colic/i));
-  const dysphagia = !!(gi.dysphagia || deepHas(p2, /กลืนลำบาก|dysphagia/i));
-  const n_v = !!(gi.nausea || gi.vomit || deepHas(p2, /คลื่นไส้|อาเจียน|nausea|vomit/i));
-  const hypotension = !!(circ.bpLow || deepHas(p2, /BP\s*ต่ำ|hypotension/i));
-  const systolicDrop30 = !!deepHas(p2, /(systolic.*30)|ลดลง.*30/i);
-  const tachy = !!(circ.hrHigh || deepHas(p2, /HR\s*สูง|tachy/i));
-  const spo2 = deepFindNumber(p2, /spo2/i); // % ถ้าพบ
-
-  // หน้า 3 (lab)
-  const WBC = getPath(p3, "cbc.wbc") ?? deepFindNumber(p3, /^wbc$/i);
-  const neutPct = getPath(p3, "cbc.neutrophilPct") ?? deepFindNumber(p3, /neutro.*%/i);
-  const eosPct  = getPath(p3, "cbc.eosinophilPct") ?? deepFindNumber(p3, /eosinoph.*%/i);
-  const AST = getPath(p3, "lft.ast") ?? deepFindNumber(p3, /^ast$/i);
-  const ALT = getPath(p3, "lft.alt") ?? deepFindNumber(p3, /^alt$/i);
-  const Cr  = getPath(p3, "rft.creatinine") ?? deepFindNumber(p3, /creat/i);
-  const uaProtein = deepHas(p3, /ua.*protein|urinalysis.*protein/i);
-  const troponinI = deepFindNumber(p3, /troponin.?i/i);
-  const troponinT = deepFindNumber(p3, /troponin.?t/i);
-
-  return {
-    shapes, colors, blisters, borders, itch, pain, swelling, peeling,
-    onset, symmetry, positions, fever,
-    wheeze, dyspnea, diarrhea, abdCramp, dysphagia, n_v, hypotension, systolicDrop30, tachy,
-    spo2, WBC, neutPct, eosPct, AST, ALT, Cr, uaProtein, troponinI, troponinT
+  // หน้า 1: skin fields (ยืดหยุ่นชื่อ)
+  const rashShapes  = new Set([ ...arr(P1.rashShape), ...arr(P1.rashShapes) ]);
+  const rashColors  = new Set([ ...arr(P1.rashColor), ...arr(P1.rashColors) ]);
+  const locations   = new Set([ ...arr(P1.locations), ...arr(P1.location) ]);
+  const itch        = (P1.itch && (P1.itch.has || P1.itch === true)) ? true : (P1.itch === "คัน" || P1.itch === "itch");
+  const swelling    = (P1.swelling && (P1.swelling.has || P1.swelling === true)) || rashShapes.has("บวม");
+  const pustule     = (P1.pustule && (P1.pustule.has || P1.pustule === true));
+  const painBurn    = (P1.pain && (P1.pain.has || P1.pain === true)) || (P1.burn && (P1.burn.has || P1.burn === true));
+  const skinDetach  = {
+    lt10  : P1.skinDetach?.lt10 || rashShapes.has("ผิวหนังหลุดลอกไม่เกิน 10%") || rashShapes.has("ไม่เกิน 10% BSA"),
+    gt30  : P1.skinDetach?.gt30 || rashShapes.has("เกิน 30% BSA") || rashColors.has("หลุดลอก >30%"),
+    center: P1.skinDetach?.center || rashShapes.has("ผิวหนังหลุดลอกตรงกลางผื่น"),
   };
-}
 
-/* เช็คช่วงเวลาเริ่มอาการ */
-function onsetIn(onset, arrStr){
-  return arrStr.some(s => onset.includes(s));
-}
+  // หน้า 2: systems
+  const resp = P2.resp || {};
+  const cv   = P2.cv   || {};
+  const gi   = P2.gi   || {};
+  const mucosalSites = new Set([
+    ...(arr(P2.mucosa) || []),
+    ...(arr(P1.mucosa) || [])
+  ]); // ถ้ามีระบบเก็บ mucosa
 
-/* ---------- RULES ---------- */
-window.brainRules = window.brainRules || {};
+  // หน้า 3: labs (คีย์เป็นกลุ่ม)
+  const L = P3 || {};
+  const cbc  = L.cbc  || {};
+  const lft  = L.lft  || {};
+  const rft  = L.rft  || {};
+  const lung = L.lung || {};
+  const heart= L.heart|| {};
+  const immuno = L.immuno || {};
 
-/* Urticaria */
-window.brainRules.urticaria = {
-  title: "Urticaria",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["ตุ่มนูน"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["ปื้นนูน"]), 4);
-    s += scoreIf(n.itch.includes("คัน"), 4);
-    s += scoreIf(includesAny(n.borders, ["ขอบหยัก"]), 3);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 3);
-    s += scoreIf(includesAny(n.colors, ["แดงซีด"]), 3);
-    s += scoreIf(includesAny(n.colors, ["ซีด"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["วงกลม"]), 2);
-    s += scoreIf(n.swelling.includes("บวม"), 2);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ทั่วร่างกาย","มือ","เท้า","แขน","ขา","หน้า","รอบดวงตา","ลำคอ"]), 1);
-    return s;
-  }
-};
+  // อ่านค่าตัวเลขสบายๆ
+  const num = (v) => {
+    const n = Number(String(v ?? "").replace(/[, ]+/g,""));
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const getVal = (grp, key) => num(grp?.[key]?.value);
 
-/* Anaphylaxis (มี Gate) */
-window.brainRules.anaphylaxis = {
-  title: "Anaphylaxis",
-  score: function (d) {
-    const n = norm(d);
-    const onsetOk = onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1–6 ชั่วโมง","1-6 ชั่วโมง"]);
-    const hasSkin = includesAny(n.shapes, ["ตุ่มนูน","ปื้นนูน"]) || includesAny(n.colors, ["แดง"]) || n.swelling.includes("บวม");
-    const respProb = n.wheeze || n.dyspnea || (n.spo2 != null && n.spo2 < 94);
-    const circProb = n.hypotension || n.systolicDrop30;
-    const giProb = n.diarrhea || n.abdCramp || n.n_v || n.dysphagia;
+  // cutoffs (อิงข้อความที่ผู้ใช้ให้)
+  const CUT = {
+    eosPct: 10,              // %
+    eosAbs700: 700,          // /µL
+    eosAbs1500: 1500,        // /µL (stronger)
+    ALT_AST_2xULN_or_40: 40, // U/L — ใช้ ≥40 U/L เป็น threshold ขั้นต้น
+    SpO2_low: 94,            // %
+    troponinI: 0.04,         // ng/mL
+    troponinT_low: 0.01,     // ng/mL (ช่วง 0.01–0.03)
+    Cr_rise: 0.3,            // mg/dL ใน 48 ชม. (ต้องมี baseline ถ้าจะเป๊ะ)
+    ANC_neutropenia: 1500,   // /µL
+    ANC_mod: 999,
+    ANC_severe: 500,
+    Hb_low: 10,              // g/dL
+    WBC_low: 4000,           // /µL
+    Plt_low: 150000,         // /µL
+    Plt_severe: 50000,       // /µL
+  };
 
-    // Criteria:
-    const c1 = hasSkin && (respProb || circProb);
-    const c2 = ([hasSkin, respProb, circProb, giProb].filter(Boolean).length >= 2);
-    const c3 = (n.hypotension || n.systolicDrop30);
-    const passGate = onsetOk && (c1 || c2 || c3);
-    if (!passGate) return 0;
+  // labs actual
+  const eosPct   = Number.isFinite(num(cbc?.eos?.value))  ? num(cbc?.eos?.value)  : num(cbc?.aec?.value) < 100 ? num(cbc?.eos?.value) : NaN;
+  const aecAbs   = Number.isFinite(num(cbc?.aec?.value))  ? num(cbc?.aec?.value)  : NaN;
+  const atypical = Number.isFinite(num(cbc?.atypical?.value)) ? num(cbc?.atypical?.value) : NaN;
+  const hb       = num(cbc?.hb?.value);
+  const wbc      = num(cbc?.wbc?.value);
+  const plt      = num(cbc?.plt?.value);
+  const neutPct  = num(cbc?.neut?.value);
+  const anc      = Number.isFinite(wbc) && Number.isFinite(neutPct) ? Math.round((wbc * neutPct / 100)) : NaN;
 
-    let s = 0;
-    s += scoreIf(n.wheeze, 4);
-    s += scoreIf(n.dyspnea, 4);
-    s += scoreIf(n.diarrhea, 2);
-    s += scoreIf(n.abdCramp, 2);
-    s += scoreIf(n.dysphagia, 2);
-    s += scoreIf(n.n_v, 2);
-    s += scoreIf(n.hypotension, 3);
-    s += scoreIf(n.systolicDrop30, 4);
-    s += scoreIf(n.tachy, 2);
-    s += scoreIf(n.spo2 != null && n.spo2 < 95, 1);
-    s += scoreIf(hasSkin, 2);
-    return s;
-  }
-};
+  const ALT      = num(lft?.alt?.value);
+  const AST      = num(lft?.ast?.value);
 
-/* Angioedema */
-window.brainRules.angioedema = {
-  title: "Angioedema",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(n.swelling.includes("บวม"), 4);
-    s += scoreIf(includesAny(n.shapes, ["นูนหนา"]), 4);
-    s += scoreIf(includesAny(n.positions, ["ริมฝีปาก","รอบดวงตา"]), 4);
-    s += scoreIf(includesAny(n.colors, ["สีผิวปกติ"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["ตึง"]), 3);
-    s += scoreIf(n.itch.includes("ไม่คัน"), 2);
-    s += scoreIf(n.itch.includes("คัน"), 2);
-    s += scoreIf(includesAny(n.borders, ["ขอบไม่ชัดเจน"]), 2);
-    s += scoreIf(includesAny(n.positions, ["ลิ้น"]), 2);
-    s += scoreIf(n.pain.includes("ปวด"), 1);
-    s += scoreIf(n.pain.includes("แสบ"), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง"]), 1);
-    s += scoreIf(includesAny(n.positions, ["อวัยวะเพศ"]), 1);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 1);
-    return s;
-  }
-};
+  const Cr       = num(rft?.cre?.value ?? rft?.creatinine?.value);
+  const eGFR     = num(rft?.egfr?.value);
+  const UA_prot  = (L.ua?.protein?.value ?? "").toString().trim(); // mg/dL or "+"
 
-/* Maculopapular rash (เตือนให้พิจารณา DRESS/SJS/TEN/AGEP ด้วย) */
-window.brainRules.mp_rash = {
-  title: "Maculopapular rash",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["จุดเล็กแดง"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["ปื้นแดง"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["ตุ่มนูน"]), 3);
-    s += scoreIf(n.symmetry.includes("สมมาตร"), 2);
-    s += scoreIf(n.itch.includes("คัน"), 3);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","1–6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ลำตัว","แขน","ใบหน้า","ลำคอ"]), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้|temp/i) || deepHas(d.page1||{}, /ไข้/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ต่อมน้ำเหลือง/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ข้ออักเสบ/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ไตอักเสบ/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ตับอักเสบ/i), 1);
-    return s;
-  }
-};
+  const SpO2     = num(lung?.spo2?.value);
+  const CXR      = (lung?.cxr?.value ?? "").toString().toLowerCase();
 
-/* Fixed Drug Eruption */
-window.brainRules.fde = {
-  title: "Fixed drug eruption",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["วงกลม"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["วงรี"]), 2);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 3);
-    s += scoreIf(n.peeling.includes("หลุดลอกตรงกลาง"), 4);
-    s += scoreIf(includesAny(n.colors, ["ม่วง"]), 4);
-    s += scoreIf(includesAny(n.colors, ["ดำ","คล้ำ"]), 3);
-    s += scoreIf(n.swelling.includes("บวม"), 3);
-    s += scoreIf(includesAny(n.blisters, ["เล็ก"]), 2);
-    s += scoreIf(includesAny(n.blisters, ["กลาง"]), 2);
-    s += scoreIf(includesAny(n.blisters, ["ใหญ่"]), 2);
-    s += scoreIf(n.pain.includes("เจ็บ"), 3);
-    s += scoreIf(n.pain.includes("แสบ"), 3);
-    s += scoreIf(n.pain.includes("ตึง"), 3);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /คลื่นไส้|อาเจียน/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ปวดเมื่อย/i), 1);
-    s += scoreIf(n.itch.includes("คัน"), 1);
-    s += scoreIf(onsetIn(n.onset, ["1 สัปดาห์","2 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.borders, ["ขอบเรียบ"]), 2);
-    s += scoreIf(includesAny(n.positions, ["ริมฝีปาก"]), 3);
-    s += scoreIf(includesAny(n.positions, ["หน้า","มือ","เท้า","แขน","ขา","อวัยวะเพศ"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ตำแหน่งเดิม"]), 2);
-    return s;
-  }
-};
+  const tropI    = num(heart?.tropi?.value);
+  const tropT    = num(heart?.tropt?.value);
+  const ckmb     = num(heart?.ckmb?.value);
+  const EKG      = (heart?.ekg?.value ?? "").toString().toLowerCase();
 
-/* AGEP */
-window.brainRules.agep = {
-  title: "AGEP",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["ตุ่มหนอง"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["ปื้นแดง"]), 3);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้/i), 2);
-    s += scoreIf(includesAny(n.colors, ["แดง","เหลือง"]), 3);
-    s += scoreIf(n.swelling.includes("บวม"), 1);
-    s += scoreIf(n.pain.includes("เจ็บ"), 1);
-    s += scoreIf(n.itch.includes("คัน"), 1);
-    s += scoreIf(includesAny(n.colors, ["จ้ำเลือด"]), 1);
-    s += scoreIf(includesAny(n.blisters, ["เล็ก","กลาง","ใหญ่"]), 1);
-    s += scoreIf(n.WBC != null && n.WBC > 11000, 1);
-    s += scoreIf(n.neutPct != null && n.neutPct > 75, 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.shapes, ["แห้ง","ลอก","ขุย"]), 1);
-    s += scoreIf(includesAny(n.positions, ["หน้า"]), 1);
-    s += scoreIf(includesAny(n.positions, ["รักแร้","ขาหนีบ"]), 2);
-    s += scoreIf(includesAny(n.positions, ["ทั่วร่างกาย"]), 1);
-    return s;
-  }
-};
+  const IgE      = num(immuno?.ige?.value);
+  const C3C4     = (immuno?.c3c4?.value ?? "").toString().toLowerCase();
 
-/* SJS (Gate: peeling ≤10% BSA) */
-window.brainRules.sjs = {
-  title: "SJS",
-  score: function (d) {
-    const n = norm(d);
-    const gate = n.peeling.includes("ไม่เกิน 10%") || n.peeling.includes("≤10");
-    if (!gate) return 0;
-    let s = 0;
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 2);
-    s += scoreIf(includesAny(n.colors, ["ดำ","คล้ำ"]), 3);
-    s += scoreIf(includesAny(n.colors, ["เทา"]), 1);
-    s += scoreIf(includesAny(n.shapes, ["พอง","ตุ่มน้ำ"]), 2);
-    s += scoreIf(n.peeling.includes("ไม่เกิน 10%"), 4);
-    s += scoreIf(includesAny(n.shapes, ["น้ำเหลือง"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["สะเก็ด"]), 2);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ปวดเมื่อย|คลื่นไส้|เจ็บคอ|ปวดข้อ|เลือดออก/i), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ลำตัว","แขน","ขา","ใบหน้า","มือ","เท้า","ศีรษะ"]), 1);
-    return s;
-  }
-};
+  // เวลาเริ่มอาการจากหน้า 1 (อาจเก็บไว้ต่างรูป)
+  const onsetRaw = (P1.onset || P1.timeline || "").toString().trim(); // ตัวเลือก: "< 1 hr", "1–6 hr", "6–24 hr", "1–6 wk", ...
+  const onset = {
+    lt1h: /^(<\s*1\s*h|ภายใน\s*1\s*ชั่วโมง)/i.test(onsetRaw),
+    h1to6: /(1[\s–-]*6\s*h|1–6 ชั่วโมง)/i.test(onsetRaw),
+    h6to24: /(6[\s–-]*24\s*h|6–24 ชั่วโมง)/i.test(onsetRaw),
+    wk1to6: /(1[\s–-]*6\s*w|1–6\s*สัปดาห์)/i.test(onsetRaw)
+  };
 
-/* TEN (Gate: >30% BSA + multi-system แนวคิด) */
-window.brainRules.ten = {
-  title: "TEN",
-  score: function (d) {
-    const n = norm(d);
-    const gate = n.peeling.includes("เกิน 30%") || n.peeling.includes(">30");
-    if (!gate) return 0;
+  // สถานะระบบหายใจ/ไหลเวียน/ทางเดินอาหาร (หน้า 2)
+  const hasResp = !!(resp.dyspnea || resp.wheeze || resp.tachypnea || resp.stridor || resp.hoarseness);
+  const hasCV   = !!(cv.hypotension || cv.shock);
+  const hasGI   = !!(gi.colicky || gi.nausea || gi.vomit || gi.diarrhea);
 
-    let systems = 0;
-    if (includesAny(n.shapes.concat(n.colors), ["แดง","ม่วง","ดำ","ตุ่มน้ำ","น้ำเหลือง","สะเก็ด"])) systems++;
-    if (n.dyspnea || n.wheeze || (n.spo2 != null && n.spo2 < 94)) systems++;
-    if (n.diarrhea || n.abdCramp || n.n_v) systems++;
-    if (n.hypotension) systems++;
-    if (systems < 2) return 0;
+  // mucosa involvement (เราจะตีความจาก patterns หน้า 1/2 ถ้ามีการบันทึก)
+  // ใช้เงื่อนไขหลวม ๆ จาก field ผิวหนังที่เกี่ยว mucosa
+  const mucosaAny = (
+    locations.has("ปาก") || locations.has("ตา") || locations.has("อวัยวะเพศ") ||
+    mucosalSites.size >= 1
+  );
+  const mucosaCount = (() => {
+    let c = 0;
+    if (locations.has("ปาก")) c++;
+    if (locations.has("ตา")) c++;
+    if (locations.has("อวัยวะเพศ")) c++;
+    // รับจากหน้า 2 ถ้าจัดเก็บเป็นชุด
+    c += mucosalSites.size;
+    return c;
+  })();
 
-    let s = 0;
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 2);
-    s += scoreIf(includesAny(n.colors, ["ม่วง"]), 2);
-    s += scoreIf(includesAny(n.colors, ["ดำ","คล้ำ"]), 3);
-    s += scoreIf(includesAny(n.blisters, ["ใหญ่"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["น้ำเหลือง"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["สะเก็ด"]), 2);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้/i), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ปวดเมื่อย|คลื่นไส้|เจ็บคอ|ปวดข้อ|เลือดออก/i), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ลำตัว","แขน","ขา","ใบหน้า","มือ","เท้า","ศีรษะ","ริมฝีปาก","รอบดวงตา"]), 1);
-    s += scoreIf(n.diarrhea, 1);
-    s += scoreIf(deepHas(d.page2||{}, /ตับอักเสบ/i) || (n.ALT!=null && n.ALT>=40) || (n.AST!=null && n.AST>=40), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ปอดอักเสบ/i) || (n.spo2!=null && n.spo2<94), 1);
-    s += scoreIf(deepHas(d.page2||{}, /โลหิตจาง|ซีด/i), 1);
-    s += scoreIf(n.spo2!=null && n.spo2<94, 1);
-    s += scoreIf((n.ALT!=null && n.ALT>=40) || (n.AST!=null && n.AST>=40), 1);
-    s += scoreIf(n.Cr!=null && (n.Cr>=1.5), 1);
-    s += scoreIf(n.uaProtein, 1);
-    return s;
-  }
-};
+  // ตัวช่วยคะแนน/เหตุผล
+  function explPush(list, cond, text) { if (cond) list.push(text); return cond; }
+  function addScore(s, cond, w) { return s + (cond ? w : 0); }
 
-/* DRESS (Gate: timing 2–6wk + skin + systemic/hematologic + organ) */
-window.brainRules.dress = {
-  title: "DRESS",
-  score: function (d) {
-    const n = norm(d);
-    const timingOK = onsetIn(n.onset, ["2 สัปดาห์","3 สัปดาห์","4 สัปดาห์","5 สัปดาห์","6 สัปดาห์"]);
-    const skinOK = includesAny(n.shapes.concat(n.colors), ["MP","maculo","Exfoliative","ตุ่มน้ำ","ตุ่มหนอง","ผื่นแดง","สีแดง","จ้ำเลือด","หลุดลอก","ขุย","ลอก"]);
-    const systemicOK = deepHas(d.page2||{}, /ไข้/i) || deepHas(d.page2||{}, /ต่อมน้ำเหลือง/i) || (n.eosPct!=null && n.eosPct>=10);
-    const organOK =
-      (n.ALT!=null && n.ALT>=40) || (n.AST!=null && n.AST>=40) || deepHas(d.page2||{}, /ตับอักเสบ/i) ||
-      (n.Cr!=null && (n.Cr>=1.5 || n.Cr - (d.__baselineCr||0) >= 0.3)) || n.uaProtein || deepHas(d.page2||{}, /ไตอักเสบ|ไตวาย/i) ||
-      deepHas(d.page2||{}, /ปอดอักเสบ/i) || (n.spo2!=null && n.spo2<94) ||
-      deepHas(d.page2||{}, /กล้ามเนื้อหัวใจอักเสบ/i) || (n.troponinI!=null && n.troponinI>0.04) || (n.troponinT!=null && n.troponinT>0.03) ||
-      deepHas(d.page2||{}, /ไทรอยด์อักเสบ/i);
+  // --------------------------- RULES CORE -------------------------------
+  const rules = [];
 
-    const pass = timingOK && skinOK && systemicOK && organOK;
-    if (!pass) return 0;
+  // ========== URTICARIA ==========
+  rules.push({
+    id: "urticaria",
+    label: "Urticaria (Type I/Immediate or pseudoallergy)",
+    gate(d) {
+      // wheal & flare: ปื้นนูน/ลมพิษ + คัน, ไม่มีขุย/สะเก็ด/ตุ่มน้ำ/หนอง; onset < 1h supportive
+      const hasWhealShape = rashShapes.has("ตุ่มนูน") || rashShapes.has("ปื้นนูน") || rashShapes.has("วงกลมชั้นเดียว") || rashShapes.has("วงกลม 3 ชั้น");
+      const notScaleVesPus = !(rashShapes.has("ขุย") || rashShapes.has("สะเก็ด")) && !(P1.blister && (P1.blister.small || P1.blister.medium || P1.blister.large)) && !pustule;
+      return hasWhealShape && itch && notScaleVesPus;
+    },
+    score(d) {
+      let s = 0, reasons = [];
+      s = addScore(s, itch, 3) && explPush(reasons, itch, "คันเด่นชัด");
+      s = addScore(s, rashShapes.has("ปื้นนูน") || rashShapes.has("ตุ่มนูน"), 2) && explPush(reasons, (rashShapes.has("ปื้นนูน")||rashShapes.has("ตุ่มนูน")), "ลักษณะ wheal/wheal-like");
+      s = addScore(s, rashColors.has("แดง"), 1) && explPush(reasons, rashColors.has("แดง"), "ผื่นแดง");
+      s = addScore(s, onset.lt1h, 2) && explPush(reasons, onset.lt1h, "onset < 1 ชั่วโมง");
+      s = addScore(s, hasResp || hasCV, 1) && explPush(reasons, (hasResp||hasCV), "ร่วมระบบอื่น (พิจารณา anaphylaxis ด้วย)");
+      return { score: s, reasons };
+    }
+  });
 
-    let s = 0;
-    s += scoreIf(timingOK, 3);
-    s += scoreIf(skinOK, 3);
-    s += scoreIf(systemicOK, 3);
-    s += scoreIf(organOK, 4);
-    return s;
-  }
-};
+  // ========== ANGIOEDEMA ==========
+  rules.push({
+    id: "angioedema",
+    label: "Angioedema (Type I/Immediate or bradykinin-mediated pseudoallergy)",
+    gate() {
+      // บวมชั้นลึก ไม่มีขอบเขตชัดเจน, มักไม่คัน/คันน้อย, onset <1h ช่วยยืนยัน
+      return swelling;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, swelling, 3) && explPush(reasons, swelling, "บวมเด่นชั้นลึก (angioedema)");
+      s = addScore(s, !itch, 1) && explPush(reasons, !itch, "ไม่คันหรือคันน้อย");
+      s = addScore(s, onset.lt1h, 2) && explPush(reasons, onset.lt1h, "onset < 1 ชั่วโมง");
+      s = addScore(s, hasResp || hasCV, 2) && explPush(reasons, (hasResp||hasCV), "ร่วมระบบอื่น (เสี่ยง anaphylaxis)");
+      return { score: s, reasons };
+    }
+  });
 
-/* EM */
-window.brainRules.em = {
-  title: "Erythema multiforme (EM)",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["ตุ่มนูน"]), 2);
-    s += scoreIf(includesAny(n.blisters, ["เล็ก","กลาง","ใหญ่"]), 1);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["วงกลม 3 ชั้น"]), 30);
-    s += scoreIf(includesAny(n.colors, ["แดงซีด"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["สะเก็ด"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["ขอบวงนูนแดงด้านในซีด"]), 2);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้/i), 2);
-    s += scoreIf(deepHas(d.page2||{}, /อ่อนเพลีย|ปวดเมื่อย|ปวดข้อ|เจ็บคอ/i), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["มือ","เท้า","แขน","ขา","หน้า","ลำคอ"]), 1);
-    return s;
-  }
-};
+  // ========== ANAPHYLAXIS ==========
+  rules.push({
+    id: "anaphylaxis",
+    label: "Anaphylaxis (Type I/Immediate or pseudoallergy)",
+    gate() {
+      // Criteria 1: skin/mucosa + (resp or CV)
+      const skinOrMucosa = itch || swelling || mucosaAny || rashShapes.size > 0;
+      const crit1 = skinOrMucosa && (hasResp || hasCV);
 
-/* Photosensitivity drug eruption */
-window.brainRules.photo = {
-  title: "Photosensitivity drug eruption",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["ขอบเขตชัด"]), 3);
-    s += scoreIf(includesAny(n.colors, ["แดงไหม้"]), 4);
-    s += scoreIf(n.pain.includes("แสบ"), 3);
-    s += scoreIf(includesAny(n.blisters, ["เล็ก","กลาง","ใหญ่"]), 1);
-    s += scoreIf(includesAny(n.colors, ["ดำ","คล้ำ"]), 1);
-    s += scoreIf(includesAny(n.shapes, ["ปื้นแดง"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["ลอก","ขุย"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["จุดเล็กแดง","แดง"]), 3);
-    s += scoreIf(n.itch.includes("คัน"), 3);
-    s += scoreIf(includesAny(n.shapes, ["น้ำเหลือง","สะเก็ด"]), 2);
-    s += scoreIf(includesAny(n.positions, ["หน้า","หน้าอก","มือ","แขน","ขา"]), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์"]), 1);
-    return s;
-  }
-};
+      // Criteria 2: ≥2 systems (skin/mucosa, resp, cv, gi)
+      const sysCount = (skinOrMucosa?1:0) + (hasResp?1:0) + (hasCV?1:0) + (hasGI?1:0);
+      const crit2 = sysCount >= 2;
 
-/* Exfoliative dermatitis */
-window.brainRules.exfol = {
-  title: "Exfoliative dermatitis",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["ขุย","แห้ง","ลอก"]), 3);
-    s += scoreIf(includesAny(n.colors, ["มันเงา"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["น้ำเหลือง","สะเก็ด"]), 3);
-    s += scoreIf(n.itch.includes("คัน"), 2);
-    s += scoreIf(n.pain.includes("แสบ") || n.pain.includes("เจ็บ"), 1);
-    s += scoreIf(includesAny(n.positions, ["ศีรษะ","มือ","เท้า"]), 1);
-    s += scoreIf(deepHas(d.page2||{}, /ไข้|หนาวสั่น|อ่อนเพลีย|เบื่ออาหาร|ดีซ่าน|ม้ามโต|ตับโต|ขาบวม/i), 1);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์","4 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ทั่วร่างกาย"]), 1);
-    return s;
-  }
-};
+      // Criteria 3: hypotension (เราตีความจาก cv.hypotension/shock) — ไม่ได้เช็ค SBP exact
+      const crit3 = !!cv.hypotension || !!cv.shock;
 
-/* Eczematous drug eruption */
-window.brainRules.eczem = {
-  title: "Eczematous drug eruption",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.shapes, ["ตุ่มนูน"]), 2);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 3);
-    s += scoreIf(includesAny(n.shapes, ["แห้ง","ลอก","ขุย"]), 4);
-    s += scoreIf(includesAny(n.shapes, ["ปื้นแดง","ปื้นนูน"]), 2);
-    s += scoreIf(includesAny(n.shapes, ["น้ำเหลือง","สะเก็ด"]), 1);
-    s += scoreIf(n.itch.includes("คัน"), 3);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ลำตัว","แขน","ขา","เท้า","หน้า","ลำคอ"]), 1);
-    s += scoreIf(n.symmetry.includes("สมมาตร"), 3);
-    return s;
-  }
-};
+      return !!(crit1 || crit2 || crit3);
+    },
+    score() {
+      let s=0, reasons=[];
+      const skinOrMucosa = itch || swelling || mucosaAny || rashShapes.size > 0;
+      s = addScore(s, onset.lt1h || onset.h1to6, 2) && explPush(reasons, (onset.lt1h||onset.h1to6), "onset เร็ว (นาที–ชั่วโมง)");
+      s = addScore(s, skinOrMucosa && hasResp, 4) && explPush(reasons, (skinOrMucosa&&hasResp), "skin/mucosa + ระบบหายใจ");
+      s = addScore(s, skinOrMucosa && hasCV, 4) && explPush(reasons, (skinOrMucosa&&hasCV), "skin/mucosa + ระบบไหลเวียน");
+      s = addScore(s, hasGI, 1) && explPush(reasons, hasGI, "มี GI symptoms ร่วม");
+      s = addScore(s, SpO2 && SpO2 < CUT.SpO2_low, 1) && explPush(reasons, (SpO2 && SpO2 < CUT.SpO2_low), `SpO₂ < ${CUT.SpO2_low}%`);
+      return { score: s, reasons };
+    }
+  });
 
-/* Bullous Drug Eruption */
-window.brainRules.bde = {
-  title: "Bullous Drug Eruption",
-  score: function (d) {
-    const n = norm(d);
-    let s = 0;
-    s += scoreIf(includesAny(n.blisters, ["เล็ก"]), 2);
-    s += scoreIf(includesAny(n.blisters, ["กลาง"]), 4);
-    s += scoreIf(includesAny(n.blisters, ["ใหญ่"]), 4);
-    s += scoreIf(includesAny(n.colors, ["ใส"]), 4);
-    s += scoreIf(includesAny(n.colors, ["แดง"]), 2);
-    s += scoreIf(n.pain.includes("เจ็บ"), 3);
-    s += scoreIf(n.pain.includes("แสบ"), 3);
-    s += scoreIf(onsetIn(n.onset, ["ภายใน 1 ชั่วโมง","1-6 ชั่วโมง","6-24 ชั่วโมง","1 สัปดาห์","2 สัปดาห์","3 สัปดาห์"]), 1);
-    s += scoreIf(includesAny(n.positions, ["ลำตัว","แขน","ขา","เท้า"]), 1);
-    return s;
-  }
-};
+  // ========== FIXED DRUG ERUPTION (FDE) ==========
+  rules.push({
+    id: "fde",
+    label: "Fixed Drug Eruption (Type IV/Delayed)",
+    gate() {
+      const shape = rashShapes.has("วงกลมชั้นเดียว") || rashShapes.has("วงรี");
+      const color = rashColors.has("แดงจัด") || rashColors.has("ม่วง") || rashColors.has("แดงไหม้");
+      return shape && color;
+    },
+    score() {
+      let s=0, reasons=[];
+      const painItch = itch || painBurn;
+      s = addScore(s, rashShapes.has("วงกลมชั้นเดียว") || rashShapes.has("วงรี"), 2) &&
+          explPush(reasons, (rashShapes.has("วงกลมชั้นเดียว")||rashShapes.has("วงรี")), "รูปร่างวง/วงรี");
+      s = addScore(s, rashColors.has("แดงจัด") || rashColors.has("ม่วง"), 2) &&
+          explPush(reasons, (rashColors.has("แดงจัด")||rashColors.has("ม่วง")), "สีแดงจัด/อมม่วงคล้ำ");
+      s = addScore(s, painItch, 1) && explPush(reasons, painItch, "เจ็บๆคันๆ");
+      s = addScore(s, P1.blister && (P1.blister.large || P1.blister.medium), 1) &&
+          explPush(reasons, (P1.blister && (P1.blister.large||P1.blister.medium)), "มีตุ่มน้ำกรณีรุนแรง");
+      // timing: แรก 1–2 wk; re-exposure <24h (ถ้าผู้ใช้มี timeline page5 เชื่อมต่อ อาจยกระดับใน brain.js)
+      return { score: s, reasons };
+    }
+  });
 
+  // ========== MACULOPAPULAR EXANTHEM (MPE / MP rash) ==========
+  rules.push({
+    id: "mpe",
+    label: "Maculopapular rash (MPE, Type IV/Delayed)",
+    gate() {
+      const macPap = rashShapes.has("ตุ่มแบนราบ") || rashShapes.has("ตุ่มนูน") || rashShapes.has("ปื้นนูน");
+      const red    = rashColors.has("แดง");
+      const sym    = locations.size ? true : false; // ถ้ามีข้อมูลตำแหน่งมักสมมาตร
+      return macPap && red;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, rashColors.has("แดง"), 2) && explPush(reasons, rashColors.has("แดง"), "ผื่นแดง");
+      s = addScore(s, rashShapes.has("ตุ่มนูน") || rashShapes.has("ตุ่มแบนราบ") || rashShapes.has("ปื้นนูน"), 2) &&
+          explPush(reasons, (rashShapes.has("ตุ่มนูน")||rashShapes.has("ตุ่มแบนราบ")||rashShapes.has("ปื้นนูน")), "macule/papule");
+      s = addScore(s, itch, 1) && explPush(reasons, itch, "คัน");
+      s = addScore(s, eosPct >= 5, 1) && explPush(reasons, eosPct >= 5, "Eosinophil ↑ (>5%)");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset ~1–2 สัปดาห์ (ตัวชี้นำ Type IV)");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== AGEP ==========
+  rules.push({
+    id: "agep",
+    label: "AGEP (Type IV/Delayed; EuroSCAR)",
+    gate() {
+      return !!pustule; // ตุ่มหนองเล็กจำนวนมาก <5mm
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, pustule, 3) && explPush(reasons, pustule, "ตุ่มหนองเล็กจำนวนมาก");
+      // ไข้สูง ≥38°C — ถ้ามี field temp ในหน้า 2 (คุณมีช่อง “ไข้ (°C)” หน้า 2): ให้เพิ่มได้ในอนาคต
+      const neutHigh = Number.isFinite(neutPct) && neutPct >= 70; // heuristic
+      s = addScore(s, neutHigh, 1) && explPush(reasons, neutHigh, "Neutrophil สูง (สนับสนุน AGEP)");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset ~1–3 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== EXFOLIATIVE DERMATITIS ==========
+  rules.push({
+    id: "exfoliative",
+    label: "Exfoliative dermatitis (Type IV/Delayed)",
+    gate() {
+      // แดงทั้งตัว + ลอกเป็นขุย, มันเงา/น้ำเหลือง/สะเก็ด
+      const redish = rashColors.has("แดง") || rashColors.has("มันเงา");
+      const scale  = rashShapes.has("ขุย") || rashShapes.has("ผิวหลุดลอก") || rashShapes.has("ลอก");
+      return redish && scale;
+    },
+    score() {
+      let s=0, reasons=[];
+      const scale = rashShapes.has("ขุย") || rashColors.has("มันเงา");
+      s = addScore(s, scale, 3) && explPush(reasons, scale, "แดงทั่ว + ลอกเป็นขุย/มันเงา");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset 1–6 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== PHOTOSENSITIVITY ==========
+  rules.push({
+    id: "photosensitivity",
+    label: "Photosensitivity drug eruption (phototoxic/photoallergic; Type IV component)",
+    gate() {
+      // ตำแหน่งโดนแดด + ลักษณะพิเศษ
+      const sunSites = ["หน้า","หน้าอกนอกเสื้อ","หลังมือ","แขนด้านนอก","หน้าแข้ง"];
+      const onSun = sunSites.some(s => locations.has(s)) || locations.has("หน้า");
+      const photoLook = rashColors.has("แดงไหม้") || (itch && (P1.ooze || P1.crust)); // คร่าว ๆ
+      return onSun && photoLook;
+    },
+    score() {
+      let s=0, reasons=[];
+      const onSun = locations.has("หน้า") || locations.size>0;
+      s = addScore(s, onSun, 2) && explPush(reasons, onSun, "ตำแหน่งโดนแดดชัด");
+      s = addScore(s, rashColors.has("แดงไหม้"), 2) && explPush(reasons, rashColors.has("แดงไหม้"), "แดงไหม้/แสบร้อน (phototoxic)");
+      s = addScore(s, itch, 1) && explPush(reasons, itch, "คัน/ตุ่มน้ำ/น้ำเหลือง (photoallergic)");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== BULLOUS DRUG ERUPTION ==========
+  rules.push({
+    id: "bullousDE",
+    label: "Bullous Drug Eruption (Type IV/Delayed)",
+    gate() {
+      return !!(P1.blister && (P1.blister.large || P1.blister.medium));
+    },
+    score() {
+      let s=0, reasons=[];
+      const bullae = P1.blister && (P1.blister.large || P1.blister.medium);
+      s = addScore(s, bullae, 3) && explPush(reasons, bullae, "ตุ่มน้ำพองตึง/ขนาดใหญ่");
+      s = addScore(s, painBurn, 1) && explPush(reasons, painBurn, "เจ็บแสบ");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset 1–3 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== ERYTHEMA MULTIFORME (EM) ==========
+  rules.push({
+    id: "em",
+    label: "Erythema multiforme (Type IV/Delayed)",
+    gate() {
+      // target-like 3 ชั้น, ผิวหนัง + เยื่อบุ 1 ตำแหน่ง (minor) / >1 (major ≈ SJS)
+      const targetish = rashShapes.has("วงกลม 3 ชั้น") || rashShapes.has("เป้ายิงธนู");
+      return targetish;
+    },
+    score() {
+      let s=0, reasons=[];
+      const targetish = rashShapes.has("วงกลม 3 ชั้น") || rashShapes.has("เป้ายิงธนู");
+      s = addScore(s, targetish, 3) && explPush(reasons, targetish, "targetoid (3 ชั้น) ลักษณะ EM");
+      s = addScore(s, mucosaAny, 1) && explPush(reasons, mucosaAny, "มีเยื่อบุร่วม");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset ~1 สัปดาห์");
+      // ถ้า mucosa ≥2 ควรผลักไป SJS ในกติกา SJS/TEN
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== SJS ==========
+  rules.push({
+    id: "sjs",
+    label: "SJS (Type IV/Delayed)",
+    gate() {
+      // Atypical target lesion, mucosal ≥2 sites, skin detachment <10%
+      const atypicalTarget = rashShapes.has("เป้าไม่ครบ 3 ชั้น") || skinDetach.center || rashColors.has("เทา") || rashColors.has("ดำ");
+      const muc2 = mucosaCount >= 2;
+      const detLT10 = !!skinDetach.lt10;
+      return (atypicalTarget && muc2) || detLT10;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, mucosaCount >= 2, 3) && explPush(reasons, mucosaCount >= 2, "เยื่อบุ ≥2 แห่ง");
+      s = addScore(s, skinDetach.lt10, 3) && explPush(reasons, skinDetach.lt10, "ผิวหนังหลุดลอก <10% BSA");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset 1–3 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== TEN ==========
+  rules.push({
+    id: "ten",
+    label: "TEN (Type IV/Delayed)",
+    gate() {
+      return !!skinDetach.gt30;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, skinDetach.gt30, 5) && explPush(reasons, skinDetach.gt30, "ผิวหนังหลุดลอก >30% BSA");
+      s = addScore(s, mucosaAny, 1) && explPush(reasons, mucosaAny, "มักมีเยื่อบุร่วม");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset 1–3 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== DRESS (RegiSCAR gate) ==========
+  rules.push({
+    id: "dress",
+    label: "DRESS (Type IV/Delayed; RegiSCAR-like gate)",
+    gate() {
+      // ต้องมี: ผิวหนัง + (กลุ่มระบบ/เม็ดเลือด ≥1) + (อวัยวะภายใน ≥1) + timing 2–6 สัปดาห์
+      const skinReq = true; // มีผื่นใดๆ หน้าที่คุณเก็บไว้ถือว่ามี (ปรับเข้ม: สีแดง/ลอก/ตุ่ม/จ้ำเลือดใดๆ)
+      const sysOrHema =
+        (eosPct >= CUT.eosPct) ||
+        (aecAbs >= CUT.eosAbs700) ||
+        (Number.isFinite(atypical) && atypical > 0) ||
+        (P2.fever && num(P2.fever.value) >= 37.5) ||
+        (P2.nodes && P2.nodes.has); // ต่อมน้ำเหลืองโต ถ้ามีช่อง
+
+      const organ =
+        (ALT >= CUT.ALT_AST_2xULN_or_40) || (AST >= CUT.ALT_AST_2xULN_or_40) ||
+        (Number.isFinite(Cr) && Cr >= 1.5) || // งานจริงควรเทียบ baseline — ที่นี่ใช้ heuristic
+        (!!UA_prot && UA_prot !== "0" && UA_prot !== "neg") ||
+        (SpO2 && SpO2 < CUT.SpO2_low) ||
+        (tropI && tropI > CUT.troponinI) ||
+        (tropT && tropT > CUT.troponinT_low) ||
+        (/st|\bqt\b|block|arrhythm/.test(EKG)) ||
+        P2.thyroiditis || P2.pneumonitis || P2.nephritis || P2.hepatitis; // ช่องเผื่อหน้า 2
+
+      const timingOK = onset.wk1to6; // 2–6 สัปดาห์ (เราใส่เป็นช่วง 1–6 สัปดาห์จากตัวเลือก)
+      return skinReq && sysOrHema && organ && timingOK;
+    },
+    score() {
+      let s=0, reasons=[];
+      const e_eos = (aecAbs >= CUT.eosAbs1500) || (eosPct >= CUT.eosPct);
+      s = addScore(s, e_eos, 2) && explPush(reasons, e_eos, "Eosinophil สูง (≥10% หรือ AEC ≥700/µL; เด่นถ้า ≥1500/µL)");
+      const liver = (ALT >= CUT.ALT_AST_2xULN_or_40) || (AST >= CUT.ALT_AST_2xULN_or_40);
+      s = addScore(s, liver, 2) && explPush(reasons, liver, "LFT สูง (ตับอักเสบ)");
+      const kidney = (Number.isFinite(Cr) && Cr >= 1.5) || (!!UA_prot && UA_prot !== "0" && UA_prot !== "neg");
+      s = addScore(s, kidney, 2) && explPush(reasons, kidney, "ไตเกี่ยวข้อง (Cr/UA)");
+      s = addScore(s, SpO2 && SpO2 < CUT.SpO2_low, 1) && explPush(reasons, (SpO2 && SpO2 < CUT.SpO2_low), "SpO₂ <94%");
+      s = addScore(s, onset.wk1to6, 2) && explPush(reasons, onset.wk1to6, "onset 2–6 สัปดาห์");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== SERUM SICKNESS-LIKE ==========
+  rules.push({
+    id: "serumSickness",
+    label: "Serum-sickness–like reaction (Type III frame)",
+    gate() {
+      // ไข้ + ผื่น (urticarial/morbilliform) + ข้ออักเสบ/ปวดข้อ + ต่อมน้ำเหลืองโต; C3/C4 ลดลงในแท้ (ถ้ามี)
+      const fever = P2.fever && num(P2.fever.value) >= 38;
+      const rashUrtOrMPE = rashShapes.has("ปื้นนูน") || rashShapes.has("ตุ่มนูน") || rashColors.has("แดง");
+      const joint = P2.msk?.arthralgia || P2.msk?.arthritis || P2.msk?.jointPain;
+      const nodes = P2.nodes?.has;
+      return (fever && rashUrtOrMPE && (joint || nodes));
+    },
+    score() {
+      let s=0, reasons=[];
+      const cLow = /c3.*<\s*90|c4.*<\s*10/.test(C3C4);
+      s = addScore(s, true, 2) && explPush(reasons, true, "ไข้ + ผื่น + ข้อ/ต่อมน้ำเหลือง");
+      s = addScore(s, cLow, 1) && explPush(reasons, cLow, "Complement ต่ำ (กรณี serum sickness แท้)");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== HEMOLYTIC ANEMIA ==========
+  rules.push({
+    id: "hemolyticAnemia",
+    label: "Immune hemolytic anemia (Type II)",
+    gate() {
+      // ใช้ heuristic จากอาการ + เม็ดเลือด (Hb ต่ำอย่างมีนัย) — DAT/LDH/indirect bili/haptoglobin ไม่ได้เก็บในหน้า 3 ตอนนี้
+      return Number.isFinite(hb) && hb < (CUT.Hb_low - 1); // <9 g/dL เน้นกรณีเด่น
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, Number.isFinite(hb) && hb < CUT.Hb_low, 2) && explPush(reasons, (Number.isFinite(hb) && hb < CUT.Hb_low), `Hb ต่ำ (<${CUT.Hb_low} g/dL)`);
+      s = addScore(s, cv.hypotension || cv.shock, 1) && explPush(reasons, (cv.hypotension||cv.shock), "ความดันต่ำ/ช็อก");
+      // ถ้ามี UA hemoglobinuria แยกจาก RBC (ปัจจุบันไม่มีฟิลด์): ข้ามไป
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== PANCYTOPENIA ==========
+  rules.push({
+    id: "pancytopenia",
+    label: "Pancytopenia (Type II frame)",
+    gate() {
+      // Hb <10, WBC <4,000, Plt <100,000 — อย่างน้อย 2 ใน 3
+      const c = [
+        Number.isFinite(hb)  && hb  < 10,
+        Number.isFinite(wbc) && wbc < 4000,
+        Number.isFinite(plt) && plt < 100000,
+      ].filter(Boolean).length;
+      return c >= 2;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, Number.isFinite(hb) && hb < 10, 1) && explPush(reasons, (Number.isFinite(hb) && hb < 10), "Hb <10");
+      s = addScore(s, Number.isFinite(wbc) && wbc < 4000, 1) && explPush(reasons, (Number.isFinite(wbc) && wbc < 4000), "WBC <4,000");
+      s = addScore(s, Number.isFinite(plt) && plt < 100000, 1) && explPush(reasons, (Number.isFinite(plt) && plt < 100000), "Plt <100,000");
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== NEUTROPENIA ==========
+  rules.push({
+    id: "neutropenia",
+    label: "Neutropenia (Type II frame)",
+    gate() {
+      return Number.isFinite(anc) && anc < CUT.ANC_neutropenia;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, Number.isFinite(anc) && anc < CUT.ANC_neutropenia, 2) && explPush(reasons, (Number.isFinite(anc) && anc < CUT.ANC_neutropenia), `ANC <${CUT.ANC_neutropenia}`);
+      s = addScore(s, anc < CUT.ANC_severe, 1) && explPush(reasons, (anc < CUT.ANC_severe), `Severe <${CUT.ANC_severe}`);
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== THROMBOCYTOPENIA ==========
+  rules.push({
+    id: "thrombocytopenia",
+    label: "Thrombocytopenia (Type II frame)",
+    gate() {
+      return Number.isFinite(plt) && plt < CUT.Plt_low;
+    },
+    score() {
+      let s=0, reasons=[];
+      s = addScore(s, Number.isFinite(plt) && plt < CUT.Plt_low, 2) && explPush(reasons, (Number.isFinite(plt) && plt < CUT.Plt_low), `Plt <${CUT.Plt_low}`);
+      s = addScore(s, Number.isFinite(plt) && plt < CUT.Plt_severe, 1) && explPush(reasons, (Number.isFinite(plt) && plt < CUT.Plt_severe), `<${CUT.Plt_severe} (รุนแรง)`);
+      return { score: s, reasons };
+    }
+  });
+
+  // ========== NEPHRITIS ==========
+  rules.push({
+    id: "nephritis",
+    label: "Drug-induced nephritis (Type II/IV frame)",
+    gate() {
+      // Cr ↑ / eGFR <60 / UA-protein / hematuria (ถ้าเก็บ) + อาการนำไข้/ผื่น/ปวดสีข้าง (หน้า 2)
+      const renal =
+        (Number.isFinite(Cr) && Cr >= 1.5) ||
+        (Number.isFinite(eGFR) && eGFR < 60) ||
+        (!!UA_prot && UA_prot !== "0" && UA_prot !== "neg");
+      return renal;
+    },
+    score() {
+      let s=0, reasons=[];
+      const renal =
+        (Number.isFinite(Cr) && Cr >= 1.5) ||
+        (Number.isFinite(eGFR) && eGFR < 60) ||
+        (!!UA_prot && UA_prot !== "0" && UA_prot !== "neg");
+      s = addScore(s, renal, 3) && explPush(reasons, renal, "ไตเกี่ยวข้อง (Cr/eGFR/UA protein)");
+      s = addScore(s, onset.wk1to6, 1) && explPush(reasons, onset.wk1to6, "onset 1–2 สัปดาห์ (พบบ่อย)");
+      return { score: s, reasons };
+    }
+  });
+
+  // ------------------------- REGISTER RULES -----------------------------
+  window.brainRules = rules;
+
+  // (ตัวเลือก) ให้ brain.js เห็น cutoff ใช้งานร่วม (ไม่บังคับ)
+  window.brainCutoffs = CUT;
+
+  // หมายเหตุ:
+  // - brain.js ของคุณจะเป็นคนเรียกใช้ window.brainRules เพื่อให้คะแนน + จัดอันดับ
+  // - ปุ่ม "รีเฟรชผลประเมิน" ในหน้า 6 จะคอล brain.js (evaluateDrugAllergy/brainComputeAndRender)
+  //   ซึ่งจะอ่านกฎจากไฟล์นี้อัตโนมัติ
+  //
+  // หากต้องการ fine-tune น้ำหนัก: แก้ใน score() ของแต่ละ phenotype ได้เลย
+})();
