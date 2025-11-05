@@ -146,7 +146,7 @@
 
     function dayIndexOf(date){ return Math.floor((date - minDate)/MS_DAY); }
 
-    // วาดยา (แถบ/จุดกรณีวันเดียวกัน)
+    // วาดยา
     drugs.forEach((d,idx)=>{
       const start=parseDate(d.startDate); if(!start) return;
 
@@ -193,7 +193,7 @@
       drugLane.appendChild(bar);
     });
 
-    // วาด ADR (แถบ/จุดกรณีวันเดียวกัน)
+    // วาด ADR
     adrs.forEach((a,idx)=>{
       const start=parseDate(a.startDate); if(!start) return;
 
@@ -413,7 +413,7 @@
       </div>
     `;
 
-    // เตรียมกล่อง alias ให้ brain.js ถ้าใช้ id อื่น
+    // alias สำหรับ brain.js
     requestAnimationFrame(() => {
       let alias = document.getElementById("brainBox");
       if (!alias) {
@@ -437,8 +437,7 @@
       });
     }
 
-    // คำนวณครั้งแรกถ้าข้อมูลพร้อม
-    const status = checkCorePagesReady();
+    // คำนวณครั้งแรกถ้าข้อมูลพร้อม  (ใช้ตัวแปร status เดิม ไม่ประกาศซ้ำ)
     if (window.brainComputeAndRender && status.ready) {
       try { window.brainComputeAndRender(); } catch(_) {}
     }
@@ -800,22 +799,20 @@ function p6PrintTimeline() {
     }
   }
 
-  function refreshNow(forceNote) {
+  function refreshNow() {
     ensureAlias();
     nukeBrainCache();
     try { if (window.evaluateDrugAllergy) window.evaluateDrugAllergy({force:true,epoch:window.__brainEpoch}); } catch(_) {}
     try { if (window.brainComputeAndRender) window.brainComputeAndRender({force:true,epoch:window.__brainEpoch}); } catch(_) {}
 
-    // mirror หลายไทม์มิ่ง
     setTimeout(() => { if (!mirrorFromBrain()) localBrainCompute(); }, 40);
     requestAnimationFrame(() => { if (!mirrorFromBrain()) localBrainCompute(); });
     if (!mirrorFromBrain()) localBrainCompute();
   }
 
-  // ฟังสัญญาณ
-  document.addEventListener("da:update", () => refreshNow(false));
+  document.addEventListener("da:update", refreshNow);
   document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") refreshNow(true);
+    if (e.target && e.target.id === "p6BrainRefreshBtn") refreshNow();
   });
   document.addEventListener("DOMContentLoaded", () => setTimeout(refreshNow, 0));
   window.addEventListener("load", () => setTimeout(refreshNow, 0));
