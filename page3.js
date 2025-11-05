@@ -132,7 +132,8 @@
 
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:.55rem 1.1rem;">
                 ${group.items.map((item) => {
-                  const fieldId = \`${group.key}_${item.key}\`;
+                  // 🔧 FIX (เทียบเท่าเดิม): เลี่ยง backtick ซ้อนที่บางครั้งก่อ syntax error
+                  const fieldId = group.key + "_" + item.key;
                   const checked = groupData[item.key]?.checked ? "checked" : "";
                   const value = groupData[item.key]?.value || "";
                   const detail = groupData[item.key]?.detail || "";
