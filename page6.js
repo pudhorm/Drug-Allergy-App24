@@ -1248,3 +1248,96 @@ function p6PrintTimeline() {
   setTimeout(__p6MirrorNow, 0);
 })();
 </script>
+// ==== APPEND-ONLY HOTFIX for page6.js (pure JS, no <script> tags) ====
+(function () {
+  if (window.__p6HotfixBound) return;
+  window.__p6HotfixBound = true;
+
+  // คัดลอกผลจากกล่องสมอง (ถ้ามี) มายังกล่องผลหน้า 6
+  function mirrorNow() {
+    var dest = document.getElementById("p6BrainBox");
+    if (!dest) return;
+
+    // แหล่งผลที่เป็นไปได้จาก brain.js / ตัวอื่น
+    var src =
+      document.getElementById("brainBox") ||
+      document.getElementById("resultBox") ||
+      document.getElementById("result") ||
+      document.querySelector("[data-brain-output]") ||
+      document.querySelector(".brain-output");
+
+    if (src && src.innerHTML && dest.innerHTML !== src.innerHTML) {
+      dest.innerHTML = src.innerHTML;
+      return;
+    }
+
+    // ถ้ายังไม่มีผลจากสมอง ให้ใช้ fallback ในเครื่องคำนวณคร่าวๆ
+    localFallback();
+  }
+
+  // Fallback คำนวณเร็วๆ จาก page1–3 แล้วใส่ผลลง #p6BrainBox
+  function localFallback() {
+    var dest = document.getElementById("p6BrainBox");
+    if (!dest) return;
+
+    var d = window.drugAllergyData || {};
+    var p1 = d.page1 || {}, p2 = d.page2 || {}, p3 = d.page3 || {};
+    if (!(p1.__saved && p2.__saved && p3.__saved)) return; // รอข้อมูลครบก่อน
+
+    var scores = Object.create(null);
+    function add(k, w){ scores[k] = (scores[k] || 0) + (w || 1); }
+
+    // เบสิกเฮอริสติกส์ (เหมือนที่หน้า 6 ใช้)
+    if (p1.itch && p1.itch.has) add("Urticaria", 3);
+    if (Array.isArray(p1.rashShapes) && p1.rashShapes.includes("ปื้นนูน")) add("Urticaria", 2);
+    if (Array.isArray(p1.rashColors) && p1.rashColors.includes("แดง")) add("Maculopapular rash", 2);
+    if (p1.swelling && p1.swelling.has) add("Angioedema", 3);
+    if ((p2.resp && (p2.resp.dyspnea || p2.resp.wheeze || p2.resp.tachypnea)) ||
+        (p2.cv && (p2.cv.hypotension || p2.cv.shock))) add("Anaphylaxis", 4);
+    if (p1.pustule && p1.pustule.has) add("AGEP", 3);
+    if (p1.skinDetach && (p1.skinDetach.gt30)) add("TEN", 5);
+    if (p1.skinDetach && (p1.skinDetach.lt10 || p1.skinDetach.center)) add("SJS", 3);
+    if (Array.isArray(p1.rashColors) && p1.rashColors.includes("แดงไหม้") &&
+        Array.isArray(p1.locations) && p1.locations.includes("หน้า")) add("Photosensitivity drug eruption", 2);
+
+    var eosPct = Number(p3?.cbc?.eos?.value ?? NaN);
+    var aec    = Number(p3?.cbc?.aec?.value ?? NaN);
+    var alt    = Number(p3?.lft?.alt?.value ?? NaN);
+    var ast    = Number(p3?.lft?.ast?.value ?? NaN);
+    if ((Number.isFinite(aec) && aec >= 1500) || (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS", 2);
+    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS", 1);
+
+    var ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    if (!ranked.length) return;
+
+    var leader = ranked[0][0];
+    dest.innerHTML = (
+      '<div>' +
+        '<div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <span style="font-weight:800;">' + leader + '</span></div>' +
+        '<ol class="p6-list" style="margin-top:.35rem;">' +
+          ranked.map(function (x,i){ return '<li>'+(i+1)+') '+x[0]+'</li>'; }).join('') +
+        '</ol>' +
+      '</div>'
+    );
+  }
+
+  // hook ปุ่ม “รีเฟรชผลประเมิน”
+  document.addEventListener("click", function (e) {
+    if (e && e.target && e.target.id === "p6BrainRefreshBtn") {
+      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy({force:true}); } catch(_) {}
+      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender({force:true}); } catch(_) {}
+      // mirror หลายจังหวะ กันกรณี DOM เขียนช้า
+      setTimeout(mirrorNow, 30);
+      requestAnimationFrame(mirrorNow);
+    }
+  });
+
+  // mirror เมื่อมีการอัปเดตข้อมูลจากหน้าอื่น ๆ
+  document.addEventListener("da:update", function () {
+    setTimeout(mirrorNow, 50);
+    requestAnimationFrame(mirrorNow);
+  });
+
+  // ครั้งแรกหลังโหลด
+  setTimeout(mirrorNow, 0);
+})();
