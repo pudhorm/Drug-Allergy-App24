@@ -720,3 +720,49 @@ function p6PrintTimeline() {
   // ยิงทุกครั้งที่หน้า 1–3 บันทึกและส่งสัญญาณ da:update
   document.addEventListener("da:update", runRefresh);
 })();
+// === p6 brain refresh shim (append at end of page6.js; do NOT touch other parts) ===
+(function () {
+  if (window.__p6BrainShimBound) return;
+  window.__p6BrainShimBound = true;
+
+  function forceRecomputeAndRender() {
+    // เคลียร์กล่องผลก่อน เพื่อไม่ให้เห็นค่าค้าง
+    var box = document.getElementById("p6BrainBox");
+    if (box) box.textContent = "กำลังคำนวณ…";
+
+    // กันแคชที่ brain.js อาจเก็บไว้
+    try { delete window.__brainCache; delete window.brainCache; } catch (_) {}
+    window.__brainEpoch = (window.__brainEpoch || 0) + 1;
+
+    // เรียกตัวคำนวณ (ถ้ามี)
+    try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch (e) { console.warn(e); }
+    try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch (e) { console.warn(e); }
+
+    // เผื่อ DOM ยังไม่มา ให้เรียกซ้ำสั้นๆ
+    setTimeout(function () {
+      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch (_) {}
+      // ถ้ายังว่างอยู่ ให้เรนเดอร์หน้า 6 ใหม่อีกรอบ
+      var box2 = document.getElementById("p6BrainBox");
+      if (typeof window.renderPage6 === "function" && box2 && (!box2.innerHTML || /กำลังคำนวณ/.test(box2.textContent))) {
+        window.renderPage6();
+      }
+    }, 60);
+  }
+
+  // ฟังสัญญาณข้อมูลอัปเดตจากหน้า 1–3
+  document.addEventListener("da:update", forceRecomputeAndRender);
+
+  // ให้ปุ่ม “รีเฟรชผลประเมิน” เดิมเรียกชิมนี้ด้วย
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t && t.id === "p6BrainRefreshBtn") {
+      forceRecomputeAndRender();
+    }
+  });
+
+  // เรียกครั้งแรกเมื่อโหลดหน้า 6 แล้วข้อมูลพร้อม
+  if (typeof window.renderPage6 === "function") {
+    // หน่วงนิดให้ DOM ของหน้า 6 วางเสร็จ
+    setTimeout(forceRecomputeAndRender, 30);
+  }
+})();
