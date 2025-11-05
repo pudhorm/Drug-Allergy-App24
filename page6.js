@@ -1090,3 +1090,98 @@ function p6PrintTimeline() {
   // ครั้งแรกหลังโหลดหน้า
   setTimeout(hardRefresh, 0);
 })();
+// === p6 LOCAL-BRAIN (fallback) — append at end only ======================
+(function () {
+  if (window.__p6LocalBrainBound) return;
+  window.__p6LocalBrainBound = true;
+
+  function num(v) {
+    const n = Number(String(v).replace(/[, ]+/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function localBrainCompute() {
+    const box = document.getElementById("p6BrainBox");
+    if (!box) return;
+
+    const d  = window.drugAllergyData || {};
+    const p1 = d.page1 || {};
+    const p2 = d.page2 || {};
+    const p3 = d.page3 || {};
+
+    // ต้องบันทึกครบหน้า 1–3 ก่อน จึงคำนวณ
+    if (!(p1.__saved && p2.__saved && p3.__saved)) {
+      return; // ปล่อยให้ข้อความเดิมแสดง
+    }
+
+    const scores = Object.create(null);
+    const add = (k, w) => { scores[k] = (scores[k] || 0) + (w || 1); };
+
+    // ------- Heuristics เบื้องต้น (อ่านจากหน้า 1–3) -------
+    // Urticaria
+    if (p1.itch?.has) add("Urticaria", 3);
+    if ((p1.rashShapes || []).includes("ปื้นนูน")) add("Urticaria", 2);
+    if ((p1.rashColors || []).includes("แดง")) add("Urticaria", 1);
+
+    // Angioedema
+    if (p1.swelling?.has) add("Angioedema", 3);
+
+    // Anaphylaxis (คร่าวๆ: ระบบหายใจ/ไหลเวียน + ผิวหนัง)
+    if ((p2.resp?.dyspnea || p2.resp?.wheeze || p2.resp?.tachypnea) ||
+        (p2.cv?.hypotension || p2.cv?.shock)) {
+      add("Anaphylaxis", 4);
+    }
+
+    // Maculopapular rash
+    if ((p1.rashShapes || []).length && (p1.rashColors || []).includes("แดง")) {
+      add("Maculopapular rash", 2);
+    }
+
+    // AGEP — มีตุ่มหนอง
+    if (p1.pustule?.has) add("AGEP", 3);
+
+    // SJS/TEN — ผิวหนังหลุดลอก
+    if (p1.skinDetach?.gt30) add("TEN", 5);
+    if (p1.skinDetach?.lt10 || p1.skinDetach?.center) add("SJS", 3);
+
+    // Photosensitivity (แดงไหม้ + ใบหน้า)
+    if ((p1.rashColors || []).includes("แดงไหม้") &&
+        (p1.locations || []).includes("หน้า")) {
+      add("Photosensitivity drug eruption", 2);
+    }
+
+    // DRESS — eos สูง/ตับอักเสบ (สัญญาณหยาบ)
+    const aec = num(p3?.cbc?.aec?.value ?? p3?.cbc?.eos?.value);
+    const eosPct = num(p3?.cbc?.eos?.value);
+    const alt = num(p3?.lft?.alt?.value);
+    const ast = num(p3?.lft?.ast?.value);
+    if ((Number.isFinite(aec) && aec >= 1500) ||
+        (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS", 2);
+    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS", 1);
+
+    // --------------------------------------------------------
+
+    const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    if (!ranked.length) {
+      box.innerHTML = `<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>`;
+      return;
+    }
+
+    const leader = ranked[0][0];
+    box.innerHTML = `
+      <div>
+        <div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <span style="font-weight:800;">${leader}</span></div>
+        <ol class="p6-list" style="margin-top:.35rem;">
+          ${ranked.map(([k],i)=>`<li>${i+1}) ${k}</li>`).join("")}
+        </ol>
+      </div>
+    `;
+  }
+
+  // คำนวณเมื่อข้อมูลอัปเดต + เมื่อกดปุ่มรีเฟรช + ตอนโหลด
+  document.addEventListener("da:update", localBrainCompute);
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") localBrainCompute();
+  });
+  setTimeout(localBrainCompute, 0);
+})();
