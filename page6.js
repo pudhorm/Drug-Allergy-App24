@@ -1017,3 +1017,76 @@ function p6PrintTimeline() {
     console.log("[p6] forced recompute @epoch", window.__brainEpoch, window.drugAllergyData);
   };
 })();
+// === p6 ULTRA-BRIDGE + FORCE RECOMPUTE (APPEND AT END) ==================
+(function () {
+  if (window.__p6UltraBridgeBound) return;
+  window.__p6UltraBridgeBound = true;
+
+  function nukeBrainCache() {
+    try { delete window.__brainCache; } catch(_) {}
+    try { delete window.brainCache; } catch(_) {}
+    try { delete window.brainLastInput; } catch(_) {}
+    try { localStorage.removeItem('brainCache'); } catch(_) {}
+    window.__brainEpoch = (window.__brainEpoch || 0) + 1;
+  }
+
+  function callBrain(forceNote) {
+    // เรียกตัวคำนวณถ้ามี
+    try { if (typeof window.evaluateDrugAllergy === "function")
+      window.evaluateDrugAllergy({ force:true, epoch: window.__brainEpoch }); } catch(_) {}
+    try { if (typeof window.brainComputeAndRender === "function")
+      window.brainComputeAndRender({ force:true, epoch: window.__brainEpoch }); } catch(_) {}
+
+    // mirror ไป #p6BrainBox
+    mirrorNow(forceNote);
+    // เผื่อ brain เขียนช้า ให้ mirror ซ้ำ
+    setTimeout(() => mirrorNow(forceNote), 60);
+    requestAnimationFrame(() => mirrorNow(forceNote));
+  }
+
+  function candidateNodes() {
+    // จับกว้างๆ: id/class/attr ที่มักใช้เป็นกล่องผล
+    const q = [
+      "#brainBox", "#resultBox", "#result", "#output", "[data-brain-output]",
+      "[id*='brain']", "[id*='result']", ".brain-output", ".result-output",
+      ".brainBox", ".resultBox"
+    ].join(",");
+    return Array.from(document.querySelectorAll(q));
+  }
+
+  function mirrorNow(forceNote) {
+    const dest = document.getElementById("p6BrainBox");
+    if (!dest) return;
+
+    // หาตัวที่ “มีเนื้อหา” มากที่สุด
+    const nodes = candidateNodes().filter(n => n !== dest);
+    let pick = null, maxLen = 0;
+    for (const n of nodes) {
+      const len = (n.innerHTML || "").length;
+      if (len > maxLen) { maxLen = len; pick = n; }
+    }
+    if (pick && maxLen > 0) {
+      if (dest.innerHTML !== pick.innerHTML) dest.innerHTML = pick.innerHTML;
+    } else if (forceNote) {
+      // ไม่มีอะไรให้ mirror — แจ้งไว้เพื่อกันเข้าใจว่าไม่อัปเดต
+      dest.innerHTML = `<div style="color:#4b5563">
+        (ยังไม่พบกล่องผลสมองให้ mirror — ตรวจว่าไฟล์ brain.js เขียนผลลง element อะไร)
+      </div>`;
+    }
+  }
+
+  function hardRefresh(source) {
+    nukeBrainCache();
+    callBrain(true);
+  }
+
+  // ยิงเมื่อข้อมูลจากหน้า 1–3 เปลี่ยน
+  document.addEventListener("da:update", hardRefresh);
+  // ยิงเมื่อกดปุ่มรีเฟรช
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") hardRefresh("button");
+  });
+
+  // ครั้งแรกหลังโหลดหน้า
+  setTimeout(hardRefresh, 0);
+})();
