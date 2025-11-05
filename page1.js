@@ -1,4 +1,4 @@
-// page1.js
+// page1.js (REPLACE WHOLE FILE)
 (function () {
   // ----- ตัวเลือกพื้นฐาน -----
   const SHAPES = [
@@ -617,23 +617,21 @@
       store.onset = document.getElementById("p1_onset").value;
       store.onsetOther = document.getElementById("p1_onset_other").value;
 
-// ✅ หน้าที่ 1 กดบันทึกแล้ว
-store.__saved = true;
-store.__ts = Date.now(); // กันผลค้าง/แคช
+      // ✅ หน้าที่ 1 กดบันทึกแล้ว — ติดธง + timestamp เพื่อให้ brain.js รู้ว่ามีการอัปเดต
+      store.__saved = true;
+      store.__ts = Date.now();
 
-window.drugAllergyData = window.drugAllergyData || {};
-// ใช้ deep clone แทน Object.assign
-window.drugAllergyData.page1 = (window.structuredClone
-  ? structuredClone(store)
-  : JSON.parse(JSON.stringify(store)));
+      // อัปเดตตัวแปรกลางด้วย deep clone และแจ้งทุกหน้าให้รีเฟรช
+      window.drugAllergyData = window.drugAllergyData || {};
+      window.drugAllergyData.page1 = (window.structuredClone
+        ? structuredClone(store)
+        : JSON.parse(JSON.stringify(store)));
 
-document.dispatchEvent(new Event("da:update"));
+      document.dispatchEvent(new Event("da:update"));
 
-if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
-if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
-// alert(...) และเปลี่ยนหน้า ต่อเหมือนเดิม
-
+      // เรียกฟังก์ชันเดิม (ถ้ามี)
+      if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
+      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
       alert("บันทึกหน้า 1 แล้ว");
 
