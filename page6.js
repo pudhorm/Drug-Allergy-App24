@@ -420,13 +420,17 @@
       requestAnimationFrame(() => document.dispatchEvent(new Event("da:update")));
     }
 
-    // ⬇️ สายเรียกปุ่มรีเฟรชผล (ใหม่)
-    const btnBrain = document.getElementById("p6BrainRefreshBtn");
-    if (btnBrain) {
-      btnBrain.addEventListener("click", () => {
-        if (window.brainComputeAndRender) window.brainComputeAndRender();
-      });
-    }
+   // ⬇️ สายเรียกปุ่มรีเฟรชผล (ใหม่) — ใช้แค่บล็อกเดียวพอ อย่าประกาศซ้ำ
+const btnBrain = document.getElementById("p6BrainRefreshBtn");
+if (btnBrain) {
+  btnBrain.addEventListener("click", () => {
+    try { if (window.evaluateDrugAllergy) window.evaluateDrugAllergy(); } catch(_) {}
+    try { if (window.brainComputeAndRender) window.brainComputeAndRender(); } catch(_) {}
+    // ยิงสัญญาณให้ bridge/super-bridge ทำงานต่อ
+    document.dispatchEvent(new Event("da:update"));
+  });
+}
+
     // เรียกครั้งแรกเมื่อเปิดหน้า 6 และข้อมูลพร้อม
     if (window.brainComputeAndRender && status.ready) {
       window.brainComputeAndRender();
