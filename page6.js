@@ -687,20 +687,36 @@ function p6PrintTimeline() {
 }
 // === page6.js: AUTO-REFRESH ON DATA UPDATE ===============================
 
-// ให้หน้า 6 คำนวณใหม่ทุกครั้งที่มีการอัปเดตข้อมูลจากหน้า 1–3
-(function initDaAutoRefresh() {
-  if (window.__daAutoRefreshBound) return;   // กันผูกซ้ำ
-  window.__daAutoRefreshBound = true;
+// === page6.js: AUTO-REFRESH ON DATA UPDATE (REPLACE THIS BLOCK ONLY) ===
+// ให้หน้า 6 คำนวน/เรนเดอร์ใหม่ทุกครั้งที่หน้า 1–3 อัปเดต โดยกันผูกซ้ำและกันรีเฟรชถี่เกิน
+(function () {
+  if (window.__p6AutoRefreshBound) return;      // กันผูกซ้ำ
+  window.__p6AutoRefreshBound = true;
 
-  document.addEventListener("da:update", () => {
-    // คำนวณกฎ/คะแนนใหม่ ถ้ามีฟังก์ชัน brain
-    if (typeof window.evaluateDrugAllergy === "function") {
-      try { window.evaluateDrugAllergy(); } catch (e) { console.warn(e); }
-    }
+  let rafId = 0;
+  function runRefresh() {
+    if (rafId) return;                           // throttle ด้วย rAF กันเรียกซ้อน
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
+      try {
+        // 1) คำนวณกฎ/คะแนน (ถ้ามี)
+        if (typeof window.evaluateDrugAllergy === "function") {
+          window.evaluateDrugAllergy();
+        }
+        // 2) คำนวณ “สมอง” + อัปเดตกล่องผล (ถ้ามี)
+        if (typeof window.brainComputeAndRender === "function") {
+          window.brainComputeAndRender();
+        }
+        // 3) เรนเดอร์หน้า 6 ใหม่จาก state ล่าสุด
+        if (typeof window.renderPage6 === "function") {
+          window.renderPage6();
+        }
+      } catch (e) {
+        console.warn("[page6] auto-refresh error:", e);
+      }
+    });
+  }
 
-    // เรนเดอร์หน้า 6 ใหม่
-    if (typeof window.renderPage6 === "function") {
-      try { window.renderPage6(); } catch (e) { console.warn(e); }
-    }
-  });
+  // ยิงทุกครั้งที่หน้า 1–3 บันทึกและส่งสัญญาณ da:update
+  document.addEventListener("da:update", runRefresh);
 })();
