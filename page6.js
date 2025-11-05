@@ -33,7 +33,7 @@
     return `${start} → ${end}`;
   }
 
-  // เพิ่ม: เรนเดอร์สถานะความพร้อมของหน้า 1–3 (เรียกซ้ำได้)
+  // เรนเดอร์สถานะหน้า 1–3 (เรียกซ้ำได้)
   function renderCoreStatus() {
     const status = corePagesReady();
     if (status.ok) {
@@ -45,7 +45,7 @@
             <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า</p>`;
   }
 
-  // --------- NARANJO (ยกมาแสดงผล) ---------
+  // --------- NARANJO ---------
   const NARANJO_QUEST = [
     { idx:0, yes:+1, no:0,  dk:0 },
     { idx:1, yes:+2, no:-1, dk:0 },
@@ -186,7 +186,7 @@
       if(!str) return null;
       const pure = String(str).trim().split(" ")[0];
       if(pure.includes("-")){ const [y,m,d]=pure.split("-").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
-      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,y); }
+      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
       return null;
     }
     const today = new Date(), today0 = new Date(today.getFullYear(),today.getMonth(),today.getDate());
@@ -393,7 +393,7 @@
             <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
           </div>
         </div>
-      ”
+      `; // ← ปิด template string ให้ถูกต้อง
 
       // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
       const btn = document.getElementById("p6BrainRefreshBtn");
@@ -440,10 +440,8 @@
 
   // --------- AUTO UPDATE (ไม่ re-render ทั้งหน้า) ---------
   document.addEventListener("da:update", () => {
-    // คำนวณผลใหม่ + วาด timeline ใหม่ เฉพาะกล่องที่เกี่ยวข้อง
     computeLocalBrain();
     drawTimeline();
-    // อัปเดตสถานะ “ยังขาดข้อมูลจาก …”
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   });
@@ -655,6 +653,5 @@ function p6PrintTimeline() {
 
 // ===== public API =====
 if (typeof window.renderPage6 === "function") {
-  // เรียกครั้งแรก (ถ้าแท็บหน้า 6 เปิดอยู่จะเห็นผลทันที)
   try { window.renderPage6(); } catch (_) {}
 }
