@@ -414,6 +414,12 @@
       </div>
     `;
 
+    // 🔔 ยิง da:update หลังเรนเดอร์ครั้งแรกเท่านั้น (ป้องกันลูป renderPage6 <-> da:update)
+    if (!window.__p6_renderedOnce) {
+      window.__p6_renderedOnce = true;
+      requestAnimationFrame(() => document.dispatchEvent(new Event("da:update")));
+    }
+
     // ⬇️ สายเรียกปุ่มรีเฟรชผล (ใหม่)
     const btnBrain = document.getElementById("p6BrainRefreshBtn");
     if (btnBrain) {
