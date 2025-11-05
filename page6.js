@@ -816,3 +816,72 @@ function p6PrintTimeline() {
   // เรียกหนึ่งครั้งเผื่อ DOM พร้อมแล้ว
   setTimeout(ensureBridge, 0);
 })();
+// === page6 SUPER-BRIDGE: sync any existing #brainBox -> #p6BrainBox ===
+(function () {
+  if (window.__p6SuperBridgeBound) return;
+  window.__p6SuperBridgeBound = true;
+
+  let mirrorObs = null;
+
+  function copyNow() {
+    const src = document.getElementById("brainBox");
+    const dest = document.getElementById("p6BrainBox");
+    if (!src || !dest) return;
+    if (dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
+  }
+
+  function bindObserverTo(src) {
+    if (!src) return;
+    if (mirrorObs) try { mirrorObs.disconnect(); } catch(_) {}
+    mirrorObs = new MutationObserver(copyNow);
+    mirrorObs.observe(src, { childList: true, characterData: true, subtree: true });
+    copyNow();
+  }
+
+  function ensureBridge() {
+    // 1) ถ้ามี #brainBox อยู่แล้ว ให้ bind เลย
+    let src = document.getElementById("brainBox");
+    const dest = document.getElementById("p6BrainBox");
+    if (!dest) return;
+
+    if (src) {
+      bindObserverTo(src);
+      return;
+    }
+
+    // 2) ถ้ายังหาไม่เจอ ให้เฝ้าทั้งเอกสารจนกว่าจะมี
+    const rootObs = new MutationObserver(() => {
+      const found = document.getElementById("brainBox");
+      if (found) {
+        rootObs.disconnect();
+        bindObserverTo(found);
+      }
+    });
+    rootObs.observe(document.documentElement || document.body, { childList: true, subtree: true });
+
+    // 3) สำรอง: ถ้า brain.js ต้องการ element ตั้งแต่ก่อนเรียก ให้สร้าง dummy ไว้ให้มันใช้
+    if (!document.getElementById("brainBox")) {
+      const dummy = document.createElement("div");
+      dummy.id = "brainBox";
+      dummy.style.display = "none";
+      // วางใกล้กับ p6BrainBox
+      dest.parentNode.insertBefore(dummy, dest.nextSibling);
+      bindObserverTo(dummy);
+    }
+  }
+
+  // hook ปุ่มรีเฟรชหน้า 6
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") {
+      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
+      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
+      copyNow();
+    }
+  });
+
+  // รีรันทุกครั้งที่มีอัปเดตข้อมูล + ตอนโหลด
+  document.addEventListener("da:update", () => { ensureBridge(); copyNow(); });
+  document.addEventListener("DOMContentLoaded", ensureBridge);
+  window.addEventListener("load", ensureBridge);
+  setTimeout(ensureBridge, 0);
+})();
