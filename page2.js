@@ -315,8 +315,6 @@ window.drugAllergyData.page2.__ts = Date.now();
 
 document.dispatchEvent(new Event("da:update"));
 
-if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
   }
 
   // export
