@@ -387,7 +387,6 @@
           }
         </div>
 
-        <!-- ⬇️ เพิ่มกล่องผลประเมินเบื้องต้น + ปุ่มรีเฟรช (ใหม่) -->
         <div class="p6-subcard">
           <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
           <div id="p6BrainBox" class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>
@@ -414,45 +413,34 @@
       </div>
     `;
 
-    // ⬇️ ใส่ทันทีหลังปิด backtick ของ root.innerHTML (ก่อน const btnBrain …)
+    // เตรียมกล่อง alias ให้ brain.js ถ้าใช้ id อื่น
     requestAnimationFrame(() => {
-      // สร้าง alias #brainBox ถ้ายังไม่มี และวางถัดจาก #p6BrainBox
       let alias = document.getElementById("brainBox");
       if (!alias) {
         const box = document.getElementById("p6BrainBox");
         alias = document.createElement("div");
         alias.id = "brainBox";
         alias.style.display = "none";
-        if (box && box.parentNode) {
-          box.parentNode.insertBefore(alias, box.nextSibling);
-        } else {
-          document.body.appendChild(alias);
-        }
+        if (box && box.parentNode) box.parentNode.insertBefore(alias, box.nextSibling);
+        else document.body.appendChild(alias);
       }
-      // แจ้งบริดจ์ให้ซิงค์ไป #p6BrainBox
       document.dispatchEvent(new Event("da:update"));
     });
 
-    // 🔔 ยิง da:update หลังเรนเดอร์ครั้งแรกเท่านั้น (ป้องกันลูป renderPage6 <-> da:update)
-    if (!window.__p6_renderedOnce) {
-      window.__p6_renderedOnce = true;
-      requestAnimationFrame(() => document.dispatchEvent(new Event("da:update")));
-    }
-
-    // ⬇️ สายเรียกปุ่มรีเฟรชผล (ใหม่) — ใช้แค่บล็อกเดียวพอ อย่าประกาศซ้ำ
+    // ปุ่มรีเฟรช
     const btnBrain = document.getElementById("p6BrainRefreshBtn");
     if (btnBrain) {
       btnBrain.addEventListener("click", () => {
         try { if (window.evaluateDrugAllergy) window.evaluateDrugAllergy(); } catch(_) {}
         try { if (window.brainComputeAndRender) window.brainComputeAndRender(); } catch(_) {}
-        // ยิงสัญญาณให้ bridge/super-bridge ทำงานต่อ
         document.dispatchEvent(new Event("da:update"));
       });
     }
 
-    // เรียกครั้งแรกเมื่อเปิดหน้า 6 และข้อมูลพร้อม
+    // คำนวณครั้งแรกถ้าข้อมูลพร้อม
+    const status = checkCorePagesReady();
     if (window.brainComputeAndRender && status.ready) {
-      window.brainComputeAndRender();
+      try { window.brainComputeAndRender(); } catch(_) {}
     }
 
     setTimeout(() => { try { p6DrawVisualTimeline(); } catch(e){ console.error("[page6] draw timeline:", e); } }, 0);
@@ -482,8 +470,24 @@
     document.head.appendChild(tag);
   })();
 
-  // รีเฟรชอัตโนมัติเมื่อหน้า 5 มีการอัปเดต
-  document.addEventListener("da:update", () => { if (window.renderPage6) window.renderPage6(); });
+  // รีเฟรชอัตโนมัติเมื่อหน้า 1–3 อัปเดต (throttle)
+  (function () {
+    if (window.__p6AutoRefreshBound) return;
+    window.__p6AutoRefreshBound = true;
+    let rafId = 0;
+    function runRefresh() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        try {
+          if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
+          if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender();
+          if (typeof window.renderPage6 === "function") window.renderPage6();
+        } catch (e) { console.warn("[page6] auto-refresh error:", e); }
+      });
+    }
+    document.addEventListener("da:update", runRefresh);
+  })();
 
   window.renderPage6 = renderPage6;
 })();
@@ -714,338 +718,12 @@ function p6PrintTimeline() {
   `);
   win.document.close();
 }
-// === page6.js: AUTO-REFRESH ON DATA UPDATE ===============================
 
-// === page6.js: AUTO-REFRESH ON DATA UPDATE (REPLACE THIS BLOCK ONLY) ===
-// ให้หน้า 6 คำนวน/เรนเดอร์ใหม่ทุกครั้งที่หน้า 1–3 อัปเดต โดยกันผูกซ้ำและกันรีเฟรชถี่เกิน
+
+// ====== BRIDGE & FALLBACK (PURE JS — no <script> tags) ======
 (function () {
-  if (window.__p6AutoRefreshBound) return;      // กันผูกซ้ำ
-  window.__p6AutoRefreshBound = true;
-
-  let rafId = 0;
-  function runRefresh() {
-    if (rafId) return;                           // throttle ด้วย rAF กันเรียกซ้อน
-    rafId = requestAnimationFrame(() => {
-      rafId = 0;
-      try {
-        // 1) คำนวณกฎ/คะแนน (ถ้ามี)
-        if (typeof window.evaluateDrugAllergy === "function") {
-          window.evaluateDrugAllergy();
-        }
-        // 2) คำนวณ “สมอง” + อัปเดตกล่องผล (ถ้ามี)
-        if (typeof window.brainComputeAndRender === "function") {
-          window.brainComputeAndRender();
-        }
-        // 3) เรนเดอร์หน้า 6 ใหม่จาก state ล่าสุด
-        if (typeof window.renderPage6 === "function") {
-          window.renderPage6();
-        }
-      } catch (e) {
-        console.warn("[page6] auto-refresh error:", e);
-      }
-    });
-  }
-
-  // ยิงทุกครั้งที่หน้า 1–3 บันทึกและส่งสัญญาณ da:update
-  document.addEventListener("da:update", runRefresh);
-})();
-// === p6 brain refresh shim (append at end of page6.js; do NOT touch other parts) ===
-(function () {
-  if (window.__p6BrainShimBound) return;
-  window.__p6BrainShimBound = true;
-
-  function forceRecomputeAndRender() {
-    // เคลียร์กล่องผลก่อน เพื่อไม่ให้เห็นค่าค้าง
-    var box = document.getElementById("p6BrainBox");
-    if (box) box.textContent = "กำลังคำนวณ…";
-
-    // กันแคชที่ brain.js อาจเก็บไว้
-    try { delete window.__brainCache; delete window.brainCache; } catch (_) {}
-    window.__brainEpoch = (window.__brainEpoch || 0) + 1;
-
-    // เรียกตัวคำนวณ (ถ้ามี)
-    try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch (e) { console.warn(e); }
-    try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch (e) { console.warn(e); }
-
-    // เผื่อ DOM ยังไม่มา ให้เรียกซ้ำสั้นๆ
-    setTimeout(function () {
-      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch (_) {}
-      // ถ้ายังว่างอยู่ ให้เรนเดอร์หน้า 6 ใหม่อีกรอบ
-      var box2 = document.getElementById("p6BrainBox");
-      if (typeof window.renderPage6 === "function" && box2 && (!box2.innerHTML || /กำลังคำนวณ/.test(box2.textContent))) {
-        window.renderPage6();
-      }
-    }, 60);
-  }
-
-  // ฟังสัญญาณข้อมูลอัปเดตจากหน้า 1–3
-  document.addEventListener("da:update", forceRecomputeAndRender);
-
-  // ให้ปุ่ม “รีเฟรชผลประเมิน” เดิมเรียกชิมนี้ด้วย
-  document.addEventListener("click", function (e) {
-    var t = e.target;
-    if (t && t.id === "p6BrainRefreshBtn") {
-      forceRecomputeAndRender();
-    }
-  });
-
-  // เรียกครั้งแรกเมื่อโหลดหน้า 6 แล้วข้อมูลพร้อม
-  if (typeof window.renderPage6 === "function") {
-    // หน่วงนิดให้ DOM ของหน้า 6 วางเสร็จ
-    setTimeout(forceRecomputeAndRender, 30);
-  }
-})();
-// === page6 bridge: mirror brain.js output (#brainBox) -> #p6BrainBox ===
-(function () {
-  if (window.__p6BridgeBound) return;
-  window.__p6BridgeBound = true;
-
-  function ensureBridge() {
-    var box = document.getElementById("p6BrainBox");
-    if (!box) return;
-
-    // สร้าง alias #brainBox (ตัวที่ brain.js เขียนใส่) ถ้ายังไม่มี
-    var alias = document.getElementById("brainBox");
-    if (!alias) {
-      alias = document.createElement("div");
-      alias.id = "brainBox";
-      alias.style.display = "none";            // ซ่อนไว้
-      // วางไว้ถัดจาก p6BrainBox เพื่อให้อยู่ใกล้ ๆ กัน
-      box.parentNode.insertBefore(alias, box.nextSibling);
-    }
-
-    // สะท้อนเนื้อหา alias -> box เสมอ
-    if (window.__p6BrainMirror) window.__p6BrainMirror.disconnect();
-    window.__p6BrainMirror = new MutationObserver(function () {
-      box.innerHTML = alias.innerHTML;
-    });
-    window.__p6BrainMirror.observe(alias, { subtree: true, childList: true, characterData: true });
-
-    // เผื่อ alias มีค่าอยู่แล้ว ให้ก๊อปทันที
-    if (alias.innerHTML && box.innerHTML !== alias.innerHTML) {
-      box.innerHTML = alias.innerHTML;
-    }
-  }
-
-  // ผูกเหตุการณ์ให้ bridge ทำงานทั้งตอนโหลดและทุกครั้งที่มีข้อมูลอัปเดต
-  document.addEventListener("DOMContentLoaded", ensureBridge);
-  window.addEventListener("load", ensureBridge);
-  document.addEventListener("da:update", ensureBridge);
-
-  // ให้ปุ่มรีเฟรชของหน้า 6 เรียก brain อีกที (และ bridge จะสะท้อนผล)
-  document.addEventListener("click", function (e) {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") {
-      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
-      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
-      // กันแคชบางตัว
-      try { delete window.__brainCache; delete window.brainCache; } catch(_) {}
-    }
-  });
-
-  // เรียกหนึ่งครั้งเผื่อ DOM พร้อมแล้ว
-  setTimeout(ensureBridge, 0);
-})();
-// === page6 SUPER-BRIDGE: sync any existing #brainBox -> #p6BrainBox ===
-(function () {
-  if (window.__p6SuperBridgeBound) return;
-  window.__p6SuperBridgeBound = true;
-
-  let mirrorObs = null;
-
-  function copyNow() {
-    const src = document.getElementById("brainBox");
-    const dest = document.getElementById("p6BrainBox");
-    if (!src || !dest) return;
-    if (dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
-  }
-
-  function bindObserverTo(src) {
-    if (!src) return;
-    if (mirrorObs) try { mirrorObs.disconnect(); } catch(_) {}
-    mirrorObs = new MutationObserver(copyNow);
-    mirrorObs.observe(src, { childList: true, characterData: true, subtree: true });
-    copyNow();
-  }
-
-  function ensureBridge() {
-    // 1) ถ้ามี #brainBox อยู่แล้ว ให้ bind เลย
-    let src = document.getElementById("brainBox");
-    const dest = document.getElementById("p6BrainBox");
-    if (!dest) return;
-
-    if (src) {
-      bindObserverTo(src);
-      return;
-    }
-
-    // 2) ถ้ายังหาไม่เจอ ให้เฝ้าทั้งเอกสารจนกว่าจะมี
-    const rootObs = new MutationObserver(() => {
-      const found = document.getElementById("brainBox");
-      if (found) {
-        rootObs.disconnect();
-        bindObserverTo(found);
-      }
-    });
-    rootObs.observe(document.documentElement || document.body, { childList: true, subtree: true });
-
-    // 3) สำรอง: ถ้า brain.js ต้องการ element ตั้งแต่ก่อนเรียก ให้สร้าง dummy ไว้ให้มันใช้
-    if (!document.getElementById("brainBox")) {
-      const dummy = document.createElement("div");
-      dummy.id = "brainBox";
-      dummy.style.display = "none";
-      // วางใกล้กับ p6BrainBox
-      dest.parentNode.insertBefore(dummy, dest.nextSibling);
-      bindObserverTo(dummy);
-    }
-  }
-
-  // hook ปุ่มรีเฟรชหน้า 6
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") {
-      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
-      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
-      copyNow();
-    }
-  });
-
-  // รีรันทุกครั้งที่มีอัปเดตข้อมูล + ตอนโหลด
-  document.addEventListener("da:update", () => { ensureBridge(); copyNow(); });
-  document.addEventListener("DOMContentLoaded", ensureBridge);
-  window.addEventListener("load", ensureBridge);
-  setTimeout(ensureBridge, 0);
-})();
-// === p6 ANY-SOURCE BRIDGE (APPEND AT END OF FILE) ======================
-(function () {
-  if (window.__p6AnyBridgeBound) return;
-  window.__p6AnyBridgeBound = true;
-
-  const DEST_ID = "p6BrainBox";
-  const CANDIDATE_SELECTORS = [
-    "#brainBox", "#resultBox", "#result", "#p6BrainSrc",
-    "[data-brain-output]", ".brain-output"
-  ];
-
-  let mirrorObs = null;
-
-  function copyFrom(src) {
-    const dest = document.getElementById(DEST_ID);
-    if (!dest || !src) return;
-    if (dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
-  }
-
-  function bindTo(src) {
-    if (!src) return;
-    if (mirrorObs) try { mirrorObs.disconnect(); } catch (_) {}
-    mirrorObs = new MutationObserver(() => copyFrom(src));
-    mirrorObs.observe(src, { childList: true, characterData: true, subtree: true });
-    copyFrom(src);
-  }
-
-  function scanAndBind() {
-    const dest = document.getElementById(DEST_ID);
-    if (!dest) return;
-
-    // หา source ตัวแรกที่มีอยู่จริงใน DOM
-    let src = null;
-    for (const sel of CANDIDATE_SELECTORS) {
-      const el = document.querySelector(sel);
-      if (el) { src = el; break; }
-    }
-
-    // ถ้ายังไม่เจอ ให้สร้าง dummy #brainBox ไว้รองรับ brain.js
-    if (!src) {
-      let dummy = document.getElementById("brainBox");
-      if (!dummy) {
-        dummy = document.createElement("div");
-        dummy.id = "brainBox";
-        dummy.style.display = "none";
-        dest.parentNode.insertBefore(dummy, dest.nextSibling);
-      }
-      src = dummy;
-    }
-
-    bindTo(src);
-  }
-
-  // สั่งสแกนเมื่อ:
-  document.addEventListener("da:update", scanAndBind);
-  document.addEventListener("DOMContentLoaded", scanAndBind);
-  window.addEventListener("load", scanAndBind);
-  setTimeout(scanAndBind, 0);
-
-  // ให้ปุ่มรีเฟรชหน้า 6 สั่งสแกน/คัดลอกทันทีด้วย
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") {
-      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy(); } catch(_) {}
-      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender(); } catch(_) {}
-      scanAndBind();
-    }
-  });
-})();
-// === p6 HARD-INVALIDATE & FORCE-RECALC (APPEND AT END OF FILE) =========
-(function () {
-  if (window.__p6HardInvalidateBound) return;
-  window.__p6HardInvalidateBound = true;
-
-  function hardInvalidate() {
-    // ล้างแคช/ตัวแปรที่ brain อาจใช้
-    try { delete window.__brainCache; } catch(_) {}
-    try { delete window.brainCache; } catch(_) {}
-    try { delete window.brainLastInput; } catch(_) {}
-    try { localStorage.removeItem('brainCache'); } catch(_) {}
-    window.__brainEpoch = (window.__brainEpoch || 0) + 1;
-  }
-
-  function forceRecalcAndMirror() {
-    // บังคับคำนวณใหม่
-    if (typeof window.evaluateDrugAllergy === "function") {
-      try { window.evaluateDrugAllergy({ force:true, epoch: window.__brainEpoch }); } catch(e){ console.warn(e); }
-    }
-    if (typeof window.brainComputeAndRender === "function") {
-      try { window.brainComputeAndRender({ force:true, epoch: window.__brainEpoch }); } catch(e){ console.warn(e); }
-    }
-    // ซิงก์ผลไป #p6BrainBox อีกรอบ (ครอบคลุมหลาย selector)
-    (function mirrorNow(){
-      var dest = document.getElementById("p6BrainBox");
-      if (!dest) return;
-      var src =
-        document.querySelector("#brainBox") ||
-        document.querySelector("#resultBox") ||
-        document.querySelector("#result") ||
-        document.querySelector("[data-brain-output]") ||
-        document.querySelector(".brain-output");
-      if (src && dest.innerHTML !== src.innerHTML) dest.innerHTML = src.innerHTML;
-    })();
-  }
-
-  // ยิงทุกครั้งที่ข้อมูลจากหน้า 1–3 อัปเดต
-  document.addEventListener("da:update", function () {
-    hardInvalidate();
-    // รอ DOM/brain เขียนผลเสี้ยววินาทีแล้วค่อย mirror
-    requestAnimationFrame(forceRecalcAndMirror);
-    setTimeout(forceRecalcAndMirror, 50);
-    setTimeout(forceRecalcAndMirror, 120);
-  });
-
-  // ให้ปุ่มรีเฟรชบนหน้า 6 บังคับล้างแคชด้วย
-  document.addEventListener("click", function (e) {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") {
-      hardInvalidate();
-      forceRecalcAndMirror();
-    }
-  });
-
-  // helper ดีบัก: เรียกในคอนโซลได้
-  window.__debugBrainOnce = function(){
-    hardInvalidate();
-    forceRecalcAndMirror();
-    console.log("[p6] forced recompute @epoch", window.__brainEpoch, window.drugAllergyData);
-  };
-})();
-// === p6 ULTRA-BRIDGE + FORCE RECOMPUTE (APPEND AT END) ==================
-(function () {
-  if (window.__p6UltraBridgeBound) return;
-  window.__p6UltraBridgeBound = true;
+  if (window.__p6BridgeOnce) return;
+  window.__p6BridgeOnce = true;
 
   function nukeBrainCache() {
     try { delete window.__brainCache; } catch(_) {}
@@ -1055,289 +733,90 @@ function p6PrintTimeline() {
     window.__brainEpoch = (window.__brainEpoch || 0) + 1;
   }
 
-  function callBrain(forceNote) {
-    // เรียกตัวคำนวณถ้ามี
-    try { if (typeof window.evaluateDrugAllergy === "function")
-      window.evaluateDrugAllergy({ force:true, epoch: window.__brainEpoch }); } catch(_) {}
-    try { if (typeof window.brainComputeAndRender === "function")
-      window.brainComputeAndRender({ force:true, epoch: window.__brainEpoch }); } catch(_) {}
-
-    // mirror ไป #p6BrainBox
-    mirrorNow(forceNote);
-    // เผื่อ brain เขียนช้า ให้ mirror ซ้ำ
-    setTimeout(() => mirrorNow(forceNote), 60);
-    requestAnimationFrame(() => mirrorNow(forceNote));
-  }
-
-  function candidateNodes() {
-    // จับกว้างๆ: id/class/attr ที่มักใช้เป็นกล่องผล
-    const q = [
-      "#brainBox", "#resultBox", "#result", "#output", "[data-brain-output]",
-      "[id*='brain']", "[id*='result']", ".brain-output", ".result-output",
-      ".brainBox", ".resultBox"
-    ].join(",");
-    return Array.from(document.querySelectorAll(q));
-  }
-
-  function mirrorNow(forceNote) {
-    const dest = document.getElementById("p6BrainBox");
-    if (!dest) return;
-
-    // หาตัวที่ “มีเนื้อหา” มากที่สุด
-    const nodes = candidateNodes().filter(n => n !== dest);
-    let pick = null, maxLen = 0;
-    for (const n of nodes) {
-      const len = (n.innerHTML || "").length;
-      if (len > maxLen) { maxLen = len; pick = n; }
-    }
-    if (pick && maxLen > 0) {
-      if (dest.innerHTML !== pick.innerHTML) dest.innerHTML = pick.innerHTML;
-    } else if (forceNote) {
-      // ไม่มีอะไรให้ mirror — แจ้งไว้เพื่อกันเข้าใจว่าไม่อัปเดต
-      dest.innerHTML = `<div style="color:#4b5563">
-        (ยังไม่พบกล่องผลสมองให้ mirror — ตรวจว่าไฟล์ brain.js เขียนผลลง element อะไร)
-      </div>`;
-    }
-  }
-
-  function hardRefresh(source) {
-    nukeBrainCache();
-    callBrain(true);
-  }
-
-  // ยิงเมื่อข้อมูลจากหน้า 1–3 เปลี่ยน
-  document.addEventListener("da:update", hardRefresh);
-  // ยิงเมื่อกดปุ่มรีเฟรช
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") hardRefresh("button");
-  });
-
-  // ครั้งแรกหลังโหลดหน้า
-  setTimeout(hardRefresh, 0);
-})();
-// === p6 LOCAL-BRAIN (fallback) — append at end only ======================
-(function () {
-  if (window.__p6LocalBrainBound) return;
-  window.__p6LocalBrainBound = true;
-
-  function num(v) {
-    const n = Number(String(v).replace(/[, ]+/g, ""));
-    return Number.isFinite(n) ? n : NaN;
-  }
-
   function localBrainCompute() {
     const box = document.getElementById("p6BrainBox");
     if (!box) return;
-
     const d  = window.drugAllergyData || {};
-    const p1 = d.page1 || {};
-    const p2 = d.page2 || {};
-    const p3 = d.page3 || {};
-
-    // ต้องบันทึกครบหน้า 1–3 ก่อน จึงคำนวณ
-    if (!(p1.__saved && p2.__saved && p3.__saved)) {
-      return; // ปล่อยให้ข้อความเดิมแสดง
-    }
+    const p1 = d.page1 || {}, p2 = d.page2 || {}, p3 = d.page3 || {};
+    if (!(p1.__saved && p2.__saved && p3.__saved)) return;
 
     const scores = Object.create(null);
-    const add = (k, w) => { scores[k] = (scores[k] || 0) + (w || 1); };
+    const add = (k,w)=>{ scores[k]=(scores[k]||0)+(w||1); };
 
-    // ------- Heuristics เบื้องต้น (อ่านจากหน้า 1–3) -------
-    // Urticaria
-    if (p1.itch?.has) add("Urticaria", 3);
-    if ((p1.rashShapes || []).includes("ปื้นนูน")) add("Urticaria", 2);
-    if ((p1.rashColors || []).includes("แดง")) add("Urticaria", 1);
+    if (p1.itch?.has) add("Urticaria",3);
+    if ((p1.rashShapes||[]).includes("ปื้นนูน")) add("Urticaria",2);
+    if ((p1.rashColors||[]).includes("แดง")) add("Maculopapular rash",2);
+    if (p1.swelling?.has) add("Angioedema",3);
+    if ((p2.resp?.dyspnea || p2.resp?.wheeze || p2.resp?.tachypnea) || (p2.cv?.hypotension || p2.cv?.shock)) add("Anaphylaxis",4);
+    if (p1.pustule?.has) add("AGEP",3);
+    if (p1.skinDetach?.gt30) add("TEN",5);
+    if (p1.skinDetach?.lt10 || p1.skinDetach?.center) add("SJS",3);
+    if ((p1.rashColors||[]).includes("แดงไหม้") && (p1.locations||[]).includes("หน้า")) add("Photosensitivity drug eruption",2);
 
-    // Angioedema
-    if (p1.swelling?.has) add("Angioedema", 3);
-
-    // Anaphylaxis (คร่าวๆ: ระบบหายใจ/ไหลเวียน + ผิวหนัง)
-    if ((p2.resp?.dyspnea || p2.resp?.wheeze || p2.resp?.tachypnea) ||
-        (p2.cv?.hypotension || p2.cv?.shock)) {
-      add("Anaphylaxis", 4);
-    }
-
-    // Maculopapular rash
-    if ((p1.rashShapes || []).length && (p1.rashColors || []).includes("แดง")) {
-      add("Maculopapular rash", 2);
-    }
-
-    // AGEP — มีตุ่มหนอง
-    if (p1.pustule?.has) add("AGEP", 3);
-
-    // SJS/TEN — ผิวหนังหลุดลอก
-    if (p1.skinDetach?.gt30) add("TEN", 5);
-    if (p1.skinDetach?.lt10 || p1.skinDetach?.center) add("SJS", 3);
-
-    // Photosensitivity (แดงไหม้ + ใบหน้า)
-    if ((p1.rashColors || []).includes("แดงไหม้") &&
-        (p1.locations || []).includes("หน้า")) {
-      add("Photosensitivity drug eruption", 2);
-    }
-
-    // DRESS — eos สูง/ตับอักเสบ (สัญญาณหยาบ)
-    const aec = num(p3?.cbc?.aec?.value ?? p3?.cbc?.eos?.value);
-    const eosPct = num(p3?.cbc?.eos?.value);
-    const alt = num(p3?.lft?.alt?.value);
-    const ast = num(p3?.lft?.ast?.value);
-    if ((Number.isFinite(aec) && aec >= 1500) ||
-        (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS", 2);
-    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS", 1);
-
-    // --------------------------------------------------------
+    const eosPct = Number(p3?.cbc?.eos?.value ?? NaN);
+    const aec    = Number(p3?.cbc?.aec?.value ?? NaN);
+    const alt    = Number(p3?.lft?.alt?.value ?? NaN);
+    const ast    = Number(p3?.lft?.ast?.value ?? NaN);
+    if ((Number.isFinite(aec) && aec >= 1500) || (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS",2);
+    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS",1);
 
     const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-    if (!ranked.length) {
-      box.innerHTML = `<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>`;
-      return;
-    }
+    if (!ranked.length) return;
 
     const leader = ranked[0][0];
-    box.innerHTML = `
-      <div>
-        <div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <span style="font-weight:800;">${leader}</span></div>
-        <ol class="p6-list" style="margin-top:.35rem;">
-          ${ranked.map(([k],i)=>`<li>${i+1}) ${k}</li>`).join("")}
-        </ol>
-      </div>
-    `;
+    box.innerHTML =
+      '<div>' +
+        '<div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <span style="font-weight:800;">' + leader + '</span></div>' +
+        '<ol class="p6-list" style="margin-top:.35rem;">' +
+          ranked.map((x,i)=>'<li>'+(i+1)+') '+x[0]+'</li>').join('') +
+        '</ol>' +
+      '</div>';
   }
 
-  // คำนวณเมื่อข้อมูลอัปเดต + เมื่อกดปุ่มรีเฟรช + ตอนโหลด
-  document.addEventListener("da:update", localBrainCompute);
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "p6BrainRefreshBtn") localBrainCompute();
-  });
-  setTimeout(localBrainCompute, 0);
-})();
-<!-- APPEND-ONLY HOTFIX for page6.js — put at very end -->
-<script>
-(function () {
-  // เผย localBrainCompute ให้เรียกซ้ำได้
-  try { if (window.__p6LocalBrainCompute == null && typeof localBrainCompute === "function") {
-    window.__p6LocalBrainCompute = localBrainCompute;
-  } } catch(_) {}
-
-  // ฟังก์ชัน mirror ผลจาก #brainBox → #p6BrainBox ถ้ามี
-  function __p6MirrorNow() {
-    var dest = document.getElementById("p6BrainBox");
+  function mirrorFromBrain() {
+    const dest = document.getElementById("p6BrainBox");
     if (!dest) return;
-    var src =
-      document.getElementById("brainBox") ||
-      document.getElementById("resultBox") ||
-      document.querySelector("[data-brain-output]") ||
-      document.querySelector(".brain-output");
-    if (src && src.innerHTML && dest.innerHTML !== src.innerHTML) {
-      dest.innerHTML = src.innerHTML;
-      return;
-    }
-    // ถ้ายังไม่มีผลจากสมอง ให้ใช้ local fallback คำนวณใส่กล่องโดยตรง
-    if (typeof window.__p6LocalBrainCompute === "function") {
-      window.__p6LocalBrainCompute();
-    }
-  }
-
-  // เรียก mirror หลังเรนเดอร์หน้า 6 ทุกครั้ง
-  document.addEventListener("da:update", function () {
-    // หน่วงนิดเพื่อให้ DOM และสมองเขียนเสร็จ
-    setTimeout(__p6MirrorNow, 50);
-    requestAnimationFrame(__p6MirrorNow);
-  });
-
-  // เรียกครั้งแรกเผื่อหน้า 6 ถูกเปิดไว้แล้ว
-  setTimeout(__p6MirrorNow, 0);
-})();
-</script>
-// ==== APPEND-ONLY HOTFIX for page6.js (pure JS, no <script> tags) ====
-(function () {
-  if (window.__p6HotfixBound) return;
-  window.__p6HotfixBound = true;
-
-  // คัดลอกผลจากกล่องสมอง (ถ้ามี) มายังกล่องผลหน้า 6
-  function mirrorNow() {
-    var dest = document.getElementById("p6BrainBox");
-    if (!dest) return;
-
-    // แหล่งผลที่เป็นไปได้จาก brain.js / ตัวอื่น
-    var src =
+    const src =
       document.getElementById("brainBox") ||
       document.getElementById("resultBox") ||
       document.getElementById("result") ||
       document.querySelector("[data-brain-output]") ||
       document.querySelector(".brain-output");
-
     if (src && src.innerHTML && dest.innerHTML !== src.innerHTML) {
       dest.innerHTML = src.innerHTML;
-      return;
+      return true;
     }
-
-    // ถ้ายังไม่มีผลจากสมอง ให้ใช้ fallback ในเครื่องคำนวณคร่าวๆ
-    localFallback();
+    return false;
   }
 
-  // Fallback คำนวณเร็วๆ จาก page1–3 แล้วใส่ผลลง #p6BrainBox
-  function localFallback() {
-    var dest = document.getElementById("p6BrainBox");
-    if (!dest) return;
-
-    var d = window.drugAllergyData || {};
-    var p1 = d.page1 || {}, p2 = d.page2 || {}, p3 = d.page3 || {};
-    if (!(p1.__saved && p2.__saved && p3.__saved)) return; // รอข้อมูลครบก่อน
-
-    var scores = Object.create(null);
-    function add(k, w){ scores[k] = (scores[k] || 0) + (w || 1); }
-
-    // เบสิกเฮอริสติกส์ (เหมือนที่หน้า 6 ใช้)
-    if (p1.itch && p1.itch.has) add("Urticaria", 3);
-    if (Array.isArray(p1.rashShapes) && p1.rashShapes.includes("ปื้นนูน")) add("Urticaria", 2);
-    if (Array.isArray(p1.rashColors) && p1.rashColors.includes("แดง")) add("Maculopapular rash", 2);
-    if (p1.swelling && p1.swelling.has) add("Angioedema", 3);
-    if ((p2.resp && (p2.resp.dyspnea || p2.resp.wheeze || p2.resp.tachypnea)) ||
-        (p2.cv && (p2.cv.hypotension || p2.cv.shock))) add("Anaphylaxis", 4);
-    if (p1.pustule && p1.pustule.has) add("AGEP", 3);
-    if (p1.skinDetach && (p1.skinDetach.gt30)) add("TEN", 5);
-    if (p1.skinDetach && (p1.skinDetach.lt10 || p1.skinDetach.center)) add("SJS", 3);
-    if (Array.isArray(p1.rashColors) && p1.rashColors.includes("แดงไหม้") &&
-        Array.isArray(p1.locations) && p1.locations.includes("หน้า")) add("Photosensitivity drug eruption", 2);
-
-    var eosPct = Number(p3?.cbc?.eos?.value ?? NaN);
-    var aec    = Number(p3?.cbc?.aec?.value ?? NaN);
-    var alt    = Number(p3?.lft?.alt?.value ?? NaN);
-    var ast    = Number(p3?.lft?.ast?.value ?? NaN);
-    if ((Number.isFinite(aec) && aec >= 1500) || (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS", 2);
-    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS", 1);
-
-    var ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-    if (!ranked.length) return;
-
-    var leader = ranked[0][0];
-    dest.innerHTML = (
-      '<div>' +
-        '<div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <span style="font-weight:800;">' + leader + '</span></div>' +
-        '<ol class="p6-list" style="margin-top:.35rem;">' +
-          ranked.map(function (x,i){ return '<li>'+(i+1)+') '+x[0]+'</li>'; }).join('') +
-        '</ol>' +
-      '</div>'
-    );
+  function ensureAlias() {
+    let alias = document.getElementById("brainBox");
+    const box = document.getElementById("p6BrainBox");
+    if (!alias && box && box.parentNode) {
+      alias = document.createElement("div");
+      alias.id = "brainBox";
+      alias.style.display = "none";
+      box.parentNode.insertBefore(alias, box.nextSibling);
+    }
   }
 
-  // hook ปุ่ม “รีเฟรชผลประเมิน”
-  document.addEventListener("click", function (e) {
-    if (e && e.target && e.target.id === "p6BrainRefreshBtn") {
-      try { if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy({force:true}); } catch(_) {}
-      try { if (typeof window.brainComputeAndRender === "function") window.brainComputeAndRender({force:true}); } catch(_) {}
-      // mirror หลายจังหวะ กันกรณี DOM เขียนช้า
-      setTimeout(mirrorNow, 30);
-      requestAnimationFrame(mirrorNow);
-    }
-  });
+  function refreshNow(forceNote) {
+    ensureAlias();
+    nukeBrainCache();
+    try { if (window.evaluateDrugAllergy) window.evaluateDrugAllergy({force:true,epoch:window.__brainEpoch}); } catch(_) {}
+    try { if (window.brainComputeAndRender) window.brainComputeAndRender({force:true,epoch:window.__brainEpoch}); } catch(_) {}
 
-  // mirror เมื่อมีการอัปเดตข้อมูลจากหน้าอื่น ๆ
-  document.addEventListener("da:update", function () {
-    setTimeout(mirrorNow, 50);
-    requestAnimationFrame(mirrorNow);
-  });
+    // mirror หลายไทม์มิ่ง
+    setTimeout(() => { if (!mirrorFromBrain()) localBrainCompute(); }, 40);
+    requestAnimationFrame(() => { if (!mirrorFromBrain()) localBrainCompute(); });
+    if (!mirrorFromBrain()) localBrainCompute();
+  }
 
-  // ครั้งแรกหลังโหลด
-  setTimeout(mirrorNow, 0);
+  // ฟังสัญญาณ
+  document.addEventListener("da:update", () => refreshNow(false));
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "p6BrainRefreshBtn") refreshNow(true);
+  });
+  document.addEventListener("DOMContentLoaded", () => setTimeout(refreshNow, 0));
+  window.addEventListener("load", () => setTimeout(refreshNow, 0));
 })();
