@@ -1,4 +1,4 @@
-// page2.js (REPLACE WHOLE FILE)
+// ===================== page2.js (REPLACE WHOLE FILE)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
@@ -8,7 +8,10 @@
   const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
-  // ส่วนที่ 1: อาการระบบอื่นๆ
+  // ─────────────────────────────────────────────────────────────
+  // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ
+  // (เพิ่มใน 2.ระบบไหลเวียนโลหิต: “BP ลดลง ≥30% ของ baseline systolic เดิม”)
+  // ─────────────────────────────────────────────────────────────
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -38,6 +41,7 @@
         "เจ็บหน้าอก",
         "ใจสั่น",
         "BP ต่ำ (<90/60)",
+        "BP ลดลง ≥30% ของ baseline systolic เดิม", // ← เพิ่มตามคำสั่ง
         "HR สูง (>100)",
         "หน้ามืด/หมดสติ",
         "โลหิตจาง",
@@ -128,7 +132,10 @@
     }
   ];
 
+  // ─────────────────────────────────────────────────────────────
   // ส่วนที่ 2: อวัยวะที่ผิดปกติ
+  // (เพิ่ม “ตับโต”, “ขาบวม”)
+  // ─────────────────────────────────────────────────────────────
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
     "ม้ามโต",
@@ -138,6 +145,8 @@
     "กล้ามเนื้อหัวใจอักเสบ",
     "ต่อมไทรอยด์อักเสบ",
     "ปอดอักเสบ",
+    "ตับโต",   // ← เพิ่ม
+    "ขาบวม",  // ← เพิ่ม
     "ไม่พบ"
   ];
 
@@ -239,7 +248,7 @@
         cb.addEventListener("change", () => {
           input.style.display = cb.checked ? "block" : "none";
           if (!cb.checked) input.value = "";
-          collectPage2(); // เก็บสถานะเฉยๆ (ยังไม่ยิงอีเวนต์)
+          collectPage2();
         });
         input.addEventListener("input", collectPage2);
       });
@@ -308,20 +317,27 @@
       }
     });
     store.organs = organObj;
+
+    // ทำเครื่องหมายว่ามีการแก้ไข (กัน edge case UI ที่เช็ค "ว่างเปล่า")
+    store.__touched = true;
   }
 
   // ทำเครื่องหมายบันทึก + อัปเดตตัวกลาง + แจ้งทุกหน้าให้รีเฟรช
   function finalizePage2() {
     const store = window.drugAllergyData.page2 || (window.drugAllergyData.page2 = {});
+    // ติดธง __saved + timestamp บน object จริง (กันกรณีตัวเช็คอ่านจากอ้างอิงเดิม)
     store.__saved = true;
+    store.__ts = Date.now();
+    store.__touched = true;
+
+    // sync เก็บลง global (overwrite ให้ชัดเจนว่ามี __saved)
+    window.drugAllergyData.page2 = Object.assign({}, store, { __saved: true, __ts: store.__ts, __touched: true });
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-    window.drugAllergyData = window.drugAllergyData || {};
-    window.drugAllergyData.page2 = Object.assign({}, store);
-    window.drugAllergyData.page2.__ts = Date.now();
-
+    // แจ้งทุกหน้าว่ามีอัปเดต (สมอง/สรุปจะเช็คธงนี้)
     document.dispatchEvent(new Event("da:update"));
+    if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
   }
 
   // export
