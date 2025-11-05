@@ -257,11 +257,12 @@
         store[group.key] = groupObj;
         // ✅ mark ว่าหน้า 3 บันทึกแล้ว + อัปเดตศูนย์กลาง + แจ้งทุกหน้าว่าอัปเดต
 store.__saved = true;
+store.__ts = Date.now();
 window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page3 = Object.assign({}, store);
+window.drugAllergyData.page3 = (structuredClone ? structuredClone(store) : JSON.parse(JSON.stringify(store)));
 document.dispatchEvent(new Event("da:update"));
-      });
-      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
     }
   }
 
