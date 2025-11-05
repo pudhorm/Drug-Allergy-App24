@@ -193,6 +193,8 @@
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
         window.drugAllergyData.page3 = {};
+        if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        document.dispatchEvent(new Event("da:update"));
         renderPage3();
         alert("ล้างข้อมูลหน้า 3 แล้ว");
       });
@@ -219,7 +221,7 @@
           btn4.click();
         }
 
-        // เรียก renderPage4() ทันที + เผื่อ DOM ยังไม่พร้อม ให้ retry สั้นๆ
+        // เรียก renderPage4()
         const callRender = () => { if (typeof window.renderPage4 === "function") window.renderPage4(); };
         callRender();
         let tries = 0;
@@ -232,44 +234,46 @@
             clearInterval(iv);
           }
         }, 30);
-        // เผื่อกรณี animation frame
         requestAnimationFrame(callRender);
       });
     }
+  }
 
-    function savePage3() {
-      const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
-      LAB_GROUPS.forEach(group => {
-        const groupObj = {};
-        group.items.forEach(item => {
-          const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
-          const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
-          const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
-          if (!cb || !valInput || !detailInput) return;
-          if (cb.checked || valInput.value.trim() !== "" || detailInput.value.trim() !== "") {
-            groupObj[item.key] = {
-              checked: cb.checked,
-              value: valInput.value.trim(),
-              detail: detailInput.value.trim()
-            };
-          }
-        });
-        store[group.key] = groupObj;
-        // ✅ mark ว่าหน้า 3 บันทึกแล้ว + อัปเดตศูนย์กลาง + แจ้งทุกหน้าว่าอัปเดต
-// --- finalize & save (PAGE 3) ---
-store.__saved = true; // ติดธงว่าเซฟแล้ว
+  // ---------- SAVE ----------
+  function savePage3() {
+    const root = document.getElementById("page3");
+    if (!root) return;
 
-// ถ้ามีฟังก์ชันบันทึกเดิม ให้เรียกได้ตามปกติ
-if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+    const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
 
-// อัปเดตตัวแปรกลาง + ยิงสัญญาณให้หน้าที่เกี่ยวข้องรีเฟรช
-window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page3 = Object.assign({}, store);
-window.drugAllergyData.page3.__ts = Date.now();
+    LAB_GROUPS.forEach(group => {
+      const groupObj = {};
+      group.items.forEach(item => {
+        const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
+        const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
+        const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
+        if (!cb || !valInput || !detailInput) return;
+        if (cb.checked || valInput.value.trim() !== "" || detailInput.value.trim() !== "") {
+          groupObj[item.key] = {
+            checked: cb.checked,
+            value: valInput.value.trim(),
+            detail: detailInput.value.trim()
+          };
+        }
+      });
+      store[group.key] = groupObj;
+    });
 
-document.dispatchEvent(new Event("da:update"));
+    // --- finalize & save (PAGE 3) ---
+    store.__saved = true; // ติดธงว่าเซฟแล้ว
 
-    }
+    if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
+    window.drugAllergyData = window.drugAllergyData || {};
+    window.drugAllergyData.page3 = Object.assign({}, store);
+    window.drugAllergyData.page3.__ts = Date.now();
+
+    document.dispatchEvent(new Event("da:update"));
   }
 
   // export
