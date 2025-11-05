@@ -1,6 +1,6 @@
 // ===================== page1.js (REPLACE WHOLE FILE)
 (function () {
-  // ----- ตัวเลือกพื้นฐาน -----
+  // ----- ตัวเลือกพื้นฐาน (อัปเดตตามคำสั่ง) -----
   const SHAPES = [
     "ตุ่มนูน",
     "ตุ่มแบนราบ",
@@ -11,7 +11,14 @@
     "ขอบหยัก",
     "ขอบเรียบ",
     "ขอบไม่ชัดเจน",
-    "จุดเล็ก"
+    // ลบ "จุดเล็ก" และเพิ่มรายการจำเพาะ
+    "จุดเล็กแดง",
+    "ปื้นแดง",
+    "ขอบเขตชัด",
+    "นูนหนา",
+    "ตึง",
+    "ขอบวงนูนแดงด้านในเรียบ",
+    "ผื่นราบ"
   ];
 
   const COLORS = [
@@ -20,11 +27,13 @@
     "แดงซีด",
     "ซีด",
     "ใส",
-    "ม่วง",
     "เหลือง",
     "มันเงา",
-    "ดำ",
-    "เทา"
+    "เทา",
+    // เพิ่มใหม่และแทนที่ของเดิม
+    "สีผิวปกติ",
+    "ดำ/คล้ำ",
+    "ม่วง/คล้ำ"
   ];
 
   const LOCS = [
@@ -39,7 +48,14 @@
     "ลำคอ",
     "อวัยวะเพศ",
     "ทวาร",
-    "หลัง"
+    "หลัง",
+    // เพิ่มใหม่
+    "ลำตัว",
+    "รักแร้",
+    "ตำแหน่งเดิมกับครั้งก่อน",
+    "ขาหนีบ",
+    "ศีรษะ",
+    "ลิ้น"
   ];
 
   // ===== สร้าง option อายุ 0-120 ปี + อื่นๆ =====
@@ -47,13 +63,9 @@
     const out = [];
     for (let i = 0; i <= 120; i++) {
       const v = String(i);
-      out.push(
-        `<option value="${v}" ${selected == v ? "selected" : ""}>${i} ปี</option>`
-      );
+      out.push(`<option value="${v}" ${selected == v ? "selected" : ""}>${i} ปี</option>`);
     }
-    out.push(
-      `<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`
-    );
+    out.push(`<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`);
     return out.join("");
   }
 
@@ -62,13 +74,9 @@
     const out = [];
     for (let i = 1; i <= 200; i++) {
       const v = String(i);
-      out.push(
-        `<option value="${v}" ${selected == v ? "selected" : ""}>${i} กก.</option>`
-      );
+      out.push(`<option value="${v}" ${selected == v ? "selected" : ""}>${i} กก.</option>`);
     }
-    out.push(
-      `<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`
-    );
+    out.push(`<option value="other" ${selected === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>`);
     return out.join("");
   }
 
@@ -97,15 +105,14 @@
     return `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked ? "checked" : ""}><span>${label}</span></label>`;
   }
 
-  // ===== FIX: ทำให้ดรอปดาวน์ตัวเลือกมองเห็นได้ชัด (ไม่แตะเนื้อหาเดิม) =====
+  // ===== FIX: ให้ dropdown มองเห็นชัด (ไม่แตะส่วนอื่น) =====
   function injectSelectFixOnce() {
     if (document.getElementById("p1-select-visibility-fix")) return;
     const style = document.createElement("style");
     style.id = "p1-select-visibility-fix";
     style.textContent = `
-      /* เฉพาะหน้า 1 */
       .p1-section-onset { overflow: visible !important; }
-      #page1 select option { color: #111827 !important; background:#ffffff !important; }
+      #page1 select option { color:#111827 !important; background:#ffffff !important; }
       #page1 select { color:#111827; }
     `;
     document.head.appendChild(style);
@@ -114,19 +121,15 @@
   // ========================== render ==========================
   function renderPage1() {
     // เตรียมที่เก็บ
-    if (!window.drugAllergyData) {
-      window.drugAllergyData = {};
-    }
-    if (!window.drugAllergyData.page1) {
-      window.drugAllergyData.page1 = {};
-    }
+    if (!window.drugAllergyData) window.drugAllergyData = {};
+    if (!window.drugAllergyData.page1) window.drugAllergyData.page1 = {};
     const d = window.drugAllergyData.page1;
     const root = document.getElementById("page1");
     if (!root) return;
 
     // ===== HTML หลัก =====
     root.innerHTML = `
-<div class="p1-wrapper">
+<div class="p1-wrapper" id="p1-wrapper">
   <h2 class="p1-title">หน้า 1: ระบบผิวหนัง / ข้อมูลผู้ป่วย</h2>
 
   <!-- ส่วนที่ 1 ข้อมูลผู้ป่วย -->
@@ -191,9 +194,9 @@
   <section class="p1-section">
     <h3 class="p1-sec-title blue"><span class="icon">🔍</span>ส่วนที่ 2 ประเมินอาการ</h3>
 
-    <!-- 1.1 รูปร่างผื่น -->
+    <!-- 1.1 รูปร่าง/ลักษณะผื่น -->
     <div class="p1-block">
-      <h4>1.1 รูปร่างผื่น</h4>
+      <h4>1.1 รูปร่าง/ลักษณะผื่น</h4>
       <div class="p1-two-cols">
         ${SHAPES.map((s, i) => cb("shape_" + i, s, d.rashShapes && d.rashShapes.includes(s))).join("")}
       </div>
@@ -209,7 +212,7 @@
       <input id="color_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashColorsOther || ""}">
     </div>
     
-     <!-- 1.3 ตุ่มน้ำ -->
+    <!-- 1.3 ตุ่มน้ำ -->
     <div class="p1-block">
       <h4>1.3 ตุ่มน้ำ</h4>
       <div class="p1-col p1-col-2col">
@@ -226,10 +229,7 @@
           <span>ตุ่มน้ำขนาดใหญ่</span>
         </label>
       </div>
-      <input id="blister_other"
-             class="p1-other"
-             placeholder="อื่นๆ ระบุ..."
-             value="${d.blisters?.other || ""}">
+      <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other || ""}">
     </div>
 
     <!-- 1.4 ผิวหนังหลุดลอก -->
@@ -253,62 +253,31 @@
           <span>ไม่พบ</span>
         </label>
       </div>
-      <input id="detach_other"
-             class="p1-other"
-             placeholder="อื่นๆ ระบุ..."
-             value="${d.skinDetach?.other || ""}">
+      <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other || ""}">
     </div>
 
     <!-- 1.5 ขุย/แห้ง/ลอก -->
     <div class="p1-block">
       <h4>1.5 ขุย/แห้ง/ลอก</h4>
       <div class="p1-col p1-col-2col">
-        <label class="p1-chk">
-          <input type="checkbox" id="scale_scale" ${d.scales?.scale ? "checked" : ""}>
-          <span>ขุย</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="scale_dry" ${d.scales?.dry ? "checked" : ""}>
-          <span>แห้ง</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="scale_peel" ${d.scales?.peel ? "checked" : ""}>
-          <span>ลอก</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="scale_none" ${d.scales?.none ? "checked" : ""}>
-          <span>ไม่พบ</span>
-        </label>
+        <label class="p1-chk"><input type="checkbox" id="scale_scale" ${d.scales?.scale ? "checked" : ""}><span>ขุย</span></label>
+        <label class="p1-chk"><input type="checkbox" id="scale_dry" ${d.scales?.dry ? "checked" : ""}><span>แห้ง</span></label>
+        <label class="p1-chk"><input type="checkbox" id="scale_peel" ${d.scales?.peel ? "checked" : ""}><span>ลอก</span></label>
+        <label class="p1-chk"><input type="checkbox" id="scale_none" ${d.scales?.none ? "checked" : ""}><span>ไม่พบ</span></label>
       </div>
-      <input id="scale_other"
-             class="p1-other"
-             placeholder="อื่นๆ ระบุ..."
-             value="${d.scales?.other || ""}">
+      <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other || ""}">
     </div>
 
     <!-- 1.6 น้ำเหลือง / สะเก็ด -->
     <div class="p1-block">
       <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
       <div class="p1-col p1-col-2col">
-        <label class="p1-chk">
-          <input type="checkbox" id="ex_serous" ${d.exudate?.serous ? "checked" : ""}>
-          <span>น้ำเหลือง</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="ex_crust" ${d.exudate?.crust ? "checked" : ""}>
-          <span>สะเก็ด</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="ex_none" ${d.exudate?.none ? "checked" : ""}>
-          <span>ไม่พบ</span>
-        </label>
+        <label class="p1-chk"><input type="checkbox" id="ex_serous" ${d.exudate?.serous ? "checked" : ""}><span>น้ำเหลือง</span></label>
+        <label class="p1-chk"><input type="checkbox" id="ex_crust" ${d.exudate?.crust ? "checked" : ""}><span>สะเก็ด</span></label>
+        <label class="p1-chk"><input type="checkbox" id="ex_none" ${d.exudate?.none ? "checked" : ""}><span>ไม่พบ</span></label>
       </div>
-      <input id="ex_other"
-             class="p1-other"
-             placeholder="อื่นๆ ระบุ..."
-             value="${d.exudate?.other || ""}">
+      <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other || ""}">
     </div>
-
 
     <!-- 1.7 คัน -->
     <div class="p1-block">
@@ -323,42 +292,23 @@
       </div>
     </div>
 
-    
     <!-- 1.8 ปวด / แสบ / เจ็บ -->
     <div class="p1-block">
       <h4>1.8 ปวด / แสบ / เจ็บ</h4>
       <div class="p1-col p1-col-2col">
-        <label class="p1-chk">
-          <input type="checkbox" id="pain_pain" ${d.pain?.pain ? "checked" : ""}>
-          <span>ปวด</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="pain_burn" ${d.pain?.burn ? "checked" : ""}>
-          <span>แสบ</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="pain_sore" ${d.pain?.sore ? "checked" : ""}>
-          <span>เจ็บ</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="pain_none" ${d.pain?.none ? "checked" : ""}>
-          <span>ไม่พบ</span>
-        </label>
+        <label class="p1-chk"><input type="checkbox" id="pain_pain" ${d.pain?.pain ? "checked" : ""}><span>ปวด</span></label>
+        <label class="p1-chk"><input type="checkbox" id="pain_burn" ${d.pain?.burn ? "checked" : ""}><span>แสบ</span></label>
+        <label class="p1-chk"><input type="checkbox" id="pain_sore" ${d.pain?.sore ? "checked" : ""}><span>เจ็บ</span></label>
+        <label class="p1-chk"><input type="checkbox" id="pain_none" ${d.pain?.none ? "checked" : ""}><span>ไม่พบ</span></label>
       </div>
     </div>
 
-    <!-- 1.9 บวม -->
+    <!-- 1.9 บวม/พอง -->
     <div class="p1-block">
-      <h4>1.9 บวม</h4>
+      <h4>1.9 บวม/พอง</h4>
       <div class="p1-col p1-col-2col">
-        <label class="p1-chk">
-          <input type="checkbox" id="sw_has" ${d.swelling?.has ? "checked" : ""}>
-          <span>บวม</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="sw_none" ${d.swelling?.none ? "checked" : ""}>
-          <span>ไม่บวม</span>
-        </label>
+        <label class="p1-chk"><input type="checkbox" id="sw_has" ${d.swelling?.has ? "checked" : ""}><span>บวม</span></label>
+        <label class="p1-chk"><input type="checkbox" id="sw_bulla" ${d.swelling?.bulla ? "checked" : ""}><span>พอง</span></label>
       </div>
     </div>
 
@@ -366,23 +316,15 @@
     <div class="p1-block">
       <h4>1.10 ตุ่มหนอง</h4>
       <div class="p1-col p1-col-2col">
-        <label class="p1-chk">
-          <input type="checkbox" id="pus_has" ${d.pustule?.has ? "checked" : ""}>
-          <span>พบ</span>
-        </label>
-        <label class="p1-chk">
-          <input type="checkbox" id="pus_none" ${d.pustule?.none ? "checked" : ""}>
-          <span>ไม่พบ</span>
-        </label>
+        <label class="p1-chk"><input type="checkbox" id="pus_has" ${d.pustule?.has ? "checked" : ""}><span>พบ</span></label>
+        <label class="p1-chk"><input type="checkbox" id="pus_none" ${d.pustule?.none ? "checked" : ""}><span>ไม่พบ</span></label>
       </div>
-      <input id="pus_detail"
-             class="p1-other"
-             placeholder="รายละเอียด..."
-             value="${d.pustule?.detail || ""}">
+      <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail || ""}">
     </div>
-    <!-- 1.21 ตำแหน่ง / การกระจายตัว -->
+
+    <!-- 1.11 ตำแหน่งที่พบ / การกระจายตัว -->
     <div class="p1-block">
-      <h4>1.21 ตำแหน่งที่พบ / การกระจายตัว</h4>
+      <h4>1.11 ตำแหน่งที่พบ / การกระจายตัว</h4>
       <div class="p1-two-cols">
         ${LOCS.map(loc => cb("loc_" + loc, loc, d.locations && d.locations.includes(loc))).join("")}
       </div>
@@ -390,7 +332,7 @@
         <select id="p1_distribution">
           <option value="">เลือก...</option>
           <option value="สมมาตร" ${d.distribution === "สมมาตร" ? "selected" : ""}>สมมาตร</option>
-          <option value="ไม่สมมาตร" ${d.distribution === "ไม่สมาตร" ? "selected" : ""}>ไม่สมมาตร</option>
+          <option value="ไม่สมาตร" ${d.distribution === "ไม่สมาตร" ? "selected" : ""}>ไม่สมาตร</option>
           <option value="อื่นๆ" ${d.distribution === "อื่นๆ" ? "selected" : ""}>อื่นๆ</option>
         </select>
       </label>
@@ -399,8 +341,8 @@
   </section>
 
   <!-- ส่วนที่ 3 เวลา -->
- <section class="p1-section p1-section-onset">
-  <h3 class="p1-sec-title purple"><span class="icon">⏱️</span>ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h3>
+  <section class="p1-section p1-section-onset">
+    <h3 class="p1-sec-title purple"><span class="icon">⏱️</span>ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h3>
     <label>เลือกช่วงเวลา
       <select id="p1_onset">
         <option value="">เลือก...</option>
@@ -414,10 +356,7 @@
         <option value="other" ${d.onset === "other" ? "selected" : ""}>อื่นๆ ระบุ…</option>
       </select>
     </label>
-    <input id="p1_onset_other" class="p1-other"
-           style="${d.onset === "other" ? "" : "display:none"}"
-           placeholder="ระบุระยะเวลา"
-           value="${d.onsetOther || ""}">
+    <input id="p1_onset_other" class="p1-other" style="${d.onset === "other" ? "" : "display:none"}" placeholder="ระบุระยะเวลา" value="${d.onsetOther || ""}">
   </section>
 
   <!-- ส่วนที่ 4 แนบรูป -->
@@ -481,7 +420,7 @@
     onsetSel.addEventListener("change", () => {
       onsetOther.style.display = onsetSel.value === "other" ? "block" : "none";
     });
-    // ยก z-index ให้เมนูช่วงเวลาเผื่อโดนเลเยอร์อื่นบัง (ไม่แตะ DOM เดิม)
+    // กันเลเยอร์บัง
     onsetSel.style.position = "relative";
     onsetSel.style.zIndex = "10000";
 
@@ -522,7 +461,7 @@
       if (f) handleFile(f);
     });
 
-    // ปุ่มล้าง  ✅ เพิ่ม popup แจ้งเตือนหลังล้าง
+    // ปุ่มล้าง
     document.getElementById("p1_clear").addEventListener("click", () => {
       window.drugAllergyData.page1 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
@@ -557,7 +496,7 @@
 
       store.drugAllergyHistory = document.getElementById("p1_history").value;
 
-      // ----- 1.1 รูปร่างผื่น -----
+      // ----- 1.1 รูปร่าง/ลักษณะผื่น -----
       store.rashShapes = SHAPES.filter((s, i) => document.getElementById("shape_" + i).checked);
       store.rashShapesOther = document.getElementById("shape_other").value;
 
@@ -615,10 +554,12 @@
         none: document.getElementById("pain_none").checked
       };
 
-      // ----- 1.9 บวม -----
+      // ----- 1.9 บวม/พอง -----
       store.swelling = {
         has: document.getElementById("sw_has").checked,
-        none: document.getElementById("sw_none").checked
+        bulla: document.getElementById("sw_bulla").checked,
+        // รักษาความเข้ากันได้ย้อนหลัง: คีย์ none คงอยู่แต่ไม่ใช้แล้ว
+        none: false
       };
 
       // ----- 1.10 ตุ่มหนอง -----
@@ -628,7 +569,7 @@
         detail: document.getElementById("pus_detail").value
       };
 
-      // ----- 1.21 ตำแหน่ง -----
+      // ----- 1.11 ตำแหน่ง -----
       store.locations = LOCS.filter(loc => document.getElementById("loc_" + loc).checked);
       store.distribution = document.getElementById("p1_distribution").value;
       store.distributionOther = document.getElementById("p1_distribution_other").value;
@@ -637,30 +578,28 @@
       store.onset = document.getElementById("p1_onset").value;
       store.onsetOther = document.getElementById("p1_onset_other").value;
 
-      // ✅ หน้าที่ 1 กดบันทึกแล้ว — ติดธง + timestamp เพื่อให้ brain.js รู้ว่ามีการอัปเดต
+      // ✅ ธงบันทึก + เวลา
       store.__saved = true;
       store.__ts = Date.now();
 
-      // อัปเดตตัวแปรกลางด้วย deep clone และแจ้งทุกหน้าให้รีเฟรช
-      window.drugAllergyData = window.drugAllergyData || {};
+      // อัปเดตตัวแปรกลาง + แจ้งทุกหน้า
       window.drugAllergyData.page1 = (window.structuredClone
         ? structuredClone(store)
         : JSON.parse(JSON.stringify(store)));
-
       document.dispatchEvent(new Event("da:update"));
 
-      // เรียกฟังก์ชันเดิม (ถ้ามี)
+      // Hooks เดิม
       if (window.evaluateDrugAllergy) window.evaluateDrugAllergy();
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
       alert("บันทึกหน้า 1 แล้ว");
 
-      // เปลี่ยนไปหน้า 2
+      // ไปหน้า 2
       const btn2 = document.querySelector('.tabs button[data-target="page2"]');
       if (btn2) btn2.click();
     });
-  } // <- จบฟังก์ชัน renderPage1
+  } // จบ renderPage1
 
   // ให้ index.html เรียกได้
   window.renderPage1 = renderPage1;
-})(); // <- ปิด IIFE ให้ครบ
+})(); // ปิด IIFE
