@@ -1,5 +1,9 @@
-// brain_page3_hook.js — Hook สำหรับคำนวณ cutpoint หน้า 3 โดย "ไม่แก้ page3.js"
+// brain_page3_hook.js — DROP-IN REPLACEMENT (single binding + debounce + scoped observer)
 (function () {
+  // ====== singleton guard ======
+  if (window.__p3hook_installed__) return;
+  window.__p3hook_installed__ = true;
+
   // ===== utils =====
   function toArabicDigits(str = "") {
     const map = {"๐":"0","๑":"1","๒":"2","๓":"3","๔":"4","๕":"5","๖":"6","๗":"7","๘":"8","๙":"9"};
@@ -14,7 +18,7 @@
   }
   const pick = (root, sel) => root.querySelector(sel);
 
-  // อ่านข้อมูลจาก DOM ของหน้า 3
+  // ===== read DOM =====
   function readPage3Dom(root) {
     const groups = [
       { key: "cbc",     items: ["wbc","aec","neut","lymph","atypical","eos","hb","plt"] },
@@ -40,11 +44,10 @@
     return data;
   }
 
-  // คำนวณ facts/flags จาก DOM
+  // ===== build facts =====
   function buildFactsFromDom(domData) {
     function v(group, item) {
       const obj = domData[group]?.[item];
-      // เอาค่าเลขจากช่อง value ก่อน ถ้าไม่มีลอง detail
       const num = parseNumber(obj?.value ?? obj?.detail ?? null);
       return num;
     }
@@ -56,7 +59,6 @@
       return null;
     }
 
-    // === ตัวอย่างค่าที่เราจะดึงไปใช้เป็น cutpoint (ปรับเพิ่ม/ลดได้) ===
     const eosAbs = v("cbc","aec");
     const eosPct = v("cbc","eos");
     const wbc    = v("cbc","wbc");
@@ -84,7 +86,6 @@
     const uaNitrite = posneg("ua","nitrite");
     const uaLE      = posneg("ua","le");
 
-    // === ธง (flags) เริ่มชุดแรก (แก้เกณฑ์ได้ง่าย) ===
     const flags = {
       eosHigh: (typeof eosAbs === "number" && eosAbs >= 700) || (typeof eosPct === "number" && eosPct >= 10),
       hepatitisPattern: (typeof ast === "number" && ast > 80) || (typeof alt === "number" && alt > 80),
@@ -97,10 +98,9 @@
       leukocytosis: (typeof wbc === "number" && wbc > 11000),
       highIgE: (typeof ige === "number" && ige > 100),
 
-      // UA-related
       proteinuria: /\+|[1-9]\d*|[1-9]\d* ?(mg\/dL)/i.test(uaProtein),
-      hematuria: typeof uaRbc === "number" && uaRbc > 5,   // >5 cells/HPF
-      pyuria: typeof uaWbc === "number" && uaWbc > 10,     // >10 cells/HPF
+      hematuria: typeof uaRbc === "number" && uaRbc > 5,
+      pyuria: typeof uaWbc === "number" && uaWbc > 10,
       nitritePos: uaNitrite === true,
       lePos: uaLE === true,
     };
@@ -112,6 +112,7 @@
     };
   }
 
+  // ===== publish =====
   function publishFactsFromPage3Dom(page3Root) {
     const domData = readPage3Dom(page3Root);
     const facts = buildFactsFromDom(domData);
@@ -119,56 +120,70 @@
     store.facts = store.facts || {};
     store.facts.labs = facts;
 
-    // แจ้งหน้าอื่นๆ (เช่น หน้า 6) ให้รีเฟรช
     try {
       document.dispatchEvent(new CustomEvent("da:update", { detail:{ source:"page3-hook", ts:Date.now() }}));
     } catch {}
 
-    // เซฟถ้ามีฟังก์ชัน
     if (typeof window.saveDrugAllergyData === "function") window.saveDrugAllergyData();
     return facts;
   }
 
-  // ผูก event กับ input/checkbox ใน #page3 (live)
+  // ===== binding (single, debounced) =====
+  let debTimer = null;
+  function queuePublish(page3Root) {
+    clearTimeout(debTimer);
+    debTimer = setTimeout(() => publishFactsFromPage3Dom(page3Root), 150);
+  }
+
   function bindLiveListeners(page3Root) {
-    if (!page3Root) return;
+    if (!page3Root || page3Root.__p3hook_bound__) return;
+    page3Root.__p3hook_bound__ = true;
+
     const handler = (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
       const isLabField =
         (t.matches('input[data-type="value"]') || t.matches('input[data-type="detail"]') || t.matches('input[type="checkbox"]')) &&
         t.closest("#page3");
-      if (isLabField) publishFactsFromPage3Dom(page3Root);
+      if (isLabField) queuePublish(page3Root);
     };
     page3Root.addEventListener("input", handler);
     page3Root.addEventListener("change", handler);
 
-    // กด “บันทึกและไปหน้า 4” ให้คำนวณอีกรอบ
     const saveNextBtn = page3Root.querySelector("#p3-save-next");
-    if (saveNextBtn) {
-      saveNextBtn.addEventListener("click", () => publishFactsFromPage3Dom(page3Root));
+    if (saveNextBtn && !saveNextBtn.__p3hook_bound__) {
+      saveNextBtn.__p3hook_bound__ = true;
+      saveNextBtn.addEventListener("click", () => {
+        clearTimeout(debTimer);
+        publishFactsFromPage3Dom(page3Root); // flush once on save-next
+      });
     }
   }
 
-  // เฝ้าดู re-render ของหน้า 3 (เพราะ renderPage3() เขียน innerHTML ใหม่)
-  function watchPage3Rerender(container) {
-    const mo = new MutationObserver(() => {
+  // ===== watch re-render (scoped to #page3 only) =====
+  let mo = null;
+  function ensureObserver() {
+    if (mo) return;
+    mo = new MutationObserver(() => {
       const page3 = document.getElementById("page3");
       if (page3) bindLiveListeners(page3);
     });
-    mo.observe(container, { childList: true, subtree: true });
+    const anchor = document.getElementById("page3") || document.body;
+    // เฝ้าแค่ระดับที่จำเป็น ไม่เฝ้า subtree ทั้งเอกสาร
+    mo.observe(anchor.parentElement || document.body, { childList: true });
   }
 
-  // init
+  // ===== init =====
   function init() {
     const page3 = document.getElementById("page3");
     if (page3) {
       bindLiveListeners(page3);
-      // คำนวณครั้งแรก (เผื่อมีค่าเก่า)
-      publishFactsFromPage3Dom(page3);
+      // compute ครั้งแรกแบบเบาๆ
+      queuePublish(page3);
     }
-    watchPage3Rerender(document.body);
+    ensureObserver();
   }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
