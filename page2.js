@@ -3,12 +3,12 @@
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // โทนสีหลักของส่วนที่ 1 (ให้เหมือนบล็อกที่ผู้ใช้ชอบ)
+  // โทนสีหลักของส่วนที่ 1
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
   const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
-  // ส่วนที่ 1: อาการระบบอื่นๆ (เรียง 1→9 จากบนลงล่าง)
+  // ส่วนที่ 1: อาการระบบอื่นๆ
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -177,7 +177,7 @@
                             <input type="checkbox" id="${id}" data-group="${group.key}" data-text="${txt}" ${checked} style="margin-top:.25rem;">
                             <div style="flex:1 1 auto;">
                               <div style="font-size:.85rem;color:#1f2937;">${txt}</div>
-                              <input type="text" placeholder="รายละเอียด..." class="p2-detail" data-group="${group.key}" data-text="${txt}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? '' : 'display:none;'}background:rgba(255,255,255,.95);">
+                              <input type="text" placeholder="รายละเอียด..." class="p2-detail" data-group="${group.key}" data-text="${txt}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid ${group.inputBorder};border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"}background:rgba(255,255,255,.95);">
                             </div>
                           </label>
                         `;
@@ -208,7 +208,7 @@
                   <input type="checkbox" id="${id}" data-org="${org}" ${checked} style="margin-top:.25rem;">
                   <div style="flex:1 1 auto;">
                     <div style="font-size:.86rem;color:#1f2937;">${org}</div>
-                    <input type="text" placeholder="รายละเอียด..." class="p2-org-detail" data-org="${org}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid rgba(148,163,184,.75);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? '' : 'display:none;'}background:#fff;">
+                    <input type="text" placeholder="รายละเอียด..." class="p2-org-detail" data-org="${org}" value="${detailVal}" style="margin-top:.35rem;width:100%;border:1px solid rgba(148,163,184,.75);border-radius:.5rem;padding:.35rem .5rem;font-size:.78rem;${checked ? "" : "display:none;"}background:#fff;">
                   </div>
                 </label>
               `;
@@ -216,7 +216,7 @@
           </div>
         </section>
 
-        <!-- ปุ่มด้านล่าง: จัดแบบซ้าย/ขวา ตามภาพตัวอย่าง และยังมี popup -->
+        <!-- ปุ่มด้านล่าง -->
         <div class="p2-actions" style="margin-top:1.1rem;display:flex;align-items:center;justify-content:space-between;">
           <button id="p2_clear"
             style="background:#ef4444;color:#fff;border:none;padding:.65rem 1rem;border-radius:1rem;font-weight:700;cursor:pointer;box-shadow:0 10px 20px rgba(239,68,68,.25);">
@@ -239,9 +239,9 @@
         cb.addEventListener("change", () => {
           input.style.display = cb.checked ? "block" : "none";
           if (!cb.checked) input.value = "";
-          savePage2();
+          collectPage2(); // เก็บสถานะเฉยๆ (ยังไม่ยิงอีเวนต์)
         });
-        input.addEventListener("input", savePage2);
+        input.addEventListener("input", collectPage2);
       });
     });
 
@@ -253,9 +253,9 @@
       cb.addEventListener("change", () => {
         input.style.display = cb.checked ? "block" : "none";
         if (!cb.checked) input.value = "";
-        savePage2();
+        collectPage2();
       });
-      input.addEventListener("input", savePage2);
+      input.addEventListener("input", collectPage2);
     });
 
     // ── ปุ่มล้าง (popup)
@@ -268,53 +268,60 @@
 
     // ── ปุ่มบันทึกและไปหน้า 3 (popup)
     document.getElementById("p2_save").addEventListener("click", () => {
-      savePage2();
-      window.drugAllergyData.page2.__saved = true;
-      if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+      collectPage2();
+      finalizePage2(); // mark __saved + dispatch "da:update"
       alert("บันทึกหน้า 2 แล้ว");
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
     });
+  }
 
-    function savePage2() {
-      const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
-      // เก็บส่วนที่ 1
-      FEATURE_GROUPS.forEach(group => {
-        const groupObj = {};
-        group.items.forEach((txt, idx) => {
-          const cb = document.getElementById(`${group.key}_${idx}`);
-          const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
-          if (!cb || !input) return;
-          if (cb.checked || input.value.trim() !== "") {
-            groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
-          }
-        });
-        store[group.key] = groupObj;
-      });
-      // เก็บส่วนที่ 2
-      const organObj = {};
-      ORGANS.forEach((org, idx) => {
-        const cb = document.getElementById(`org_${idx}`);
-        const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
+  // เก็บข้อมูล (ไม่ยิง event)
+  function collectPage2() {
+    const root = document.getElementById("page2");
+    if (!root) return;
+
+    const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
+
+    // เก็บส่วนที่ 1
+    FEATURE_GROUPS.forEach(group => {
+      const groupObj = {};
+      group.items.forEach((txt, idx) => {
+        const cb = document.getElementById(`${group.key}_${idx}`);
+        const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
         if (!cb || !input) return;
         if (cb.checked || input.value.trim() !== "") {
-          organObj[org] = { checked: cb.checked, detail: input.value.trim() };
+          groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
         }
       });
-      store.organs = organObj;
-    // --- finalize & save (PAGE 2) ---
-store.__saved = true; // ติดธงว่าเซฟแล้ว
+      store[group.key] = groupObj;
+    });
 
-// ถ้ามีฟังก์ชันบันทึกเดิม ให้เรียกได้ตามปกติ
-if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+    // เก็บส่วนที่ 2
+    const organObj = {};
+    ORGANS.forEach((org, idx) => {
+      const cb = document.getElementById(`org_${idx}`);
+      const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
+      if (!cb || !input) return;
+      if (cb.checked || input.value.trim() !== "") {
+        organObj[org] = { checked: cb.checked, detail: input.value.trim() };
+      }
+    });
+    store.organs = organObj;
+  }
 
-// อัปเดตตัวแปรกลาง + ยิงสัญญาณให้หน้าที่เกี่ยวข้องรีเฟรช
-window.drugAllergyData = window.drugAllergyData || {};
-window.drugAllergyData.page2 = Object.assign({}, store);
-window.drugAllergyData.page2.__ts = Date.now();
+  // ทำเครื่องหมายบันทึก + อัปเดตตัวกลาง + แจ้งทุกหน้าให้รีเฟรช
+  function finalizePage2() {
+    const store = window.drugAllergyData.page2 || (window.drugAllergyData.page2 = {});
+    store.__saved = true;
 
-document.dispatchEvent(new Event("da:update"));
+    if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
+    window.drugAllergyData = window.drugAllergyData || {};
+    window.drugAllergyData.page2 = Object.assign({}, store);
+    window.drugAllergyData.page2.__ts = Date.now();
+
+    document.dispatchEvent(new Event("da:update"));
   }
 
   // export
