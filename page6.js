@@ -33,6 +33,18 @@
     return `${start} → ${end}`;
   }
 
+  // เพิ่ม: เรนเดอร์สถานะความพร้อมของหน้า 1–3 (เรียกซ้ำได้)
+  function renderCoreStatus() {
+    const status = corePagesReady();
+    if (status.ok) {
+      return `<p class="p6-muted" style="margin-top:.35rem;">
+        ระบบจะประเมินจากข้อมูลที่กดบันทึกครบหน้า 1–3 แล้วสรุปว่า<strong>เข้ากับชนิดย่อยใด</strong>โดยอัตโนมัติ
+      </p>`;
+    }
+    return `<div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(", ")}</div>
+            <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า</p>`;
+  }
+
   // --------- NARANJO (ยกมาแสดงผล) ---------
   const NARANJO_QUEST = [
     { idx:0, yes:+1, no:0,  dk:0 },
@@ -174,7 +186,7 @@
       if(!str) return null;
       const pure = String(str).trim().split(" ")[0];
       if(pure.includes("-")){ const [y,m,d]=pure.split("-").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
-      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,y); }
       return null;
     }
     const today = new Date(), today0 = new Date(today.getFullYear(),today.getMonth(),today.getDate());
@@ -265,8 +277,6 @@
       const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
       const drugNames = (Array.isArray(p4.drugs)?p4.drugs:[]).map(d=>d.name).filter(Boolean);
 
-      const statusInfo = corePagesReady();
-
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
           <li>Urticaria</li><li>Anaphylaxis</li><li>Angioedema</li>
@@ -315,14 +325,7 @@
             <div class="p6-subcard">
               <div class="p6-sub-title">อาการ/อาการแสดงทางคลินิกของการแพ้ยา</div>
               ${subtypesList}
-              ${
-                statusInfo.ok
-                  ? `<p class="p6-muted" style="margin-top:.35rem;">
-                      ระบบจะประเมินจากข้อมูลที่กดบันทึกครบหน้า 1–3 แล้วสรุปว่า<strong>เข้ากับชนิดย่อยใด</strong>โดยอัตโนมัติ
-                    </p>`
-                  : `<div class="p6-empty">ยังขาดข้อมูลจาก: ${statusInfo.missing.join(", ")}</div>
-                     <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า</p>`
-              }
+              <div id="p6CoreStatus">${renderCoreStatus()}</div>
             </div>
 
             <div class="p6-subcard">
@@ -390,7 +393,7 @@
             <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
           </div>
         </div>
-      `;
+      ”
 
       // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
       const btn = document.getElementById("p6BrainRefreshBtn");
@@ -406,6 +409,10 @@
     // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
     computeLocalBrain();
     drawTimeline();
+
+    // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
+    const holder = document.getElementById("p6CoreStatus");
+    if (holder) holder.innerHTML = renderCoreStatus();
   }
 
   // --------- STYLES ---------
@@ -436,6 +443,9 @@
     // คำนวณผลใหม่ + วาด timeline ใหม่ เฉพาะกล่องที่เกี่ยวข้อง
     computeLocalBrain();
     drawTimeline();
+    // อัปเดตสถานะ “ยังขาดข้อมูลจาก …”
+    const holder = document.getElementById("p6CoreStatus");
+    if (holder) holder.innerHTML = renderCoreStatus();
   });
 
   // --------- EXPORT ---------
