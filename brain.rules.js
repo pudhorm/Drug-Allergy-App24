@@ -134,55 +134,61 @@
     if (num(p2.RR) > 21)  T.add("vital:RR>21");
     if (num(p2.SpO2) > 0 && num(p2.SpO2) < 94) T.add("vital:SpO2<94");
 
-    // -------- หน้า 3: แลป --------
-    const cbc = p3.cbc || {};
-    const diff = cbc.diff || {};
-    const eosPct = num(cbc.eosinophilPct ?? cbc.eos?.value);
-    const WBC = num(cbc.WBC ?? cbc.wbc?.value);
-    const ANC = num(cbc.ANC ?? cbc.anc?.value);
-    const Hb = num(cbc.Hb ?? cbc.hb?.value);
-    const Hct = num(cbc.Hct ?? cbc.hct?.value);
-    const Plt = num(cbc.Plt ?? cbc.plt?.value);
-    const aec = num(cbc.AEC ?? cbc.aec?.value);
+    // -------- หน้า 3: แลป (นับเฉพาะเมื่อหน้า 3 บันทึกแล้ว และตัวเลข > 0) --------
+    const labReady = !!(d.page3 && d.page3.__saved);
+    const pos = (x) => Number.isFinite(x) && x > 0;
 
-    if (Number.isFinite(ANC) && ANC < 1500) T.add("lab:ANC<1500");
-    if (Number.isFinite(WBC) && WBC < 4000) T.add("lab:WBC<4000");
-    if (Number.isFinite(Plt) && Plt < 100000) T.add("lab:Plt<100k");
-    if (Number.isFinite(Hb) && Hb < 10) T.add("lab:Hb<10");
-    if (Number.isFinite(Hct) && Hct < 30) T.add("lab:Hct<30");
-    if (Number.isFinite(eosPct) && eosPct >= 10) T.add("lab:Eos>=10%");
-    if (Number.isFinite(aec) && aec >= 1500) T.add("lab:AEC>=1500");
+    if (labReady) {
+      const cbc = p3.cbc || {};
+      const eosPct = num(cbc.eosinophilPct ?? cbc.eos?.value);
+      const WBC = num(cbc.WBC ?? cbc.wbc?.value);
+      const ANC = num(cbc.ANC ?? cbc.anc?.value);
+      const Hb  = num(cbc.Hb  ?? cbc.hb?.value);
+      const Hct = num(cbc.Hct ?? cbc.hct?.value);
+      const Plt = num(cbc.Plt ?? cbc.plt?.value);
+      const aec = num(cbc.AEC ?? cbc.aec?.value);
 
-    const lft = p3.lft || {};
-    const ALT = num(lft.ALT ?? lft.alt?.value);
-    const AST = num(lft.AST ?? lft.ast?.value);
-    const ALP = num(lft.ALP ?? lft.alp?.value);
-    const TB  = num(lft.TB  ?? lft.totalBili?.value);
-    const DB  = num(lft.DB  ?? lft.directBili?.value);
-    // เกณฑ์ที่ผู้ใช้ให้: ALT/AST ≥ 2x ULN หรือ ≥ 40 U/L (ใช้ ≥40 เป็น fallback)
-    if (Number.isFinite(ALT) && ALT >= 40) T.add("lab:ALT>=40");
-    if (Number.isFinite(AST) && AST >= 40) T.add("lab:AST>=40");
+      if (pos(ANC) && ANC < 1500)      T.add("lab:ANC<1500");
+      if (pos(WBC) && WBC < 4000)      T.add("lab:WBC<4000");
+      if (pos(Plt) && Plt < 100000)    T.add("lab:Plt<100k");
+      if (pos(Hb)  && Hb  < 10)        T.add("lab:Hb<10");
+      if (pos(Hct) && Hct < 30)        T.add("lab:Hct<30");
+      if (Number.isFinite(eosPct) && eosPct >= 10)   T.add("lab:Eos>=10%");
+      if (Number.isFinite(aec)    && aec    >= 1500) T.add("lab:AEC>=1500");
 
-    const rft = p3.rft || {};
-    const Cr  = num(rft.Cr ?? rft.creatinine?.value);
-    const eGFR = num(rft.eGFR ?? rft.egfr?.value);
-    if (Number.isFinite(Cr) && Cr > 0) {
-      // ถ้าเพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X baseline — ไม่มี baseline ในฟอร์ม → ใช้โทเคนรวม
-      if (Cr >= 1.5 || Cr - (num(rft.baselineCr) || Cr) >= 0.3) T.add("lab:Cr↑>=0.3or1.5x");
+      const lft = p3.lft || {};
+      const ALT = num(lft.ALT ?? lft.alt?.value);
+      const AST = num(lft.AST ?? lft.ast?.value);
+      if (pos(ALT) && ALT >= 40) T.add("lab:ALT>=40");
+      if (pos(AST) && AST >= 40) T.add("lab:AST>=40");
+
+      const rft = p3.rft || {};
+      const Cr   = num(rft.Cr   ?? rft.creatinine?.value);
+      const eGFR = num(rft.eGFR ?? rft.egfr?.value);
+      if (pos(Cr)) {
+        if (Cr >= 1.5 || Cr - (num(rft.baselineCr) || Cr) >= 0.3) T.add("lab:Cr↑>=0.3or1.5x");
+      }
+      if (pos(eGFR) && eGFR < 60) T.add("lab:eGFR<60");
+
+      const ua = p3.ua || {};
+      if (truthy(ua.proteinPositive) || norm(ua.protein) === "+") T.add("lab:protein+");
+
+      // อื่นๆ
+      const card = p3.cardiac || {};
+      const troI = num(card.troponinI);
+      const troT = num(card.troponinT);
+      if (pos(troI) && troI > 0.04) T.add("lab:troponin↑");
+      if (pos(troT) && troT > 0.03) T.add("lab:troponin↑");
+
+      const comp = p3.complement || {};
+      const C3 = num(comp.C3), C4 = num(comp.C4);
+      if (pos(C3) && C3 < 90)  T.add("lab:C3<90");
+      if (pos(C4) && C4 < 10)  T.add("lab:C4<10");
+
+      const gas = p3.ox || {};
+      const SpO2 = num(gas.SpO2);
+      if (pos(SpO2) && SpO2 < 94) T.add("lab:SpO2<94");
     }
-    if (Number.isFinite(eGFR) && eGFR < 60) T.add("lab:eGFR<60");
-
-    const ua = p3.ua || {};
-    if (truthy(ua.proteinPositive) || norm(ua.protein) === "+") T.add("lab:protein+");
-
-    // อื่นๆ
-    const card = p3.cardiac || {};
-    if (num(card.troponinI) > 0.04 || num(card.troponinT) > 0.03) T.add("lab:troponin↑");
-    const comp = p3.complement || {};
-    if (Number.isFinite(num(comp.C3)) && num(comp.C3) < 90) T.add("lab:C3<90");
-    if (Number.isFinite(num(comp.C4)) && num(comp.C4) < 10) T.add("lab:C4<10");
-    const gas = p3.ox || {};
-    if (Number.isFinite(num(gas.SpO2)) && num(gas.SpO2) < 94) T.add("lab:SpO2<94");
 
     // ผลร่างกาย (จากหน้า 2 หรือ 3)
     if (truthy(p2.examHRHigh) || Number.isFinite(num(p2.HR)) && num(p2.HR) > 100) T.add("exam:HR>100");
@@ -209,7 +215,7 @@
       majors: [
         { anyOf: [tok("border","ขอบหยัก"), tok("shape","วงกลม"), tok("border","ขอบวงนูนแดงด้านในเรียบ")] },
         { anyOf: [tok("color","แดง"), tok("color","แดงซีด"), tok("color","ซีด"), tok("color","สีผิวปกติ")] },
-        { anyOf: [tok("shape","ตุ่มนูน"), tok("shape","ปื้นนูน")], weight: 2 }, // ลักษณะสำคัญ x2
+        { anyOf: [tok("shape","ตุ่มนูน"), tok("shape","ปื้นนูน")], weight: 2 },
         { anyOf: ["sym:คัน"] },
         { anyOf: ["sym:บวม"] },
         { anyOf: [tok("loc","ทั่วร่างกาย"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","รอบดวงตา"), tok("loc","ลำคอ"), tok("loc","ลำตัว"), tok("loc","หลัง")] },
@@ -283,7 +289,7 @@
         { anyOf: [tok("loc","หน้า"), tok("loc","รักแร้"), tok("loc","ทั่วร่างกาย"), tok("loc","ขาหนีบ")] },
         { anyOf: [tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
         { anyOf: ["sys:ไข้"] },
-        { anyOf: ["lab:WBC<4000", "lab:Neutrophil>75%", "exam:HR>100"] }, // หมายเหตุ: ถ้าไม่มี neutrophil% จริง ก็ข้ามเงียบ ๆ
+        { anyOf: ["lab:WBC<4000", "lab:Neutrophil>75%", "exam:HR>100"] },
       ],
     },
 
@@ -299,7 +305,7 @@
         { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
         { anyOf: ["sys:ไข้","sys:ปวดเมื่อยกล้ามเนื้อ","gi:คลื่นไส้อาเจียน","sys:เลือดออกในทางเดินอาหาร"] },
         { anyOf: [tok("loc","ริมฝีปาก"), tok("loc","รอบดวงตา"), tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","มือ"), tok("loc","เท้า")] },
-        { anyOf: ["mucosa:>1"] }, // ถ้ามีตัวแปรนับเยื่อบุ ให้แมปเป็นโทเคนนี้
+        { anyOf: ["mucosa:>1"] },
       ],
     },
 
@@ -411,7 +417,7 @@
     serumSickness: {
       title: "Serum sickness",
       majors: [
-        { anyOf: ["sym:ตุ่มนูน","tok:แดง","sym:บวม","sym:คัน"].map(x => x.replace("tok:","color:")) }, // ตุ่มนูน/แดง/บวม/คัน
+        { anyOf: ["sym:ตุ่มนูน","tok:แดง","sym:บวม","sym:คัน"].map(x => x.replace("tok:","color:")) },
         { anyOf: ["sys:ไข้"], weight: 2 },
         { anyOf: ["sys:ต่อมน้ำเหลืองโต","org:ไตอักเสบ"] },
         { anyOf: ["lab:protein+","lab:C3<90","lab:C4<10"] },
@@ -442,10 +448,10 @@
         { anyOf: [tok("color","ซีด"), "sys:ดีซ่าน"], weight: 2 },
         { anyOf: ["sys:ปัสสาวะสีชา/สีดำ"], weight: 3 },
         { anyOf: ["org:ไตวาย"] },
-        { anyOf: ["lab:IgG+","lab:C3+"] }, // ถ้ามี direct Coombs ในแบบฟอร์มให้แมปมาที่นี่
+        { anyOf: ["lab:IgG+","lab:C3+"] },
         { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์")] },
         { anyOf: ["lab:Hb<10"], weight: 3 },
-        { anyOf: ["lab:LDHสูง"] }, // ถ้ามีค่า LDH ให้แมปมาที่นี่
+        { anyOf: ["lab:LDHสูง"] },
         { anyOf: ["cv:BPต่ำ","cv:BPลดลง≥40"] },
         { anyOf: ["sys:ปวดหลังส่วนเอว","sys:ปวดแน่นชายโครงขวา"] },
       ],
@@ -520,7 +526,7 @@
     }
 
     if (!anyMatched) return 0;
-    // ตัวหาร = จำนวนข้อใหญ่ทั้งหมด (N) — ตามสเปคโหมด C
+    // ตัวหาร = จำนวนข้อใหญ่ทั้งหมด (N)
     const pct = Math.round((100 * sumWeight) / N);
     return Math.max(0, Math.min(100, pct));
   }
@@ -530,10 +536,7 @@
   // ---------------------------------------------------------------------------
   function brainRank(mode) {
     const d = window.drugAllergyData || {};
-    if (mode !== "C") {
-      // อนาคตอาจมีโหมดอื่น
-      mode = "C";
-    }
+    if (mode !== "C") mode = "C";
 
     const tokens = collectSignals(d);
     const results = [];
@@ -544,7 +547,6 @@
       results.push({ key, title: def.title || key, pctC });
     });
 
-    // เรียงจากมาก → น้อย
     results.sort((a, b) => (b.pctC || 0) - (a.pctC || 0));
     return { mode: "C", results };
   }
