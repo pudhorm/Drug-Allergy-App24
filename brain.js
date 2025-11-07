@@ -19,13 +19,15 @@
   function buildBars(results){
     var rows = results.map(function(r){
       var pct = Number(r.pctC || 0);
+      // clamp 0–100 และปัดทศนิยมให้ดูดี
       var w = Math.max(0, Math.min(100, pct));
+      var txt = Math.round(w);
       return (
         '<div class="p6-bar-row">' +
           '<div class="p6-bar-label">'+ r.title +'</div>' +
           '<div class="p6-bar-track">' +
             '<div class="p6-bar-fill" style="width:'+ w +'%;"></div>' +
-            '<div class="p6-bar-text">'+ w +'%</div>' +
+            '<div class="p6-bar-text">'+ txt +'%</div>' +
           '</div>' +
         '</div>'
       );
@@ -56,14 +58,20 @@
       return '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
     }
 
-    // ใช้สมองรุ่นใหม่: brainRank('C') → ได้ %C ทุก ADR
+    // ใช้สมองรุ่นใหม่: brainRank('C') → ได้ %C ทุก ADR (absolute % ไม่ normalize)
     if (typeof window.brainRank === "function") {
       try {
         var out = window.brainRank('C') || { results: [] };
         var results = Array.isArray(out.results) ? out.results : [];
         if (!results.length) return '<div class="p6-empty">ยังไม่มีผล</div>';
 
-        // หัวข้อ “ผลเด่น” (ตัวที่ %C มากสุด)
+        // ไม่ normalize; จัดระเบียบ: clamp 0–100 + sort มาก→น้อย
+        results = results.map(function(r){
+          var p = Number(r.pctC || 0);
+          return Object.assign({}, r, { pctC: Math.max(0, Math.min(100, p)) });
+        }).sort(function(a,b){ return (b.pctC||0) - (a.pctC||0); });
+
+        // หัวข้อ “ผลเด่น” (ตัวที่ %C มากสุดหลัง sort)
         var leader = results[0];
         var headerHTML = leader
           ? '<div style="font-weight:800;margin-bottom:.35rem;">ผลเด่น: '+ leader.title +'</div>'
@@ -89,7 +97,9 @@
         results_old.push({ key: key, title: rules[key].title || key, pctC: sc });
       } catch (e) {}
     });
-    results_old.sort(function(a,b){ return (b.pctC||0) - (a.pctC||0); });
+    results_old = results_old
+      .map(function(r){ r.pctC = Math.max(0, Math.min(100, Number(r.pctC||0))); return r; })
+      .sort(function(a,b){ return (b.pctC||0) - (a.pctC||0); });
     return buildBars(results_old);
   }
 
