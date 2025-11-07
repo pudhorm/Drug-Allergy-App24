@@ -1,516 +1,554 @@
 // ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
+// โหมด C: "แมตช์ตรงตัว" ระหว่างสิ่งที่ผู้ใช้ติ้กในหน้า 1–3 กับเกณฑ์ของแต่ละ ADR
+// - ไม่มีการจัดหมวดหมู่/สืบทอดสัญญาณ
+// - ข้อใหญ่ (major) = anyOf ของโทเคน 1 ชุด; แมตช์ได้ 1 ตัวถือว่า "ผ่านข้อใหญ่นั้น"
+// - น้ำหนัก: weight (ค่าปริยาย = 1), รองรับ x2/x3/x4
+// - สูตรคำนวณ: ถ้าไม่ผ่านข้อใหญ่สักข้อ → 0%; มิฉะนั้น %C = 100 * (sum(weight ผ่าน) / N)
+//   โดย N = "จำนวนข้อใหญ่ทั้งหมด" ของ ADR นั้น (ไม่ใช่ผลรวม weight)
+// - brainRank('C') จะคืน results = [{ key, title, pctC }...] เรียงมาก → น้อย
+
 (function () {
-  // ---------- SAFE GUARD ----------
-  if (window.__brainRulesBound) return;
-  window.__brainRulesBound = true;
-
-  // ---------- HELPERS ----------
-  function asArray(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
-  function truthy(x){ return !!x; }
-  function num(v){ const n=Number(String(v??"").replace(/[, ]+/g,"")); return Number.isFinite(n)?n:NaN; }
-
-  // ---------- TAG COLLECTOR: รวมแท็กจากหน้า 1–3 ----------
-  function collectTags(d){
-    const tags = new Set();
-    const p1 = d.page1 || {};
-    const p2 = d.page2 || {};
-    const p3 = d.page3 || {};
-
-    // ----- หน้า 1: รูปร่าง/สี/อาการผิว/ตำแหน่ง/เวลา -----
-    asArray(p1.rashShapes).forEach(s => { if(!s) return; tags.add("รูปร่าง:"+String(s).trim()); });
-    asArray(p1.rashColors).forEach(c => { if(!c) return; tags.add("สี:"+String(c).trim()); });
-
-    if (p1.itch?.has) tags.add("อาการผิว:คัน");
-    if (p1.swelling?.has) tags.add("อาการผิว:บวม");
-    if (p1.pain?.pain) tags.add("อาการผิว:ปวด");
-    if (p1.pain?.burn) tags.add("อาการผิว:แสบ");
-    if (p1.tight?.has) tags.add("อาการผิว:ตึง");
-    if (p1.pustule?.has) tags.add("อาการผิว:ตุ่มหนอง");
-    if (p1.bullae?.small) tags.add("ตุ่มน้ำ:เล็ก");
-    if (p1.bullae?.medium) tags.add("ตุ่มน้ำ:กลาง");
-    if (p1.bullae?.large) tags.add("ตุ่มน้ำ:ใหญ่");
-    if (p1.serum?.has) tags.add("อาการผิว:น้ำเหลือง");
-    if (p1.crust?.has) tags.add("อาการผิว:สะเก็ด");
-    if (p1.centerPeel?.has) tags.add("อาการผิว:ผิวหนังหลุดลอกตรงกลางผื่น");
-    if (p1.skinDetach?.lt10) tags.add("BSA:<=10%");
-    if (p1.skinDetach?.gt30) tags.add("BSA:>=30%");
-    if (p1.skinDetach?.center) tags.add("อาการผิว:ผิวหนังหลุดลอก");
-
-    asArray(p1.locations).forEach(loc => { if(!loc) return; tags.add("ตำแหน่ง:"+String(loc).trim()); });
-    if (p1.distribution?.symmetric) tags.add("การกระจาย:สมมาตร");
-
-    if (p1.onset) {
-      const o = String(p1.onset).trim();
-      if (/ภายใน\s*1\s*ชั่วโมง/.test(o)) tags.add("เวลา:<=1h");
-      if (/1\s*–?\s*6\s*ชั่วโมง|1-6\s*ชั่วโมง/.test(o)) tags.add("เวลา:1-6h");
-      if (/6\s*–?\s*24\s*ชั่วโมง|6-24/.test(o)) tags.add("เวลา:6-24h");
-      if (/1\s*สัปดาห์/.test(o)) tags.add("เวลา:1w");
-      if (/2\s*สัปดาห์/.test(o)) tags.add("เวลา:2w");
-      if (/3\s*สัปดาห์/.test(o)) tags.add("เวลา:3w");
-      if (/4\s*สัปดาห์/.test(o)) tags.add("เวลา:4w");
-      if (/5\s*สัปดาห์/.test(o)) tags.add("เวลา:5w");
-      if (/6\s*สัปดาห์/.test(o)) tags.add("เวลา:6w");
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+  function num(v) {
+    const n = Number(String(v ?? "").toString().replace(/[, ]+/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function truthy(v) {
+    if (v === true) return true;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return false;
+      return !/^(false|null|undefined|0|no|ไม่|ไม่มี)$/i.test(s);
     }
-
-    // ----- หน้า 2: ระบบอื่น ๆ / Vitals -----
-    const gResp = p2.resp || {};
-    if (gResp.wheeze || gResp["หายใจมีเสียงวี๊ด"]?.checked) tags.add("ระบบอื่น:หายใจมีเสียงวี๊ด");
-    if (gResp.dyspnea || gResp["หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)"]?.checked) tags.add("ระบบอื่น:หายใจลำบาก");
-    if (gResp.tachypnea) tags.add("ระบบอื่น:หายใจเร็ว");
-
-    const gCV = p2.cv || {};
-    if (gCV.hypotension || gCV["BP ต่ำ (<90/60)"]?.checked) tags.add("ระบบอื่น:BPต่ำ");
-    if (gCV["BP ลดลง ≥30% ของ baseline systolic เดิม"]?.checked) tags.add("ระบบอื่น:BPลง30%");
-    if (gCV["BP ลดลง ≥40 mmHg ของ baseline systolic เดิม"]?.checked) tags.add("ระบบอื่น:BPลง40mmHg");
-    if (gCV.tachycardia) tags.add("Lab:HR>100");
-
-    const gGI = p2.gi || {};
-    if (gGI["ท้องเสีย"]?.checked) tags.add("ระบบอื่น:ท้องเสีย");
-    if (gGI["กลืนลำบาก"]?.checked) tags.add("ระบบอื่น:กลืนลำบาก");
-    if (gGI["ปวดบิดท้อง"]?.checked) tags.add("ระบบอื่น:ปวดบิดท้อง");
-    if (gGI["คลื่นไส้/อาเจียน"]?.checked) tags.add("ระบบอื่น:คลื่นไส้อาเจียน");
-
-    const gEye = p2.eye || {};
-    if (gEye["เยื่อบุตาอักเสบ (ตาแดง)"]?.checked) tags.add("ระบบอื่น:เยื่อบุตาอักเสบ");
-
-    const gOther = p2.other || {};
-    if (gOther["ไข้ Temp > 37.5 °C"]?.checked) tags.add("ระบบอื่น:ไข้");
-    if (gOther["อ่อนเพลีย"]?.checked) tags.add("ระบบอื่น:อ่อนเพลีย");
-
-    const organs = p2.organs || {};
-    if (organs["ต่อมน้ำเหลืองโต"]?.checked) tags.add("อวัยวะ:ต่อมน้ำเหลืองโต");
-    if (organs["ม้ามโต"]?.checked) tags.add("อวัยวะ:ม้ามโต");
-    if (organs["ตับอักเสบ"]?.checked) tags.add("อวัยวะ:ตับอักเสบ");
-    if (organs["ตับโต"]?.checked) tags.add("อวัยวะ:ตับโต");
-    if (organs["ไตอักเสบ"]?.checked) tags.add("อวัยวะ:ไตอักเสบ");
-    if (organs["ไตวาย"]?.checked) tags.add("อวัยวะ:ไตวาย");
-    if (organs["กล้ามเนื้อหัวใจอักเสบ"]?.checked) tags.add("อวัยวะ:กล้ามเนื้อหัวใจอักเสบ");
-    if (organs["ปอดอักเสบ"]?.checked) tags.add("อวัยวะ:ปอดอักเสบ");
-    if (organs["ขาบวม"]?.checked) tags.add("อวัยวะ:ขาบวม");
-
-    // ----- หน้า 3: LAB/VITALS -----
-    const eosPct  = num(p3?.cbc?.eos?.value);
-    if (Number.isFinite(eosPct) && eosPct >= 5) tags.add("Lab:Eosinophil>=5%");
-    if (Number.isFinite(eosPct) && eosPct >= 10) tags.add("Lab:Eosinophil>=10%");
-    const wbc     = num(p3?.cbc?.wbc?.value);
-    if (Number.isFinite(wbc) && wbc > 11000) tags.add("Lab:WBC>11000");
-    if (Number.isFinite(wbc) && wbc < 4000) tags.add("Lab:WBC<4000");
-    const neutPct = num(p3?.cbc?.neutrophil?.value);
-    if (Number.isFinite(neutPct) && neutPct > 75) tags.add("Lab:Neutrophil>75%");
-    const hb      = num(p3?.cbc?.hb?.value);
-    if (Number.isFinite(hb) && hb < 10) tags.add("Lab:HB<10");
-    const hct     = num(p3?.cbc?.hct?.value);
-    if (Number.isFinite(hct) && hct < 30) tags.add("Lab:Hct<30");
-    const plt     = num(p3?.cbc?.platelet?.value);
-    if (Number.isFinite(plt) && plt < 150000) tags.add("Lab:PLT<150k");
-    if (Number.isFinite(plt) && plt < 100000) tags.add("Lab:PLT<100k");
-
-    const alt     = num(p3?.lft?.alt?.value);
-    const ast     = num(p3?.lft?.ast?.value);
-    if ((Number.isFinite(alt) && alt >= 40) || (Number.isFinite(ast) && ast >= 40)) tags.add("Lab:LFT>=40");
-    if ((Number.isFinite(alt) && alt >= 80) || (Number.isFinite(ast) && ast >= 80)) tags.add("Lab:LFT>=2xULN");
-
-    const cr      = num(p3?.rft?.creatinine?.value);
-    if (Number.isFinite(cr)) {
-      // กฎ TEN/DRESS/Nephritis ต้องการเงื่อนไขเพิ่มขึ้นจาก baseline → ให้ติ๊กไว้ที่หน้า 2/รายละเอียด
-      if (cr >= 1.5) tags.add("Lab:CrHigh");
-    }
-    const egfr = num(p3?.rft?.egfr?.value);
-    if (Number.isFinite(egfr) && egfr < 60) tags.add("Lab:eGFR<60");
-
-    const spo2 = num(p2?.resp?.spo2?.value ?? p3?.vitals?.spo2?.value);
-    if (Number.isFinite(spo2) && spo2 < 94) tags.add("Lab:SpO2<94");
-    const hr = num(p2?.cv?.hr?.value ?? p3?.vitals?.hr?.value);
-    if (Number.isFinite(hr) && hr > 100) tags.add("Lab:HR>100");
-
-    // UA protein+
-    const uaProtein = String(p3?.ua?.protein?.value || "").trim();
-    if (/^\+/.test(uaProtein) || /positive/i.test(uaProtein)) tags.add("Lab:protein+");
-
-    // Complement
-    const c3 = num(p3?.immuno?.c3?.value);
-    if (Number.isFinite(c3) && c3 < 90) tags.add("Lab:C3ต่ำ");
-    const c4 = num(p3?.immuno?.c4?.value);
-    if (Number.isFinite(c4) && c4 < 10) tags.add("Lab:C4ต่ำ");
-
-    // Atypical lymphocyte
-    const atyp = num(p3?.cbc?.atypicalLymph?.value);
-    if (Number.isFinite(atyp) && atyp > 0) tags.add("Lab:atypicalLymph");
-
-    // LDH (ถ้าใส่เป็น xULN ให้ติ๊กในรายละเอียดหน้า 2; ที่นี่ flag ทั่วไป)
-    const ldh = num(p3?.others?.ldh?.value);
-    if (Number.isFinite(ldh) && ldh > 2) tags.add("Lab:LDHHigh");
-
-    // Cardiac
-    const troponin = num(p3?.cardiac?.troponin?.value);
-    if (Number.isFinite(troponin) && troponin > 0.04) tags.add("Lab:Troponinสูง");
-    if (p3?.cardiac?.ekgAbnormal) tags.add("Lab:EKGผิดปกติ");
-
-    return tags;
+    return !!v;
+  }
+  function norm(s) {
+    return String(s || "").trim();
   }
 
-  // ช่วยเช็คว่ามีแท็กย่อย “ตรงอย่างน้อย 1 ตัว” ในข้อใหญ่นั้นไหม
-  function hitAny(tagSet, needles){ for (const t of needles) if (tagSet.has(t)) return true; return false; }
+  // สร้าง token helper
+  function tok(prefix, name) {
+    return prefix + ":" + norm(name);
+  }
 
-  // ---------- นิยามกฎ 21 แบบ (สูตร C) ----------
-  // โครง: { key, title, majors:[ { name, sub:[tags...], weight? } ] }
-  // ตัวหาร = majors.length, ตัวเศษ = ผลรวม weight ของ “ข้อใหญ่ที่เข้าเงื่อนไข”
-  const ADR = [];
+  // ---------------------------------------------------------------------------
+  // 1) เก็บสัญญาณจากหน้า 1–3 แบบ "แบนราบ" เป็น Set ของโทเคน
+  //    โทเคนตั้งชื่อให้ตรงกับตัวเลือกที่ผู้ใช้เห็น/ติ้กจริงบนฟอร์ม (ภาษาไทย)
+  // ---------------------------------------------------------------------------
+  function collectSignals(d) {
+    const T = new Set();
 
-  // 1) Urticaria (7 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key: "urticaria", title: "Urticaria",
-    majors: [
-      { name:"รูปร่าง", sub:["รูปร่าง:ขอบหยัก","รูปร่าง:วงกลม","รูปร่าง:ขอบวงนูนแดงด้านในเรียบ"] },
-      { name:"สี", sub:["สี:แดง","สี:แดงซีด","สี:ซีด","สี:สีผิวปกติ"] },
-      { name:"ลักษณะสำคัญ", sub:["รูปร่าง:ตุ่มนูน","รูปร่าง:ปื้นนูน"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:คัน"] },
-      { name:"อาการพบน้อย", sub:["อาการผิว:บวม"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ทั่วร่างกาย","ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:หน้า","ตำแหน่ง:rอบดวงตา","ตำแหน่ง:รอบดวงตา","ตำแหน่ง:ลำคอ","ตำแหน่ง:ลำตัว","ตำแหน่ง:หลัง"] },
-      { name:"เวลา", sub:["เวลา:<=1h"] },
-    ]
-  });
+    const p1 = (d && d.page1) || d.skin || {};       // skin page
+    const p2 = (d && d.page2) || d.other || {};      // other systems
+    const p3 = (d && d.page3) || d.lab || {};        // labs
 
-  // 2) Anaphylaxis (7 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"anaphylaxis", title:"Anaphylaxis",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ตุ่มนูน","รูปร่าง:ปื้นนูน","อาการผิว:บวม","รูปร่าง:นูนหนา","อาการผิว:ตึง"] },
-      { name:"ลักษณะสำคัญ", sub:["ระบบอื่น:หายใจมีเสียงวี๊ด","ระบบอื่น:หายใจลำบาก"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:คัน","สี:แดง","สี:สีผิวปกติ"] },
-      { name:"อาการพบน้อย", sub:["ระบบอื่น:ท้องเสีย","ระบบอื่น:กลืนลำบาก","ระบบอื่น:ปวดบิดท้อง","ระบบอื่น:คลื่นไส้อาเจียน"] },
-      { name:"เวลา", sub:["เวลา:<=1h","เวลา:1-6h"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:BPต่ำ","ระบบอื่น:BPลง40mmHg","ระบบอื่น:BPลง30%"] },
-      { name:"Lab/Vital", sub:["Lab:HR>100","Lab:SpO2<94"] },
-    ]
-  });
+    // -------- หน้า 1: รูปร่าง/สี/ขอบ/ตุ่มน้ำ/ผิวหลุดลอก/คัน/ปวดแสบเจ็บ/บวม/ตำแหน่ง/ระยะเวลา --------
+    // รูปร่าง (array ของข้อความ)
+    const shapes = [].concat(p1.rashShapes || p1.shape || []);
+    shapes.forEach(s => T.add(tok("shape", s)));
 
-  // 3) Angioedema (7 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"angioedema", title:"Angioedema",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:นูนหนา","รูปร่าง:ขอบไม่ชัดเจน"] },
-      { name:"สี", sub:["สี:สีผิวปกติ","สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["อาการผิว:บวม"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:ตึง"] },
-      { name:"อาการพบน้อย", sub:["อาการผิว:คัน","อาการผิว:ปวด","อาการผิว:แสบ"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ริมฝีปาก","ตำแหน่ง:รอบดวงตา","ตำแหน่ง:ลิ้น","ตำแหน่ง:อวัยวะเพศ"] },
-      { name:"เวลา", sub:["เวลา:<=1h"] },
-    ]
-  });
+    // สี (array ของข้อความ)
+    const colors = [].concat(p1.rashColors || p1.color || []);
+    colors.forEach(c => T.add(tok("color", c)));
 
-  // 4) Maculopapular rash (8 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"maculopapular", title:"Maculopapular rash",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ปื้นแดง","รูปร่าง:ปื้นนูน","รูปร่าง:ตุ่มนูน"] },
-      { name:"สี", sub:["สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["อาการผิว:จุดเล็กแดง"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:คัน"] },
-      { name:"อาการพบน้อย", sub:["ระบบอื่น:ไข้","Lab:Eosinophil>=5%"] },
-      { name:"ตำแหน่ง", sub:["การกระจาย:สมมาตร","ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ใบหน้า","ตำแหน่ง:ลำคอ"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ต่อมน้ำเหลืองโต","ระบบอื่น:ข้ออักเสบ","อวัยวะ:ไตอักเสบ","อวัยวะ:ตับอักเสบ"] },
-    ]
-  });
+    // ขอบ (เช่น ขอบหยัก, ขอบเรียบ, ขอบเขตชัด, ขอบไม่ชัดเจน, ขอบวงนูนแดงด้านในเรียบ)
+    const borders = [].concat(p1.rashBorders || p1.border || []);
+    borders.forEach(b => T.add(tok("border", b)));
 
-  // 5) Fixed drug eruption (9 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"fde", title:"Fixed drug eruption",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:วงกลม","รูปร่าง:วงรี"] },
-      { name:"สี", sub:["สี:แดง","สี:ดำ","สี:ดำ/คล้ำ","สี:คล้ำ","สี:ม่วง","สี:เทา"] },
-      { name:"ลักษณะสำคัญ", sub:["สี:ม่วง","สี:ดำ/คล้ำ","สี:คล้ำ"], weight:3 },
-      { name:"อาการผิว", sub:["อาการผิว:ผิวหนังหลุดลอกตรงกลางผื่น","อาการผิว:เจ็บ","อาการผิว:แสบ","อาการผิว:ตึง"] },
-      { name:"อาการพบน้อย", sub:["อาการผิว:บวม","ตุ่มน้ำ:ใหญ่","ตุ่มน้ำ:กลาง","ตุ่มน้ำ:เล็ก","อาการผิว:พอง"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ริมฝีปาก","ตำแหน่ง:หน้า","ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:อวัยวะเพศ","ตำแหน่ง:ตำแหน่งเดิมกับครั้งก่อน"] },
-      { name:"เวลา", sub:["เวลา:1w","เวลา:2w"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:คลื่นไส้อาเจียน","ระบบอื่น:ปวดเมื่อยกล้ามเนื้อ"] },
-      { name:"ขอบ", sub:["รูปร่าง:ขอบเรียบ","รูปร่าง:ขอบเขตชัดเจน"] },
-    ]
-  });
+    // ตุ่มน้ำ / พอง (blister/pustule/bulla) — เก็บเป็น size/ชนิด
+    const blisters = [].concat(p1.blisterTypes || p1.blister || []);
+    blisters.forEach(b => T.add(tok("blister", b)));
+    if (p1.pustule && (p1.pustule.has || p1.pustule === true)) T.add("skin:ตุ่มหนอง");
+    if (truthy(p1.bulla)) T.add("blister:พอง");
 
-  // 6) AGEP (9 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"agep", title:"AGEP",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ผื่นแดง","สี:แดง"] },
-      { name:"สี", sub:["สี:แดง","สี:เหลือง"] },
-      { name:"ลักษณะสำคัญ", sub:["อาการผิว:ตุ่มหนอง"], weight:3 },
-      { name:"อาการผิว", sub:["อาการผิว:บวม","อาการผิว:คัน","อาการผิว:เจ็บ"] },
-      { name:"อาการพบน้อย", sub:["อาการผิว:ปื้น/จ้ำเลือด","อาการผิว:แห้ง","อาการผิว:ลอก","อาการผิว:ขุย"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:หน้า","ตำแหน่ง:รักแร้","ตำแหน่ง:ทั่วร่างกาย","ตำแหน่ง:ขาหนีบ"] },
-      { name:"เวลา", sub:["เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้"] },
-      { name:"Lab", sub:["Lab:WBC>11000","Lab:Neutrophil>75%"] },
-    ]
-  });
+    // ผิวหลุดลอก (skinDetach object: { center, lt10, gt30 } หรือ string)
+    const sd = p1.skinDetach || {};
+    if (sd.center) T.add("peeling:ผิวหนังหลุดลอกตรงกลางผื่น");
+    if (sd.lt10)   T.add("peeling:ไม่เกิน10%BSA");
+    if (sd.gt30)   T.add("peeling:เกิน30%BSA");
 
-  // 7) SJS (10 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"sjs", title:"SJS",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)","อาการผิว:ผิวหนังหลุดลอก"] },
-      { name:"สี", sub:["สี:ดำ/คล้ำ","สี:เทา","สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["BSA:<=10%"], weight:3 },
-      { name:"อาการผิว", sub:["อาการผิว:น้ำเหลือง","ตุ่มน้ำ:เล็ก","ตุ่มน้ำ:กลาง","ตุ่มน้ำ:ใหญ่","อาการผิว:พอง"] },
-      { name:"อาการ", sub:["อาการผิว:สะเก็ด"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ลำตัว"] },
-      { name:"เวลา", sub:["เวลา:<=1h","เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:ปวดเมื่อยกล้ามเนื้อ","ระบบอื่น:คลื่นไส้อาเจียน","ระบบอื่น:เลือดออกในทางเดินอาหาร"] },
-      { name:"อวัยวะ", sub:["ตำแหน่ง:ริมฝีปาก","ตำแหน่ง:รอบดวงตา","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:หน้า","ตำแหน่ง:มือ","ตำแหนง:มือ","ตำแหน่ง:เท้า"] },
-      { name:"เยื่อบุ", sub:["เยื่อบุ:>1ตำแหน่ง"] },
-    ]
-  });
+    // อาการผิว: คัน/เจ็บ/แสบ/ตึง/ไม่คัน
+    const itch = p1.itch || {};
+    if (itch.has || itch === true) T.add("sym:คัน");
+    if (itch.none === true) T.add("sym:ไม่คัน");
+    const pain = p1.pain || {};
+    if (pain.pain) T.add("sym:ปวด");
+    if (pain.burning) T.add("sym:แสบ");
+    if (pain.tight) T.add("sym:ตึง");
+    // บวม
+    const swelling = p1.swelling || {};
+    if (swelling.has || swelling === true) T.add("sym:บวม");
 
-  // 8) TEN (10 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"ten", title:"TEN",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ผื่นแดง","รูปร่าง:ปื้นแดง","รูปร่าง:วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)"] },
-      { name:"สี", sub:["สี:แดง","สี:ดำ/คล้ำ"] },
-      { name:"ลักษณะสำคัญ", sub:["BSA:>=30%"], weight:3 },
-      { name:"อาการผิว", sub:["ตุ่มน้ำ:ใหญ่","อาการผิว:น้ำเหลือง","อาการผิว:สะเก็ด"] },
-      { name:"อาการพบน้อย", sub:["สี:ซีด","ระบบอื่น:โลหิตจาง","ระบบอื่น:เลือดออกในทางเดินอาหาร","ระบบอื่น:กลืนลำบาก"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:หน้า","ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:ศีรษะ","ตำแหน่ง:ทั่วร่างกาย","ตำแหน่ง:ริมฝีปาก"] },
-      { name:"เวลา", sub:["เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:ปวดเมื่อยกล้ามเนื้อ","ระบบอื่น:คลื่นไส้อาเจียน","ระบบอื่น:เจ็บคอ","ระบบอื่น:ปวดข้อ","ระบบอื่น:ท้องเสีย","ระบบอื่น:เยื่อบุตาอักเสบ"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ไตวาย","อวัยวะ:ตับอักเสบ","อวัยวะ:ปอดอักเสบ"] },
-      { name:"Lab", sub:["Lab:CrHigh","Lab:protein+","Lab:SpO2<94","Lab:LFT>=2xULN","Lab:LFT>=40"] },
-    ]
-  });
+    // สะเก็ด/น้ำเหลือง/แห้ง/ลอก/ขุย/มันเงา/ใส
+    if (truthy(p1.crust))    T.add("skin:สะเก็ด");
+    if (truthy(p1.serous))   T.add("skin:น้ำเหลือง");
+    if (truthy(p1.dry))      T.add("skin:แห้ง");
+    if (truthy(p1.scale))    T.add("skin:ขุย");
+    if (truthy(p1.peel))     T.add("skin:ลอก");
+    if (truthy(p1.shiny))    T.add("skin:มันเงา");
+    if (colors.includes("ใส")) T.add("color:ใส");
 
-  // 9) DRESS (9 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"dress", title:"DRESS",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ผื่นแดง","รูปร่าง:ปื้นแดง"] },
-      { name:"สี", sub:["สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["Lab:Eosinophil>=10%","Lab:atypicalLymph"], weight:3 },
-      { name:"อาการผิว", sub:["ตุ่มน้ำ:เล็ก","ตุ่มน้ำ:กลาง","ตุ่มน้ำ:ใหญ่","อาการผิว:ปื้น/จ้ำเลือด"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:หน้า","ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ขา"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้"] },
-      { name:"เวลา", sub:["เวลา:1w","เวลา:2w","เวลา:3w","เวลา:4w","เวลา:5w","เวลา:6w"] },
-      { name:"Lab", sub:["Lab:LFT>=2xULN","Lab:LFT>=40","Lab:CrHigh","Lab:protein+","Lab:SpO2<94","Lab:EKGผิดปกติ","Lab:Troponinสูง"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ต่อมน้ำเหลืองโต","อวัยวะ:ตับอักเสบ","อวัยวะ:ไตอักเสบ","อวัยวะ:ไตวาย","อวัยวะ:ปอดอักเสบ","อวัยวะ:กล้ามเนื้อหัวใจอักเสบ","อวัยวะ:ต่อมไทรอยด์อักเสบ"] },
-    ]
-  });
+    // ตำแหน่ง/การกระจายตัว
+    const locs = [].concat(p1.locations || p1.rashLocations || []);
+    locs.forEach(l => T.add(tok("loc", l)));
+    if (p1.distribution === "สมมาตร") T.add("dist:สมมาตร");
 
-  // 10) EM (9 ข้อใหญ่; x3 ที่ "ลักษณะสำคัญ")
-  ADR.push({
-    key:"em", title:"Erythema multiforme (EM)",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ตุ่มนูน","รูปร่าง:ขอบวงนูนแดงด้านในเรียบ"] },
-      { name:"สี", sub:["สี:แดง","สี:แดงซีด"] },
-      { name:"ลักษณะสำคัญ", sub:["รูปร่าง:วงกลม 3 ชั้น (เป้าธนู)","รูปร่าง:วงกลม 3 ชั้น"], weight:3 },
-      { name:"อาการผิว", sub:["อาการผิว:พอง","ตุ่มน้ำ:เล็ก","ตุ่มน้ำ:กลาง"] },
-      { name:"อาการ", sub:["อาการผิว:สะเก็ด"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w"] },
-      { name:"ตำแหน่งเยื่อบุ", sub:["ตำแหน่ง:ช่องปาก","ตำแหน่ง:จมูก","ตำแหน่ง:ทวาร","ตำแหน่ง:อวัยวะเพศ"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:อ่อนเพลีย","ระบบอื่น:ปวดเมื่อยกล้ามเนื้อ","ระบบอื่น:เจ็บคอ","ระบบอื่น:ปวดข้อ"] },
-      { name:"ตำแหน่งร่างกาย", sub:["ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:หน้า","ตำแหน่ง:ลำตัว","ตำแหน่ง:หลัง","ตำแหน่ง:ลำคอ"] },
-    ]
-  });
+    // ระยะเวลาเริ่มอาการ (string)
+    const onset = norm(p1.onset || p1.timeline || "");
+    if (onset) T.add(tok("onset", onset));
 
-  // 11) Photosensitivity (8 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ" และ "อาการเด่น")
-  ADR.push({
-    key:"photosensitivity", title:"Photosensitivity drug eruption",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ขอบเขตชัดเจน","รูปร่าง:ขอบเขตชัด","รูปร่าง:ปื้นแดง","อาการผิว:จุดเล็กแดง","รูปร่าง:จุดเล็กแดง"] },
-      { name:"สี", sub:["สี:ดำ/คล้ำ","สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["สี:แดงไหม้"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:น้ำเหลือง","อาการผิว:สะเก็ด"] },
-      { name:"อาการอาจพบ", sub:["ตุ่มน้ำ:เล็ก","ตุ่มน้ำ:กลาง","ตุ่มน้ำ:ใหญ่","อาการผิว:ลอก","อาการผิว:ขุย","อาการผิว:คัน"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:หน้า","ตำแหน่ง:หน้าอก","ตำแหน่ง:มือ","ตำแหน่ง:แขน","ตำแหน่ง:ขา"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:<=1h"] },
-      { name:"อาการเด่น", sub:["อาการผิว:แสบ"], weight:2 },
-    ]
-  });
+    // -------- หน้า 2: ระบบอื่น ๆ --------
+    const r = p2.resp || {};
+    if (truthy(r.wheeze))   T.add("resp:หายใจมีเสียงวี๊ด");
+    if (truthy(r.dyspnea))  T.add("resp:หายใจลำบาก");
+    if (truthy(r.tachypnea)) T.add("resp:หอบเหนื่อย");
 
-  // 12) Exfoliative dermatitis (10 ข้อใหญ่; x3 ที่ 3,4,10)
-  ADR.push({
-    key:"exfoliative", title:"Exfoliative dermatitis",
-    majors:[
-      { name:"รูปร่าง", sub:["อาการผิว:ตึง"] },
-      { name:"สี", sub:["สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["อาการผิว:แห้ง"], weight:3 },
-      { name:"อาการผิว(เด่น)", sub:["อาการผิว:ขุย"], weight:3 },
-      { name:"อาการอื่น", sub:["อาการผิว:คัน"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ทั่วร่างกาย","ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:ศีรษะ"] },
-      { name:"เวลา", sub:["เวลา:3w","เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:4w"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:หนาวสั่น","ระบบอื่น:อ่อนเพลีย","ระบบอื่น:ดีซ่าน"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ต่อมน้ำเหลืองโต","อวัยวะ:ตับโต","อวัยวะ:ม้ามโต","อวัยวะ:ขาบวม"] },
-      { name:"ลักษณะเด่น", sub:["อาการผิว:มันเงา","อาการผิว:ลอก"], weight:3 },
-    ]
-  });
+    const cv = p2.cv || {};
+    if (truthy(cv.hypotension)) T.add("cv:BPต่ำ");
+    if (truthy(cv.shock))       T.add("cv:BPลดลง≥40");
 
-  // 13) Eczematous (10 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ" และ "อาการที่อาจพบ")
-  ADR.push({
-    key:"eczematous", title:"Eczematous drug eruption",
-    majors:[
-      { name:"รูปร่าง", sub:["รูปร่าง:ตุ่มนูน","รูปร่าง:ปื้นแดง"] },
-      { name:"สี", sub:["สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["อาการผิว:คัน"], weight:2 },
-      { name:"อาการผิวเพิ่ม", sub:["รูปร่าง:นูนหนา","อาการผิว:ผื่นแดง"] },
-      { name:"อาการอื่น", sub:["อาการผิว:จุดเล็กแดง","อาการผิว:น้ำเหลือง","อาการผิว:สะเก็ด"] },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:หน้า","ตำแหน่ง:ลำคอ"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"อาการอาจพบ", sub:["อาการผิว:ขุย","อาการผิว:แห้ง","อาการผิว:ลอก"], weight:2 },
-      { name:"การกระจาย", sub:["การกระจาย:สมมาตร"] },
-      { name:"ตุ่มน้ำ", sub:["ตุ่มน้ำ:เล็ก","ตุ่มน้ำ:กลาง","ตุ่มน้ำ:ใหญ่"] },
-    ]
-  });
+    const gi = p2.gi || {};
+    if (truthy(gi.diarrhea))  T.add("gi:ท้องเสีย");
+    if (truthy(gi.dysphagia)) T.add("gi:กลืนลำบาก");
+    if (truthy(gi.cramp))     T.add("gi:ปวดบิดท้อง");
+    if (truthy(gi.nausea))    T.add("gi:คลื่นไส้อาเจียน");
 
-  // 14) Bullous Drug Eruption (7 ข้อใหญ่; x2 ที่ "ลักษณะสำคัญ", x3 ที่ "สีด้านใน")
-  ADR.push({
-    key:"bullous", title:"Bullous Drug Eruption",
-    majors:[
-      { name:"รูปร่าง", sub:["ตุ่มน้ำ:เล็ก","อาการผิว:พอง","อาการผิว:ตึง"] },
-      { name:"สี", sub:["สี:แดง"] },
-      { name:"ลักษณะสำคัญ", sub:["ตุ่มน้ำ:กลาง","ตุ่มน้ำ:ใหญ่"], weight:2 },
-      { name:"อาการผิว", sub:["อาการผิว:เจ็บ","อาการผิว:แสบ"] },
-      { name:"สีด้านใน", sub:["สี:ใส"], weight:3 },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ขา","ตำแหน่ง:เท้า"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-    ]
-  });
+    const misc = p2.misc || {};
+    if (truthy(misc.fever))     T.add("sys:ไข้");
+    if (truthy(misc.chill))     T.add("sys:หนาวสั่น");
+    if (truthy(misc.fatigue))   T.add("sys:อ่อนเพลีย");
+    if (truthy(misc.soreThroat))T.add("sys:เจ็บคอ");
+    if (truthy(misc.aralgia))   T.add("sys:ปวดข้อ");
+    if (truthy(misc.arthritis)) T.add("sys:ข้ออักเสบ");
+    if (truthy(misc.myalgia))   T.add("sys:ปวดเมื่อยกล้ามเนื้อ");
+    if (truthy(misc.oralUlcer)) T.add("sys:แผลในปาก");
+    if (truthy(misc.bleedingGI))T.add("sys:เลือดออกในทางเดินอาหาร");
+    if (truthy(misc.lymph))     T.add("sys:ต่อมน้ำเหลืองโต");
+    if (truthy(misc.corneal))   T.add("sys:แผลกระจกตา");
+    if (truthy(misc.conjunctivitis)) T.add("sys:เยื่อบุตาอักเสบ");
 
-  // 15) Serum sickness (8 ข้อใหญ่; x2 ที่ "อาการ(เด่น)" และ "อาการระบบอื่นๆ")
-  ADR.push({
-    key:"serumSickness", title:"Serum sickness",
-    majors:[
-      { name:"อาการ", sub:["รูปร่าง:ตุ่มนูน","สี:แดง","อาการผิว:บวม","อาการผิว:คัน"] },
-      { name:"อาการเด่น", sub:["ระบบอื่น:ไข้"], weight:2 },
-      { name:"อวัยวะ", sub:["อวัยวะ:ต่อมน้ำเหลืองโต","อวัยวะ:ไตอักเสบ"] },
-      { name:"Lab", sub:["Lab:protein+","Lab:C3ต่ำ","Lab:C4ต่ำ"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"Lab2", sub:["Lab:RBC5-10/HPF","Lab:RBC 5-10/HPF"] },
-      { name:"ระบบอื่น(เด่น)", sub:["ระบบอื่น:ปวดข้อ","ระบบอื่น:ข้ออักเสบ"], weight:2 },
-      { name:"ตำแหน่ง", sub:["ตำแหน่ง:รอบดวงตา","ตำแหน่ง:มือ","ตำแหน่ง:เท้า","ตำแหน่ง:ลำตัว","ตำแหน่ง:แขน","ตำแหน่ง:ขา"] },
-    ]
-  });
+    // -------- หน้า 2: vital sign เงื่อนไขตัวเลข (ถ้ามี) --------
+    if (num(p2.HR) > 100) T.add("vital:HR>100");
+    if (num(p2.RR) > 21)  T.add("vital:RR>21");
+    if (num(p2.SpO2) > 0 && num(p2.SpO2) < 94) T.add("vital:SpO2<94");
 
-  // 16) Vasculitis (8 ข้อใหญ่; x2 ที่ "ลักษณะเด่น")
-  ADR.push({
-    key:"vasculitis", title:"Vasculitis",
-    majors:[
-      { name:"อาการ", sub:["รูปร่าง:ตุ่มนูน","รูปร่าง:ผื่นแดง","สี:แดง"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:ปวดข้อ","ระบบอื่น:ข้ออักเสบ","ระบบอื่น:ปวดกล้ามเนื้อ","อวัยวะ:ต่อมน้ำเหลืองโต"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ไตอักเสบ","อวัยวะ:ไตวาย","อวัยวะ:ต่อมน้ำเหลืองโต"] },
-      { name:"อาการเด่นระบบหายใจ/ทางเดินอาหาร", sub:["ระบบอื่น:ไอเป็นเลือด","ระบบอื่น:ถุงลมเลือดออก","ระบบอื่น:เลือดออกในทางเดินอาหาร"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w","เวลา:3w"] },
-      { name:"Lab2", sub:["Lab:protein+","Lab:C3ต่ำ","Lab:C4ต่ำ"] },
-      { name:"Lab3", sub:["Lab:CrHigh"] },
-      { name:"ลักษณะเด่น", sub:["อาการผิว:จ้ำเลือด","ตำแหน่ง:ขา"], weight:2 },
-    ]
-  });
+    // -------- หน้า 3: แลป --------
+    const cbc = p3.cbc || {};
+    const diff = cbc.diff || {};
+    const eosPct = num(cbc.eosinophilPct ?? cbc.eos?.value);
+    const WBC = num(cbc.WBC ?? cbc.wbc?.value);
+    const ANC = num(cbc.ANC ?? cbc.anc?.value);
+    const Hb = num(cbc.Hb ?? cbc.hb?.value);
+    const Hct = num(cbc.Hct ?? cbc.hct?.value);
+    const Plt = num(cbc.Plt ?? cbc.plt?.value);
+    const aec = num(cbc.AEC ?? cbc.aec?.value);
 
-  // 17) Hemolytic anemia (9 ข้อใหญ่; x2/x3 ตามกำหนด)
-  ADR.push({
-    key:"hemolytic", title:"Hemolytic anemia",
-    majors:[
-      { name:"อาการเด่น", sub:["สี:ซีด","ระบบอื่น:ดีซ่าน"], weight:2 },
-      { name:"ระบบอื่นเด่น", sub:["ระบบอื่น:ปัสสาวะสีชา/สีดำ"], weight:3 },
-      { name:"อวัยวะ", sub:["อวัยวะ:ไตวาย"] },
-      { name:"Lab", sub:["Lab:IgG+","Lab:C3+"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w"] },
-      { name:"Lab2เด่น", sub:["Lab:HB<10"], weight:3 },
-      { name:"Lab3", sub:["Lab:LDHHigh"] },
-      { name:"BP", sub:["ระบบอื่น:BPต่ำ","ระบบอื่น:BPลง40mmHg"] },
-      { name:"อื่น", sub:["ระบบอื่น:ปวดหลังส่วนเอว","ระบบอื่น:ปวดแน่นชายโครงขวา"] },
-    ]
-  });
+    if (Number.isFinite(ANC) && ANC < 1500) T.add("lab:ANC<1500");
+    if (Number.isFinite(WBC) && WBC < 4000) T.add("lab:WBC<4000");
+    if (Number.isFinite(Plt) && Plt < 100000) T.add("lab:Plt<100k");
+    if (Number.isFinite(Hb) && Hb < 10) T.add("lab:Hb<10");
+    if (Number.isFinite(Hct) && Hct < 30) T.add("lab:Hct<30");
+    if (Number.isFinite(eosPct) && eosPct >= 10) T.add("lab:Eos>=10%");
+    if (Number.isFinite(aec) && aec >= 1500) T.add("lab:AEC>=1500");
 
-  // 18) Pancytopenia (10 ข้อใหญ่; หลายข้อ x2/x3)
-  ADR.push({
-    key:"pancytopenia", title:"Pancytopenia",
-    majors:[
-      { name:"อาการ", sub:["สี:ซีด","ระบบอื่น:อ่อนเพลีย"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ปัสสาวะสีชา/สีดำ","ระบบอื่น:หนาวสั่น","ระบบอื่น:เจ็บคอ","ระบบอื่น:แผลในปาก"] },
-      { name:"อาการผิดปกติ(เด่น)", sub:["อาการผิว:จุดเลือดออก","อาการผิว:ฟกช้ำ","ระบบอื่น:เลือดกำเดาไหล","ระบบอื่น:เหงือกเลือดออก"], weight:3 },
-      { name:"Vitals", sub:["Lab:HR>100"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w"] },
-      { name:"Lab2", sub:["ระบบอื่น:ไข้"] },
-      { name:"Hb", sub:["Lab:HB<10"], weight:2 },
-      { name:"Hct", sub:["Lab:Hct<30"], weight:2 },
-      { name:"WBC", sub:["Lab:WBC<4000"], weight:2 },
-      { name:"Platelet", sub:["Lab:PLT<100k"], weight:2 },
-    ]
-  });
+    const lft = p3.lft || {};
+    const ALT = num(lft.ALT ?? lft.alt?.value);
+    const AST = num(lft.AST ?? lft.ast?.value);
+    const ALP = num(lft.ALP ?? lft.alp?.value);
+    const TB  = num(lft.TB  ?? lft.totalBili?.value);
+    const DB  = num(lft.DB  ?? lft.directBili?.value);
+    // เกณฑ์ที่ผู้ใช้ให้: ALT/AST ≥ 2x ULN หรือ ≥ 40 U/L (ใช้ ≥40 เป็น fallback)
+    if (Number.isFinite(ALT) && ALT >= 40) T.add("lab:ALT>=40");
+    if (Number.isFinite(AST) && AST >= 40) T.add("lab:AST>=40");
 
-  // 19) Neutropenia (4 ข้อใหญ่; x4 ที่ ANC)
-  ADR.push({
-    key:"neutropenia", title:"Neutropenia",
-    majors:[
-      { name:"อาการ", sub:["ระบบอื่น:หนาวสั่น","ระบบอื่น:เจ็บคอ","ระบบอื่น:แผลในปาก"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ไข้","ระบบอื่น:แผลในปาก","ระบบอื่น:ทอนซิลอักเสบ"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ปอดอักเสบ"] },
-      { name:"Labเด่น", sub:["Lab:ANC<1500"], weight:4 }, // หากมีช่อง ANC แยก ให้ map -> Lab:ANC<1500
-    ]
-  });
-
-  // 20) Thrombocytopenia (4 ข้อใหญ่; x2 ที่อาการเด่น)
-  ADR.push({
-    key:"thrombocytopenia", title:"Thrombocytopenia",
-    majors:[
-      { name:"อาการเด่น", sub:["อาการผิว:จุดเลือดออก","อาการผิว:ปื้น/จ้ำเลือด"], weight:2 },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:เหงือกเลือดออก","ระบบอื่น:เลือดออกในทางเดินอาหาร","ระบบอื่น:ปัสสาวะเลือดออก"] },
-      { name:"Lab", sub:["Lab:PLT<150k"] },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w"] },
-    ]
-  });
-
-  // 21) Nephritis (5 ข้อใหญ่; x3 ที่ Lab)
-  ADR.push({
-    key:"nephritis", title:"Nephritis",
-    majors:[
-      { name:"อาการ", sub:["ระบบอื่น:ไข้","ระบบอื่น:ปวดข้อ","ระบบอื่น:อ่อนเพลีย"] },
-      { name:"ระบบอื่น", sub:["ระบบอื่น:ปัสสาวะออกน้อย","ระบบอื่น:ปัสสาวะขุ่น"] },
-      { name:"อวัยวะ", sub:["อวัยวะ:ขาบวม","อาการผิว:บวม"] },
-      { name:"Labเด่น", sub:["Lab:CrHigh","Lab:eGFR<60"], weight:3 },
-      { name:"เวลา", sub:["เวลา:1-6h","เวลา:6-24h","เวลา:1w","เวลา:2w"] },
-    ]
-  });
-
-  // ---------- ENGINE (สูตร C) ----------
-  function scoreC(rule, tagSet){
-    const majors = rule.majors || [];
-    if (!majors.length) return {score:0, denom:0, pct:0};
-    let score = 0;
-    for (const m of majors) {
-      const w = Number(m.weight || 1);
-      if (hitAny(tagSet, m.sub || [])) score += w;
+    const rft = p3.rft || {};
+    const Cr  = num(rft.Cr ?? rft.creatinine?.value);
+    const eGFR = num(rft.eGFR ?? rft.egfr?.value);
+    if (Number.isFinite(Cr) && Cr > 0) {
+      // ถ้าเพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X baseline — ไม่มี baseline ในฟอร์ม → ใช้โทเคนรวม
+      if (Cr >= 1.5 || Cr - (num(rft.baselineCr) || Cr) >= 0.3) T.add("lab:Cr↑>=0.3or1.5x");
     }
-    const denom = majors.length; // สูตร C: ตัวหาร = จำนวนข้อใหญ่ทั้งหมด
-    const pct = Math.max(0, Math.min(100, Math.round((score/denom)*100)));
-    return { score, denom, pct };
+    if (Number.isFinite(eGFR) && eGFR < 60) T.add("lab:eGFR<60");
+
+    const ua = p3.ua || {};
+    if (truthy(ua.proteinPositive) || norm(ua.protein) === "+") T.add("lab:protein+");
+
+    // อื่นๆ
+    const card = p3.cardiac || {};
+    if (num(card.troponinI) > 0.04 || num(card.troponinT) > 0.03) T.add("lab:troponin↑");
+    const comp = p3.complement || {};
+    if (Number.isFinite(num(comp.C3)) && num(comp.C3) < 90) T.add("lab:C3<90");
+    if (Number.isFinite(num(comp.C4)) && num(comp.C4) < 10) T.add("lab:C4<10");
+    const gas = p3.ox || {};
+    if (Number.isFinite(num(gas.SpO2)) && num(gas.SpO2) < 94) T.add("lab:SpO2<94");
+
+    // ผลร่างกาย (จากหน้า 2 หรือ 3)
+    if (truthy(p2.examHRHigh) || Number.isFinite(num(p2.HR)) && num(p2.HR) > 100) T.add("exam:HR>100");
+    if (truthy(misc.hemorrhageSkin)) T.add("skin:ปื้น/จ้ำเลือด");
+    if (truthy(misc.petechiae)) T.add("skin:จุดเลือดออก");
+
+    // อวัยวะผิดปกติ (checkbox)
+    const org = p2.organs || {};
+    if (truthy(org.kidneyFail)) T.add("org:ไตวาย");
+    if (truthy(org.hepatitis))  T.add("org:ตับอักเสบ");
+    if (truthy(org.pneumonia))  T.add("org:ปอดอักเสบ");
+    if (truthy(org.myocarditis))T.add("org:กล้ามเนื้อหัวใจอักเสบ");
+
+    return T;
   }
 
-  function rankAllC(d){
-    const tagSet = collectTags(d || window.drugAllergyData || {});
-    const results = ADR.map(def => {
-      const out = scoreC(def, tagSet);
-      return { key:def.key, title:def.title, pctC: out.pct, _scoreC: out.score, _denom: out.denom };
-    }).sort((a,b)=> (b.pctC - a.pctC) || (b._scoreC - a._scoreC));
-    return { tags: Array.from(tagSet), results };
-  }
+  // ---------------------------------------------------------------------------
+  // 2) นิยามข้อใหญ่ของแต่ละ ADR (21 แบบ) เป็น array ของ { anyOf: [...], weight?: number }
+  //    โทเคนต้องตรงกับ collectSignals() ข้างบน
+  // ---------------------------------------------------------------------------
+  const ADR_DEFS = {
+    urticaria: {
+      title: "Urticaria",
+      majors: [
+        { anyOf: [tok("border","ขอบหยัก"), tok("shape","วงกลม"), tok("border","ขอบวงนูนแดงด้านในเรียบ")] },
+        { anyOf: [tok("color","แดง"), tok("color","แดงซีด"), tok("color","ซีด"), tok("color","สีผิวปกติ")] },
+        { anyOf: [tok("shape","ตุ่มนูน"), tok("shape","ปื้นนูน")], weight: 2 }, // ลักษณะสำคัญ x2
+        { anyOf: ["sym:คัน"] },
+        { anyOf: ["sym:บวม"] },
+        { anyOf: [tok("loc","ทั่วร่างกาย"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","รอบดวงตา"), tok("loc","ลำคอ"), tok("loc","ลำตัว"), tok("loc","หลัง")] },
+        { anyOf: [tok("onset","ภายใน 1 ชั่วโมง")] },
+      ],
+    },
 
-  // ---------- EXPORT ----------
-  // ให้ brain.js เรียกใช้
-  window.brainRank = function(mode){
-    // ตอนนี้เรารองรับเฉพาะสูตร C ที่คุณเลือก
-    return rankAllC(window.drugAllergyData || {});
+    anaphylaxis: {
+      title: "Anaphylaxis",
+      majors: [
+        { anyOf: [tok("shape","ตุ่มนูน"), tok("shape","ปื้นนูน"), "sym:บวม", "sym:ตึง"] },
+        { anyOf: ["resp:หายใจมีเสียงวี๊ด","resp:หอบเหนื่อย","resp:หายใจลำบาก","vital:RR>21","vital:HR>100","vital:SpO2<94"], weight: 2 },
+        { anyOf: ["sym:คัน", tok("color","แดง"), tok("color","สีผิวปกติ")] },
+        { anyOf: ["gi:ท้องเสีย","gi:กลืนลำบาก","gi:ปวดบิดท้อง","gi:คลื่นไส้อาเจียน"] },
+        { anyOf: [tok("onset","ภายใน 1 ชั่วโมง"), tok("onset","ภายใน 1–6 ชั่วโมง")] },
+        { anyOf: ["cv:BPต่ำ","cv:BPลดลง≥40"] },
+        { anyOf: ["exam:HR>100","vital:SpO2<94"] },
+      ],
+    },
+
+    angioedema: {
+      title: "Angioedema",
+      majors: [
+        { anyOf: [tok("shape","นูนหนา"), tok("border","ขอบไม่ชัดเจน")] },
+        { anyOf: [tok("color","สีผิวปกติ"), tok("color","แดง")] },
+        { anyOf: ["sym:บวม"], weight: 2 },
+        { anyOf: ["sym:ตึง"] },
+        { anyOf: ["sym:คัน","sym:ไม่คัน","sym:ปวด","sym:แสบ"] },
+        { anyOf: [tok("loc","ริมฝีปาก"), tok("loc","รอบดวงตา"), tok("loc","ลิ้น"), tok("loc","อวัยวะเพศ")] },
+        { anyOf: [tok("onset","ภายใน 1 ชั่วโมง")] },
+      ],
+    },
+
+    maculopapular: {
+      title: "Maculopapular rash",
+      majors: [
+        { anyOf: [tok("shape","ปื้นแดง"), tok("shape","ปื้นนูน"), tok("shape","ตุ่มนูน")] },
+        { anyOf: [tok("color","แดง")] },
+        { anyOf: ["skin:จุดเล็กแดง"], weight: 2 },
+        { anyOf: ["sym:คัน"] },
+        { anyOf: ["sys:ไข้", "lab:Eos>=10%"] },
+        { anyOf: ["dist:สมมาตร", tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ใบหน้า"), tok("loc","ลำคอ")] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์")] },
+        { anyOf: ["sys:ต่อมน้ำเหลืองโต","sys:ข้ออักเสบ","org:ไตอักเสบ","org:ตับอักเสบ"] },
+      ],
+    },
+
+    fde: {
+      title: "Fixed drug eruption",
+      majors: [
+        { anyOf: [tok("shape","วงกลม"), tok("shape","วงรี")] },
+        { anyOf: [tok("color","แดง"), tok("color","ดำ/คล้ำ")] },
+        { anyOf: [tok("color","ม่วง/คล้ำ")], weight: 3 },
+        { anyOf: ["peeling:ผิวหนังหลุดลอกตรงกลางผื่น","sym:เจ็บ","sym:แสบ","sym:ตึง"] },
+        { anyOf: ["sym:บวม","blister:พอง","blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่"] },
+        { anyOf: [tok("loc","ริมฝีปาก"), tok("loc","หน้า"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","อวัยวะเพศ"), tok("loc","ตำแหน่งเดิมกับครั้งก่อน")] },
+        { anyOf: [tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์")] },
+        { anyOf: ["sys:ไข้","gi:คลื่นไส้อาเจียน","sys:ปวดเมื่อยกล้ามเนื้อ"] },
+        { anyOf: [tok("border","ขอบเรียบ"), tok("border","ขอบเขตชัดเจน")] },
+      ],
+    },
+
+    agep: {
+      title: "AGEP",
+      majors: [
+        { anyOf: [tok("shape","ผื่นแดง")] },
+        { anyOf: [tok("color","แดง"), tok("color","เหลือง")] },
+        { anyOf: ["skin:ตุ่มหนอง"], weight: 3 },
+        { anyOf: ["sym:บวม","sym:คัน","sym:เจ็บ"] },
+        { anyOf: ["skin:ปื้น/จ้ำเลือด","skin:แห้ง","skin:ลอก","skin:ขุย"] },
+        { anyOf: [tok("loc","หน้า"), tok("loc","รักแร้"), tok("loc","ทั่วร่างกาย"), tok("loc","ขาหนีบ")] },
+        { anyOf: [tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["sys:ไข้"] },
+        { anyOf: ["lab:WBC<4000", "lab:Neutrophil>75%", "exam:HR>100"] }, // หมายเหตุ: ถ้าไม่มี neutrophil% จริง ก็ข้ามเงียบ ๆ
+      ],
+    },
+
+    sjs: {
+      title: "SJS",
+      majors: [
+        { anyOf: [tok("shape","วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)")] },
+        { anyOf: [tok("color","ดำ/คล้ำ"), tok("color","เทา"), tok("color","แดง")] },
+        { anyOf: ["peeling:ไม่เกิน10%BSA"], weight: 3 },
+        { anyOf: ["skin:น้ำเหลือง","blister:พอง","blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่"] },
+        { anyOf: ["skin:สะเก็ด"] },
+        { anyOf: [tok("loc","ลำตัว")] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["sys:ไข้","sys:ปวดเมื่อยกล้ามเนื้อ","gi:คลื่นไส้อาเจียน","sys:เลือดออกในทางเดินอาหาร"] },
+        { anyOf: [tok("loc","ริมฝีปาก"), tok("loc","รอบดวงตา"), tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","มือ"), tok("loc","เท้า")] },
+        { anyOf: ["mucosa:>1"] }, // ถ้ามีตัวแปรนับเยื่อบุ ให้แมปเป็นโทเคนนี้
+      ],
+    },
+
+    ten: {
+      title: "TEN",
+      majors: [
+        { anyOf: [tok("shape","ผื่นแดง"), tok("shape","ปื้นแดง"), tok("shape","วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)")] },
+        { anyOf: [tok("color","แดง"), tok("color","ดำ/คล้ำ")] },
+        { anyOf: ["peeling:เกิน30%BSA"], weight: 3 },
+        { anyOf: ["blister:ตุ่มน้ำขนาดใหญ่","skin:น้ำเหลือง","skin:สะเก็ด"] },
+        { anyOf: [tok("color","ซีด"), "lab:Hb<10","sys:เลือดออกในทางเดินอาหาร","gi:กลืนลำบาก"] },
+        { anyOf: [tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","ศีรษะ"), tok("loc","ทั่วร่างกาย"), tok("loc","ริมฝีปาก")] },
+        { anyOf: [tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["sys:ไข้","sys:ปวดเมื่อยกล้ามเนื้อ","gi:คลื่นไส้อาเจียน","sys:เจ็บคอ","sys:ปวดข้อ","gi:ท้องเสีย","sys:เยื่อบุตาอักเสบ"] },
+        { anyOf: ["org:ไตวาย","org:ตับอักเสบ","org:ปอดอักเสบ"] },
+        { anyOf: ["lab:Cr↑>=0.3or1.5x", "lab:protein+", "lab:SpO2<94", "lab:ALT>=40", "lab:AST>=40"] },
+      ],
+    },
+
+    dress: {
+      title: "DRESS",
+      majors: [
+        { anyOf: [tok("shape","ผื่นแดง"), tok("shape","ปื้นแดง")] },
+        { anyOf: [tok("color","แดง")] },
+        { anyOf: ["lab:Eos>=10%","lab:AEC>=1500","lab:atypicalLymphocyte"], weight: 3 },
+        { anyOf: ["blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่","skin:ปื้น/จ้ำเลือด"] },
+        { anyOf: [tok("loc","หน้า"), tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา")] },
+        { anyOf: ["sys:ไข้"] },
+        { anyOf: [tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์"), tok("onset","ภายใน 4 สัปดาห์"), tok("onset","ภายใน 5 สัปดาห์"), tok("onset","ภายใน 6 สัปดาห์")] },
+        { anyOf: ["lab:ALT>=40","lab:AST>=40","lab:Cr↑>=0.3or1.5x","lab:protein+","lab:SpO2<94","lab:troponin↑","sys:EKGผิดปกติ"] },
+        { anyOf: ["org:ตับอักเสบ","org:ไตอักเสบ","org:ไตวาย","org:ปอดอักเสบ","org:กล้ามเนื้อหัวใจอักเสบ","org:ต่อมไทรอยด์อักเสบ"] },
+      ],
+    },
+
+    em: {
+      title: "Erythema multiforme (EM)",
+      majors: [
+        { anyOf: [tok("shape","ตุ่มนูน"), tok("border","ขอบวงนูนแดงด้านในเรียบ")] },
+        { anyOf: [tok("color","แดง"), tok("color","แดงซีด")] },
+        { anyOf: [tok("shape","วงกลม 3 ชั้น (เป้าธนู)") , tok("shape","วงกลม 3 ชั้น")], weight: 3 },
+        { anyOf: ["blister:พอง","blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง"] },
+        { anyOf: ["skin:สะเก็ด"] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์")] },
+        { anyOf: [tok("loc","ช่องปาก"), tok("loc","จมูก"), tok("loc","ทวาร"), tok("loc","อวัยวะเพศ")] },
+        { anyOf: ["sys:ไข้","sys:อ่อนเพลีย","sys:ปวดเมื่อยกล้ามเนื้อ","sys:เจ็บคอ","sys:ปวดข้อ"] },
+        { anyOf: [tok("loc","มือ"), tok("loc","เท้า"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","ลำตัว"), tok("loc","หลัง"), tok("loc","ลำคอ")] },
+      ],
+    },
+
+    photosensitivity: {
+      title: "Photosensitivity drug eruption",
+      majors: [
+        { anyOf: [tok("border","ขอบเขตชัด"), tok("shape","ปื้นแดง"), tok("skin","จุดแดงเล็ก")] },
+        { anyOf: [tok("color","ดำ/คล้ำ"), tok("color","แดง")] },
+        { anyOf: [tok("color","แดงไหม้")], weight: 2 },
+        { anyOf: ["skin:น้ำเหลือง","skin:สะเก็ด"] },
+        { anyOf: ["blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่","skin:ลอก","skin:ขุย","sym:คัน"] },
+        { anyOf: [tok("loc","หน้า"), tok("loc","หน้าอก"), tok("loc","มือ"), tok("loc","แขน"), tok("loc","ขา")] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 1 ชั่วโมง")] },
+        { anyOf: ["sym:แสบ"], weight: 2 },
+      ],
+    },
+
+    exfoliative: {
+      title: "Exfoliative dermatitis",
+      majors: [
+        { anyOf: ["sym:ตึง"] },
+        { anyOf: [tok("color","แดง")] },
+        { anyOf: ["skin:แห้ง"], weight: 3 },
+        { anyOf: ["skin:ขุย"], weight: 3 },
+        { anyOf: ["sym:คัน"] },
+        { anyOf: [tok("loc","ทั่วร่างกาย"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","ศีรษะ")] },
+        { anyOf: [tok("onset","ภายใน 3 สัปดาห์"), tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 4 สัปดาห์")] },
+        { anyOf: ["sys:ไข้","sys:หนาวสั่น","sys:อ่อนเพลีย","sys:ดีซ่าน"] },
+        { anyOf: ["sys:ต่อมน้ำเหลืองโต","sys:ตับโต","sys:ม้ามโต","sym:ขาบวม"] },
+        { anyOf: ["skin:มันเงา","skin:ลอก"], weight: 3 },
+      ],
+    },
+
+    eczematous: {
+      title: "Eczematous drug eruption",
+      majors: [
+        { anyOf: [tok("shape","ตุ่มนูน"), tok("shape","ปื้นแดง")] },
+        { anyOf: [tok("color","แดง")] },
+        { anyOf: ["sym:คัน"], weight: 2 },
+        { anyOf: ["sym:ตึง", tok("shape","ผื่นแดง")] },
+        { anyOf: ["skin:จุดเล็กแดง","skin:น้ำเหลือง","skin:สะเก็ด"] },
+        { anyOf: [tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","หน้า"), tok("loc","ลำคอ")] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["skin:ขุย","skin:แห้ง","skin:ลอก"], weight: 2 },
+        { anyOf: ["dist:สมมาตร"] },
+        { anyOf: ["blister:ตุ่มน้ำขนาดเล็ก","blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่"] },
+      ],
+    },
+
+    bullous: {
+      title: "Bullous Drug Eruption",
+      majors: [
+        { anyOf: ["blister:ตุ่มน้ำขนาดเล็ก","blister:พอง","sym:ตึง"] },
+        { anyOf: [tok("color","แดง")] },
+        { anyOf: ["blister:ตุ่มน้ำขนาดกลาง","blister:ตุ่มน้ำขนาดใหญ่"], weight: 2 },
+        { anyOf: ["sym:เจ็บ","sym:แสบ"] },
+        { anyOf: [tok("color","ใส")], weight: 3 },
+        { anyOf: [tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา"), tok("loc","เท้า")] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+      ],
+    },
+
+    serumSickness: {
+      title: "Serum sickness",
+      majors: [
+        { anyOf: ["sym:ตุ่มนูน","tok:แดง","sym:บวม","sym:คัน"].map(x => x.replace("tok:","color:")) }, // ตุ่มนูน/แดง/บวม/คัน
+        { anyOf: ["sys:ไข้"], weight: 2 },
+        { anyOf: ["sys:ต่อมน้ำเหลืองโต","org:ไตอักเสบ"] },
+        { anyOf: ["lab:protein+","lab:C3<90","lab:C4<10"] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["ua:RBC5-10/HPF"] },
+        { anyOf: ["sys:ปวดข้อ","sys:ข้ออักเสบ"], weight: 2 },
+        { anyOf: [tok("loc","รอบดวงตา"), tok("loc","มือ"), tok("loc","เท้า"), tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ขา")] },
+      ],
+    },
+
+    vasculitis: {
+      title: "Vasculitis",
+      majors: [
+        { anyOf: ["sym:ตุ่มนูน", tok("shape","ผื่นแดง"), tok("color","แดง")].map(x => (x.startsWith("sym:ตุ่มนูน")?tok("shape","ตุ่มนูน"):x)) },
+        { anyOf: ["sys:ไข้","sys:ปวดข้อ","sys:ข้ออักเสบ","sys:ปวดกล้ามเนื้อ","sys:ต่อมน้ำเหลืองโต"] },
+        { anyOf: ["org:ไตอักเสบ","org:ไตวาย","sys:ต่อมน้ำเหลืองโต"] },
+        { anyOf: ["sys:ไอเป็นเลือด","sys:ถุงลมเลือดออก","sys:เลือดออกในทางเดินอาหาร"] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์"), tok("onset","ภายใน 3 สัปดาห์")] },
+        { anyOf: ["lab:protein+","lab:C3<90","lab:C4<10"] },
+        { anyOf: ["lab:Cr↑>=0.3or1.5x"] },
+        { anyOf: ["skin:ปื้น/จ้ำเลือด", tok("loc","ขา")], weight: 2 },
+      ],
+    },
+
+    hemolytic: {
+      title: "Hemolytic anemia",
+      majors: [
+        { anyOf: [tok("color","ซีด"), "sys:ดีซ่าน"], weight: 2 },
+        { anyOf: ["sys:ปัสสาวะสีชา/สีดำ"], weight: 3 },
+        { anyOf: ["org:ไตวาย"] },
+        { anyOf: ["lab:IgG+","lab:C3+"] }, // ถ้ามี direct Coombs ในแบบฟอร์มให้แมปมาที่นี่
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์")] },
+        { anyOf: ["lab:Hb<10"], weight: 3 },
+        { anyOf: ["lab:LDHสูง"] }, // ถ้ามีค่า LDH ให้แมปมาที่นี่
+        { anyOf: ["cv:BPต่ำ","cv:BPลดลง≥40"] },
+        { anyOf: ["sys:ปวดหลังส่วนเอว","sys:ปวดแน่นชายโครงขวา"] },
+      ],
+    },
+
+    pancytopenia: {
+      title: "Pancytopenia",
+      majors: [
+        { anyOf: [tok("color","ซีด"), "sys:อ่อนเพลีย"] },
+        { anyOf: ["sys:ปัสสาวะสีชา/สีดำ","sys:หนาวสั่น","sys:เจ็บคอ","sys:แผลในปาก"] },
+        { anyOf: ["skin:จุดเลือดออก","skin:ฟกช้ำ","sys:เลือดกำเดาไหล","sys:เหงือกเลือดออก"], weight: 3 },
+        { anyOf: ["exam:HR>100"] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์")] },
+        { anyOf: ["sys:ไข้"] },
+        { anyOf: ["lab:Hb<10"], weight: 2 },
+        { anyOf: ["lab:Hct<30"], weight: 2 },
+        { anyOf: ["lab:WBC<4000"], weight: 2 },
+        { anyOf: ["lab:Plt<100k"], weight: 2 },
+      ],
+    },
+
+    neutropenia: {
+      title: "Neutropenia",
+      majors: [
+        { anyOf: ["sys:หนาวสั่น","sys:เจ็บคอ","sys:แผลในปาก"] },
+        { anyOf: ["sys:ไข้","sys:แผลในปาก","sys:ทอนซิลอักเสบ"] },
+        { anyOf: ["org:ปอดอักเสบ"] },
+        { anyOf: ["lab:ANC<1500"], weight: 4 },
+      ],
+    },
+
+    thrombocytopenia: {
+      title: "Thrombocytopenia",
+      majors: [
+        { anyOf: ["skin:จุดเลือดออก","skin:ปื้น/จ้ำเลือด"], weight: 2 },
+        { anyOf: ["sys:เหงือกเลือดออก","sys:เลือดออกในทางเดินอาหาร","ua:RBC+"] },
+        { anyOf: ["lab:Plt<150000", "lab:Plt<100k"] },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์")] },
+      ],
+    },
+
+    nephritis: {
+      title: "Nephritis",
+      majors: [
+        { anyOf: ["sys:ไข้","sys:ปวดข้อ","sys:อ่อนเพลีย"] },
+        { anyOf: ["sys:ปัสสาวะออกน้อย","sys:ปัสสาวะขุ่น"] },
+        { anyOf: ["sym:ขาบวม","sym:บวม"] },
+        { anyOf: ["lab:Cr↑>=0.3or1.5x","lab:eGFR<60"], weight: 3 },
+        { anyOf: [tok("onset","ภายใน 1-6 ชั่วโมง"), tok("onset","ภายใน 6-24 ชั่วโมง"), tok("onset","ภายใน 1 สัปดาห์"), tok("onset","ภายใน 2 สัปดาห์")] },
+      ],
+    },
   };
 
-  // เผื่อ fallback เก่าในบางที่ยังอ้างถึง brainRules
-  window.brainRules = ADR.reduce((acc, def) => {
-    acc[def.key] = { title: def.title, majors: def.majors.slice() };
-    return acc;
-  }, {});
+  // ---------------------------------------------------------------------------
+  // 3) เครื่องคิดคะแนนโหมด C
+  // ---------------------------------------------------------------------------
+  function scoreC(tokens, def) {
+    const majors = def.majors || [];
+    const N = majors.length || 0;
+    if (!N) return 0;
 
-  // แจ้งหน้า 6 ให้คำนวณใหม่เมื่อมีอัปเดตข้อมูล
-  document.addEventListener("da:update", function(){
-    try { window.brainComputeAndRender && window.brainComputeAndRender(); } catch(_) {}
-  });
+    let anyMatched = false;
+    let sumWeight = 0;
 
+    for (const m of majors) {
+      const any = (m.anyOf || []);
+      const matched = any.some(t => tokens.has(t));
+      if (matched) {
+        anyMatched = true;
+        sumWeight += Number(m.weight || 1);
+      }
+    }
+
+    if (!anyMatched) return 0;
+    // ตัวหาร = จำนวนข้อใหญ่ทั้งหมด (N) — ตามสเปคโหมด C
+    const pct = Math.round((100 * sumWeight) / N);
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4) Public API
+  // ---------------------------------------------------------------------------
+  function brainRank(mode) {
+    const d = window.drugAllergyData || {};
+    if (mode !== "C") {
+      // อนาคตอาจมีโหมดอื่น
+      mode = "C";
+    }
+
+    const tokens = collectSignals(d);
+    const results = [];
+
+    Object.keys(ADR_DEFS).forEach(key => {
+      const def = ADR_DEFS[key];
+      const pctC = scoreC(tokens, def);
+      results.push({ key, title: def.title || key, pctC });
+    });
+
+    // เรียงจากมาก → น้อย
+    results.sort((a, b) => (b.pctC || 0) - (a.pctC || 0));
+    return { mode: "C", results };
+  }
+
+  // export
+  window.brainRank = brainRank;
 })();
