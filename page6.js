@@ -410,13 +410,12 @@
 
       // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
       const btn = document.getElementById("p6BrainRefreshBtn");
-      if (btn) btn.addEventListener("click", function(){
-        if (typeof window.brainComputeAndRender === "function") {
-          window.brainComputeAndRender();
-        } else {
-          computeLocalBrain();
-        }
-      });
+if (btn) btn.addEventListener("click", () => {
+  if (typeof window.brainComputeAndRender === "function") {
+    window.brainComputeAndRender();
+  }
+});
+
 
       // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
