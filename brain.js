@@ -16,12 +16,11 @@
     return keys.length > 0;
   }
 
-  // ===== คำนวณผลสรุป: ใช้ window.brainRules ถ้ามี =====
+  // ===== คำนวณผลสรุป =====
   function computeSummary() {
     var d = window.drugAllergyData || {};
 
-    // ➜ เดิม: บังคับต้องมี __saved ครบ 1–3
-    // ➜ ใหม่: ยอมรับทั้งกรณี __saved หรือมีข้อมูลจริงอย่างน้อย 1 ช่องในหน้านั้น
+    // ยอมรับทั้งกรณี __saved หรือมีข้อมูลจริงอย่างน้อย 1 ช่องในแต่ละหน้า
     var ok1 = isSavedOrHasData(d.page1);
     var ok2 = isSavedOrHasData(d.page2);
     var ok3 = isSavedOrHasData(d.page3);
@@ -31,42 +30,64 @@
       return '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
     }
 
-    // ต้องมีสมอง/กฎ
-    var rules = window.brainRules || null;
-    if (!rules) {
-      return '<div class="p6-muted">ยังไม่ได้ใส่ “สมอง/กฎการให้คะแนน” ของ 21 กลุ่ม<br/>คุณสามารถเพิ่มกฎใน <code>window.brainRules</code> ภายหลังได้</div>';
+    // ====== โหมด A: ใช้เอนจินใหม่จาก brain.rules.js (window.brainRank) ======
+    if (typeof window.brainRank === "function") {
+      try {
+        var ranked = window.brainRank(); // { tags:[], results:[{title,pct,score,denom,detail}] }
+        var results = Array.isArray(ranked && ranked.results) ? ranked.results : [];
+        if (!results.length) return '<div class="p6-empty">ยังไม่มีผล</div>';
+
+        // เอา Top 3 (brain.rules.js เรียงมาแล้ว แต่ป้องกันไว้)
+        results.sort(function(a,b){ return (b.pct||0) - (a.pct||0) || (b.score||0) - (a.score||0); });
+        var top3 = results.slice(0, 3);
+
+        var listHTML = top3.map(function (r, i) {
+          var pct = (r.pct != null) ? r.pct : Math.round(((r.score||0)/(r.denom||1))*100);
+          return '<li><strong>' + (i+1) + ')</strong> ' + (r.title || r.name || r.key) +
+                 ' <span style="color:#6b7280">(' + pct + '%)</span></li>';
+        }).join("");
+
+        var lead = top3[0] ? (top3[0].title || top3[0].name || top3[0].key) : "";
+        return '' +
+          '<div>' +
+            (lead ? '<div style="font-weight:800;margin-bottom:.35rem;">ผลเด่น: ' + lead + '</div>' : '') +
+            '<ol class="p6-list">' + (listHTML || '<li>ยังไม่มีผล</li>') + '</ol>' +
+          '</div>';
+      } catch (e) {
+        console.error("[brain] brainRank error:", e);
+        // ถ้าเอนจินใหม่มีปัญหา → ตกกลับไปโหมด B
+      }
     }
 
-    // เรียก score ทุกกลุ่ม → จัดอันดับ
-    var results = [];
+    // ====== โหมด B: ใช้รูปแบบเก่า (window.brainRules ที่มี .score(d)) ======
+    var rules = window.brainRules || null;
+    if (!rules) {
+      return '<div class="p6-muted">ยังไม่ได้ใส่ “สมอง/กฎการให้คะแนน”<br/>โปรดโหลด <code>brain.rules.js</code> หรือกำหนด <code>window.brainRules</code>/<code>window.brainRank</code></div>';
+    }
+
+    var resultsLegacy = [];
     Object.keys(rules).forEach(function (key) {
       try {
         var fn = rules[key] && rules[key].score;
         var sc = (typeof fn === "function") ? Number(fn(d)) || 0 : 0;
-        results.push({ key: key, name: rules[key].title || key, score: sc });
+        resultsLegacy.push({ key: key, name: rules[key].title || key, score: sc });
       } catch (e) { /* ignore */ }
     });
 
-    // ถ้าไม่มีคะแนนเลย
-    if (!results.length) {
-      return '<div class="p6-empty">ยังไม่มีผล</div>';
-    }
+    if (!resultsLegacy.length) return '<div class="p6-empty">ยังไม่มีผล</div>';
 
-    // เรียงมาก→น้อย แล้วตัดเหลือ 3 อันดับแรก (คงรูปแบบเดิม)
-    results.sort(function(a,b){ return b.score - a.score; });
-    var top3 = results.slice(0, 3);
+    resultsLegacy.sort(function(a,b){ return b.score - a.score; });
+    var top3Legacy = resultsLegacy.slice(0, 3);
 
-    // แสดงเฉพาะชื่อ “ไม่โชว์คะแนน”
-    var listHTML = top3.map(function (r, i) {
+    var listLegacy = top3Legacy.map(function (r, i) {
       return '<li><strong>' + (i+1) + ')</strong> ' + r.name + '</li>';
     }).join("");
 
-    var topName = top3[0] ? top3[0].name : "";
-
+    var leadLegacy = top3Legacy[0] ? top3Legacy[0].name : "";
     return '' +
       '<div>' +
-        (topName ? '<div style="font-weight:800;margin-bottom:.35rem;">ผลเด่น: ' + topName + '</div>' : '') +
-        '<ol class="p6-list">' + (listHTML || '<li>ยังไม่มีผล</li>') + '</ol>' +
+        (leadLegacy ? '<div style="font-weight:800;margin-bottom:.35rem;">ผลเด่น: ' + leadLegacy + '</div>' : '') +
+        '<ol class="p6-list">' + (listLegacy || '<li>ยังไม่มีผล</li>') + '</ol>' +
       '</div>';
   }
 
@@ -88,8 +109,8 @@
   // เฝ้าฟังเหตุการณ์อัพเดตข้อมูล → รีเฟรชผลอัตโนมัติเมื่ออยู่หน้า 6
   document.addEventListener("da:update", function () {
     var page6 = document.getElementById("page6");
-    if (page6 && page6.classList.contains("visible")) {
-      if (window.brainComputeAndRender) window.brainComputeAndRender();
+    if (page6 && page6.classList && page6.classList.contains("visible")) {
+      try { window.brainComputeAndRender(); } catch (_) {}
     }
   });
 })();
