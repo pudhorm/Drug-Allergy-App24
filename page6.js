@@ -6,11 +6,18 @@
   window.__p6Bound = true;
 
   // --------- UTIL ---------
+  // ใช้มาตรฐานเดียวกับ brain.js: __saved หรือมีข้อมูลจริง >=1 ฟิลด์ก็นับว่า “พร้อม”
+  function __hasRealData(pageObj){
+    if (!pageObj) return false;
+    if (pageObj.__saved) return true;
+    const keys = Object.keys(pageObj).filter(k => !k.startsWith("__"));
+    return keys.length > 0;
+  }
   function corePagesReady() {
     const d = window.drugAllergyData || {};
-    const p1 = !!(d.page1 && d.page1.__saved === true);
-    const p2 = !!(d.page2 && d.page2.__saved === true);
-    const p3 = !!(d.page3 && d.page3.__saved === true);
+    const p1 = __hasRealData(d.page1);
+    const p2 = __hasRealData(d.page2);
+    const p3 = __hasRealData(d.page3);
     const missing = [];
     if (!p1) missing.push("หน้า 1 ผิวหนัง");
     if (!p2) missing.push("หน้า 2 ระบบอื่นๆ");
@@ -106,6 +113,12 @@
     const ready = corePagesReady();
     if (!ready.ok) {
       outEl.innerHTML = `<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>`;
+      return;
+    }
+
+    // ถ้ามีสมองใหม่ ให้หลีกทางไปใช้ brain.js (สูตร C)
+    if (typeof window.brainComputeAndRender === "function") {
+      window.brainComputeAndRender();
       return;
     }
 
@@ -397,7 +410,13 @@
 
       // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
       const btn = document.getElementById("p6BrainRefreshBtn");
-      if (btn) btn.addEventListener("click", computeLocalBrain);
+      if (btn) btn.addEventListener("click", function(){
+        if (typeof window.brainComputeAndRender === "function") {
+          window.brainComputeAndRender();
+        } else {
+          computeLocalBrain();
+        }
+      });
 
       // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
@@ -407,7 +426,11 @@
     }
 
     // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
-    computeLocalBrain();
+    if (typeof window.brainComputeAndRender === "function") {
+      window.brainComputeAndRender();
+    } else {
+      computeLocalBrain();
+    }
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -440,7 +463,11 @@
 
   // --------- AUTO UPDATE (ไม่ re-render ทั้งหน้า) ---------
   document.addEventListener("da:update", () => {
-    computeLocalBrain();
+    if (typeof window.brainComputeAndRender === "function") {
+      window.brainComputeAndRender();
+    } else {
+      computeLocalBrain();
+    }
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
