@@ -19,7 +19,12 @@
     }
     return !!v;
   }
-  function norm(s) { return String(s || "").trim(); }
+  // แปลง en/em dash → hyphen ให้แมตช์ช่วงเวลา เช่น 1–6 == 1-6
+  function norm(s) {
+    return String(s || "")
+      .replace(/[\u2012\u2013\u2014\u2212]/g, "-")
+      .trim();
+  }
   function tok(prefix, name) { return prefix + ":" + norm(name); }
 
   // อ่าน metric ที่อาจอยู่ได้หลายรูปแบบ และเช็คว่า "ผู้ใช้ติ๊กเลือก" แล้วหรือยัง
@@ -54,6 +59,8 @@
     // -------- หน้า 1 --------
     const shapes = [].concat(p1.rashShapes || p1.shape || []);
     shapes.forEach(s => T.add(tok("shape", s)));
+    // ฟอร์มเก็บ "จุดเล็กแดง" ไว้ในรูปร่าง → สร้างโทเคนผิวหนังคู่กัน เพื่อให้กฎ MP จับได้
+    if (shapes.includes("จุดเล็กแดง")) T.add("skin:จุดเล็กแดง");
 
     const colors = [].concat(p1.rashColors || p1.color || []);
     colors.forEach(c => T.add(tok("color", c)));
@@ -92,7 +99,8 @@
 
     const locs = [].concat(p1.locations || p1.rashLocations || []);
     locs.forEach(l => T.add(tok("loc", l)));
-    if (p1.distribution === "สมมาตร") T.add("dist:สมมาตร");
+    // บางธีมเก็บค่าเป็นสตริงยาว เช่น "สมมาตร/ไม่สมมาตร"
+    if (String(p1.distribution || "").indexOf("สมมาตร") !== -1) T.add("dist:สมมาตร");
 
     const onset = norm(p1.onset || p1.timeline || "");
     if (onset) T.add(tok("onset", onset));
@@ -224,7 +232,7 @@
         { anyOf: ["resp:หายใจมีเสียงวี๊ด","resp:หอบเหนื่อย","resp:หายใจลำบาก","vital:RR>21","vital:HR>100","vital:SpO2<94"], weight: 2 },
         { anyOf: ["sym:คัน", tok("color","แดง"), tok("color","สีผิวปกติ")] },
         { anyOf: ["gi:ท้องเสีย","gi:กลืนลำบาก","gi:ปวดบิดท้อง","gi:คลื่นไส้อาเจียน"] },
-        { anyOf: [tok("onset","ภายใน 1 ชั่วโมง"), tok("onset","ภายใน 1–6 ชั่วโมง")] },
+        { anyOf: [tok("onset","ภายใน 1 ชั่วโมง"), tok("onset","ภายใน 1-6 ชั่วโมง")] },
         { anyOf: ["cv:BPต่ำ","cv:BPลดลง≥40"] },
         { anyOf: ["exam:HR>100","vital:SpO2<94"] },
       ],
@@ -248,7 +256,8 @@
       majors: [
         { anyOf: [tok("shape","ปื้นแดง"), tok("shape","ปื้นนูน"), tok("shape","ตุ่มนูน")] },
         { anyOf: [tok("color","แดง")] },
-        { anyOf: ["skin:จุดเล็กแดง"], weight: 2 },
+        // รองรับทั้งกรณีที่บันทึกเป็น skin หรืออยู่ในหมวดรูปร่าง
+        { anyOf: ["skin:จุดเล็กแดง","shape:จุดเล็กแดง"], weight: 2 },
         { anyOf: ["sym:คัน"] },
         { anyOf: ["sys:ไข้", "lab:Eos>=10%"] },
         { anyOf: ["dist:สมมาตร", tok("loc","ลำตัว"), tok("loc","แขน"), tok("loc","ใบหน้า"), tok("loc","ลำคอ")] },
@@ -352,7 +361,8 @@
     photosensitivity: {
       title: "Photosensitivity drug eruption",
       majors: [
-        { anyOf: [tok("border","ขอบเขตชัด"), tok("shape","ปื้นแดง"), tok("skin","จุดแดงเล็ก")] },
+        // พิมพ์ถูกต้องคือ "จุดเล็กแดง"
+        { anyOf: [tok("border","ขอบเขตชัด"), tok("shape","ปื้นแดง"), "skin:จุดเล็กแดง"] },
         { anyOf: [tok("color","ดำ/คล้ำ"), tok("color","แดง")] },
         { anyOf: [tok("color","แดงไหม้")], weight: 2 },
         { anyOf: ["skin:น้ำเหลือง","skin:สะเก็ด"] },
