@@ -4,7 +4,7 @@
     "ตุ่มนูน",
     "ตุ่มแบนราบ",
     "ปื้นนูน",
-    "นูนหนา",              // ✅ ใหม่
+    "นูนหนา",              // ✅ ใหม่ (ตามที่ตกลง)
     "วงกลมชั้นเดียว",
     "วงกลม 3 ชั้น",
     "วงรี",
@@ -14,8 +14,11 @@
     "จุดเล็ก"
   ];
 
+  // ✅ ปรับตามที่สั่ง: ลบ "ดำ", "ม่วง" และ "เพิ่ม 3 ตัวใหม่"
   const COLORS = [
-    "แดง","แดงไหม้","แดงซีด","ซีด","ใส","ม่วง","เหลือง","มันเงา","ดำ","เทา"
+    "แดง","แดงไหม้","แดงซีด","ซีด","ใส",
+    "เหลือง","มันเงา","เทา",
+    "ดำ/คล้ำ","ม่วง/คล้ำ","สีผิวปกติ"
   ];
 
   const LOCS = [
@@ -190,7 +193,7 @@
         <select id="p1_distribution">
           <option value="">เลือก...</option>
           <option value="สมมาตร" ${d.distribution==="สมมาตร"?"selected":""}>สมมาตร</option>
-          <option value="ไม่สมาตร" ${d.distribution==="ไม่สมาตร"?"selected":""}>ไม่สมมาตร</option>
+          <option value="ไม่สมาตร" ${d.distribution==="ไม่สมาตร"?"selected":""}>ไม่สมาตร</option>
           <option value="อื่นๆ" ${d.distribution==="อื่นๆ"?"selected":""}>อื่นๆ</option>
         </select>
       </label>
@@ -332,7 +335,7 @@
         pain:document.getElementById("pain_pain").checked,
         burn:document.getElementById("pain_burn").checked,
         sore:document.getElementById("pain_sore").checked,
-        tight:document.getElementById("pain_tight").checked,   // ✅ เก็บ “ตึง”
+        tight:document.getElementById("pain_tight").checked,   // ✅ “ตึง”
         none:document.getElementById("pain_none").checked
       };
 
