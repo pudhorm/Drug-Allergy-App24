@@ -1,4 +1,4 @@
-// ===================== page2.js (REPLACE WHOLE FILE)
+// ===================== page2.js (REPLACE WHOLE FILE) =====================
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
@@ -10,7 +10,6 @@
 
   // ─────────────────────────────────────────────────────────────
   // ส่วนที่ 1: อาการ/อาการแสดงระบบอื่นๆ
-  // (เพิ่มใน 2.ระบบไหลเวียนโลหิต: “BP ลดลง ≥30% ของ baseline systolic เดิม”)
   // ─────────────────────────────────────────────────────────────
   const FEATURE_GROUPS = [
     {
@@ -41,7 +40,7 @@
         "เจ็บหน้าอก",
         "ใจสั่น",
         "BP ต่ำ (<90/60)",
-        "BP ลดลง ≥30% ของ baseline systolic เดิม", // ← เพิ่มตามคำสั่ง
+        "BP ลดลง ≥30% ของ baseline systolic เดิม", // เพิ่มตามสเปค
         "HR สูง (>100)",
         "หน้ามืด/หมดสติ",
         "โลหิตจาง",
@@ -134,7 +133,6 @@
 
   // ─────────────────────────────────────────────────────────────
   // ส่วนที่ 2: อวัยวะที่ผิดปกติ
-  // (เพิ่ม “ตับโต”, “ขาบวม”)
   // ─────────────────────────────────────────────────────────────
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
@@ -145,8 +143,8 @@
     "กล้ามเนื้อหัวใจอักเสบ",
     "ต่อมไทรอยด์อักเสบ",
     "ปอดอักเสบ",
-    "ตับโต",   // ← เพิ่ม
-    "ขาบวม",  // ← เพิ่ม
+    "ตับโต",   // เพิ่ม
+    "ขาบวม",  // เพิ่ม
     "ไม่พบ"
   ];
 
@@ -292,6 +290,12 @@
 
     const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
 
+    // เตรียม containers ให้กฎอ่านง่าย
+    store.misc = store.misc || {};
+    store.gi = store.gi || {};
+    store.cv = store.cv || {};
+    store.resp = store.resp || {};
+
     // เก็บส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       const groupObj = {};
@@ -299,14 +303,75 @@
         const cb = document.getElementById(`${group.key}_${idx}`);
         const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
         if (!cb || !input) return;
+
+        // เก็บตามข้อความ (คงเดิม)
         if (cb.checked || input.value.trim() !== "") {
           groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
+        }
+
+        // ── สร้างคีย์เสริม/แมปเข้าสู่ฟิลด์ที่ brain.rules ใช้ ──
+        if (group.key === "resp") {
+          if (txt === "หายใจมีเสียงวี๊ด" && cb.checked) {
+            store.resp.wheeze = true;
+          }
+          if (txt.indexOf("หอบเหนื่อย/หายใจลำบาก") >= 0 && cb.checked) {
+            // แมตช์กับตัวอ่าน: dyspneaCombo + dyspnea + tachypnea และให้ vitals proxy
+            store.resp.dyspneaCombo = true;
+            store.resp.dyspnea = true;
+            store.resp.tachypnea = true;
+            // ตัวกฎจะสร้าง token vital เอง แต่กันพลาด ให้ flag ไว้
+            store.vital = Object.assign({}, store.vital, { RRover21: true, HRover100: true, SpO2lt94: true });
+          }
+        }
+
+        if (group.key === "cv") {
+          if (txt === "BP ต่ำ (<90/60)" && cb.checked) {
+            store.cv.hypotension = true;
+          }
+          if (txt.indexOf("BP ลดลง ≥30%") >= 0 && cb.checked) {
+            store.cv.drop30 = true;
+          }
+          if (txt.indexOf("HR สูง") === 0 && cb.checked) {
+            // ให้กฎจับได้ผ่าน examHRHigh (และสำรอง HR เป็นตัวเลขเผื่อใช้)
+            store.examHRHigh = true;
+            store.HR = 101;
+          }
+        }
+
+        if (group.key === "gi") {
+          if (txt === "ท้องเสีย" && cb.checked) store.gi.diarrhea = true;
+          if (txt === "กลืนลำบาก" && cb.checked) store.gi.dysphagia = true;
+          if (txt === "ปวดบิดท้อง" && cb.checked) store.gi.cramp = true;
+          if (txt === "คลื่นไส้/อาเจียน" && cb.checked) store.gi.nausea = true;
+          if (txt === "แผลในปาก" && cb.checked) store.misc.oralUlcer = true;
+          if (txt === "เลือดออกในทางเดินอาหาร" && cb.checked) store.misc.bleedingGI = true;
+        }
+
+        if (group.key === "eye") {
+          if (txt.indexOf("เยื่อบุตาอักเสบ") === 0 && cb.checked) store.misc.conjunctivitis = true;
+          if (txt === "แผลที่กระจกตา" && cb.checked) store.misc.corneal = true;
+        }
+
+        if (group.key === "skin_extra") {
+          if (txt === "ปื้น/จ้ำเลือด" && cb.checked) store.misc.hemorrhageSkin = true;
+          if (txt === "จุดเลือดออก" && cb.checked) store.misc.petechiae = true;
+        }
+
+        if (group.key === "ent") {
+          if (txt === "เจ็บคอ" && cb.checked) store.misc.soreThroat = true;
+          if (txt === "ทอนซิลอักเสบ" && cb.checked) store.misc.tonsillitis = true; // เผื่อใช้ต่อไป
+        }
+
+        if (group.key === "other") {
+          if (txt.indexOf("ไข้") === 0 && cb.checked) store.misc.fever = true;
+          if (txt === "อ่อนเพลีย" && cb.checked) store.misc.fatigue = true;
+          if (txt === "หนาวสั่น" && cb.checked) store.misc.chill = true;
         }
       });
       store[group.key] = groupObj;
     });
 
-    // เก็บส่วนที่ 2
+    // เก็บส่วนที่ 2 (อวัยวะ)
     const organObj = {};
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
@@ -315,27 +380,33 @@
       if (cb.checked || input.value.trim() !== "") {
         organObj[org] = { checked: cb.checked, detail: input.value.trim() };
       }
+
+      // สะพานไปยังคีย์ที่กฎอ่าน (store.org.*)
+      if (cb && cb.checked) {
+        store.org = store.org || {};
+        if (org === "ไตอักเสบ") store.org.kidneyFail = true;        // ให้กฎจับเป็น org:ไตอักเสบ/ไตวาย ได้บางส่วน
+        if (org === "ตับอักเสบ") store.org.hepatitis = true;
+        if (org === "ปอดอักเสบ") store.org.pneumonia = true;
+        if (org === "กล้ามเนื้อหัวใจอักเสบ") store.org.myocarditis = true;
+      }
     });
     store.organs = organObj;
 
-    // ทำเครื่องหมายว่ามีการแก้ไข (กัน edge case UI ที่เช็ค "ว่างเปล่า")
+    // ทำเครื่องหมายว่ามีการแก้ไข
     store.__touched = true;
   }
 
   // ทำเครื่องหมายบันทึก + อัปเดตตัวกลาง + แจ้งทุกหน้าให้รีเฟรช
   function finalizePage2() {
     const store = window.drugAllergyData.page2 || (window.drugAllergyData.page2 = {});
-    // ติดธง __saved + timestamp บน object จริง (กันกรณีตัวเช็คอ่านจากอ้างอิงเดิม)
     store.__saved = true;
     store.__ts = Date.now();
     store.__touched = true;
 
-    // sync เก็บลง global (overwrite ให้ชัดเจนว่ามี __saved)
     window.drugAllergyData.page2 = Object.assign({}, store, { __saved: true, __ts: store.__ts, __touched: true });
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
 
-    // แจ้งทุกหน้าว่ามีอัปเดต (สมอง/สรุปจะเช็คธงนี้)
     document.dispatchEvent(new Event("da:update"));
     if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
   }
