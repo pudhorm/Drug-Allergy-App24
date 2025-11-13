@@ -1,36 +1,90 @@
 // ===================== page1.js (REPLACE WHOLE FILE)
 (function () {
+  // ---------- 1.1 รูปร่างผื่น (15 รายการ) ----------
   const SHAPES = [
     "ตุ่มนูน",
     "ตุ่มแบนราบ",
     "ปื้นนูน",
-    "นูนหนา",              // ✅ ใหม่ (ตามที่ตกลง)
-    "วงกลมชั้นเดียว",
+    "วงกลม",
     "วงกลม 3 ชั้น",
     "วงรี",
     "ขอบหยัก",
     "ขอบเรียบ",
     "ขอบไม่ชัดเจน",
-    "จุดเล็ก"
+    "จุดเล็กแดง",
+    "ปื้นแดง",
+    "ขอบเขตชัด",
+    "ขอบวงนูนแดงด้านในเรียบ",
+    "ผื่นราบ",
+    "ผิวหนังตึง" // ← ย้ายจาก 1.8
   ];
 
-  // ✅ ปรับตามที่สั่ง: ลบ "ดำ", "ม่วง" และ "เพิ่ม 3 ตัวใหม่"
+  // ---------- 1.2 สีผื่น (ใหม่ 11 รายการ) ----------
   const COLORS = [
-    "แดง","แดงไหม้","แดงซีด","ซีด","ใส",
-    "เหลือง","มันเงา","เทา",
-    "ดำ/คล้ำ","ม่วง/คล้ำ","สีผิวปกติ"
+    "แดง",
+    "แดงไหม้",
+    "แดงซีด",
+    "ซีด",
+    "ใส",
+    "เหลือง",
+    "มันเงา",
+    "เทา",
+    "ดำ/คล้ำ",
+    "ม่วง/คล้ำ",
+    "สีผิวปกติ"
   ];
 
+  // ---------- 1.11 ตำแหน่งที่พบ (18 ตัวเลือก) ----------
   const LOCS = [
-    "ทั่วร่างกาย","มือ","เท้า","หน้า","แขน","ขา","ริมฝีปาก","รอบดวงตา",
-    "ลำคอ","อวัยวะเพศ","ทวาร","หลัง","ลำตัว","ลิ้น"  // ✅ เพิ่ม "ลำตัว","ลิ้น"
+    "ทั่วร่างกาย",
+    "มือ",
+    "เท้า",
+    "หน้า",
+    "แขน",
+    "ขา",
+    "ริมฝีปาก",
+    "รอบดวงตา",
+    "ลำคอ",
+    "อวัยวะเพศ",
+    "ทวาร",
+    "หลัง",
+    "ลำตัว",
+    "รักแร้",
+    "ขาหนีบ",
+    "ศีรษะ",
+    "ลิ้น",
+    "ตำแหน่งเดิมกับครั้งก่อน"
   ];
 
-  function buildAgeOptions(selected){const out=[];for(let i=0;i<=120;i++){const v=String(i);out.push(`<option value="${v}" ${selected==v?"selected":""}>${i} ปี</option>`);}out.push(`<option value="other" ${selected==="other"?"selected":""}>อื่นๆ ระบุ…</option>`);return out.join("");}
-  function buildWeightOptions(selected){const out=[];for(let i=1;i<=200;i++){const v=String(i);out.push(`<option value="${v}" ${selected==v?"selected":""}>${i} กก.</option>`);}out.push(`<option value="other" ${selected==="other"?"selected":""}>อื่นๆ ระบุ…</option>`);return out.join("");}
-  function buildUnderlyingOptions(selected){const base=["ไม่มีโรคประจำตัว","เบาหวาน","ความดันโลหิตสูง","โรคหัวใจ","โรคตับ","โรคไต","หอบหืด/ภูมิแพ้","อื่นๆ ระบุ…"];return base.map(opt=>{const val=opt==="อื่นๆ ระบุ…"? "other":opt;return `<option value="${val}" ${selected===val?"selected":""}>${opt}</option>`;}).join("");}
+  // ---------- utils ----------
+  function buildAgeOptions(selected){
+    const out=[];
+    for(let i=0;i<=120;i++){
+      const v=String(i);
+      out.push(`<option value="${v}" ${selected==v?"selected":""}>${i} ปี</option>`);
+    }
+    out.push(`<option value="other" ${selected==="other"?"selected":""}>อื่นๆ ระบุ…</option>`);
+    return out.join("");
+  }
+  function buildWeightOptions(selected){
+    const out=[];
+    for(let i=1;i<=200;i++){
+      const v=String(i);
+      out.push(`<option value="${v}" ${selected==v?"selected":""}>${i} กก.</option>`);
+    }
+    out.push(`<option value="other" ${selected==="other"?"selected":""}>อื่นๆ ระบุ…</option>`);
+    return out.join("");
+  }
+  function buildUnderlyingOptions(selected){
+    const base=["ไม่มีโรคประจำตัว","เบาหวาน","ความดันโลหิตสูง","โรคหัวใจ","โรคตับ","โรคไต","หอบหืด/ภูมิแพ้","อื่นๆ ระบุ…"];
+    return base.map(opt=>{
+      const val=opt==="อื่นๆ ระบุ…"? "other":opt;
+      return `<option value="${val}" ${selected===val?"selected":""}>${opt}</option>`;
+    }).join("");
+  }
   function cb(id,label,checked){return `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked?"checked":""}><span>${label}</span></label>`;}
 
+  // ---------- select visibility fix ----------
   function injectSelectFixOnce(){
     if(document.getElementById("p1-select-visibility-fix"))return;
     const style=document.createElement("style");
@@ -43,6 +97,7 @@
     document.head.appendChild(style);
   }
 
+  // ---------- render ----------
   function renderPage1(){
     if(!window.drugAllergyData) window.drugAllergyData = {};
     if(!window.drugAllergyData.page1) window.drugAllergyData.page1 = {};
@@ -54,6 +109,7 @@
 <div class="p1-wrapper">
   <h2 class="p1-title">หน้า 1: ระบบผิวหนัง / ข้อมูลผู้ป่วย</h2>
 
+  <!-- ส่วนที่ 1: ข้อมูลผู้ป่วย -->
   <section class="p1-section">
     <h3 class="p1-sec-title"><span class="icon">👤</span>ส่วนที่ 1 ข้อมูลผู้ป่วย</h3>
     <div class="p1-grid">
@@ -79,25 +135,27 @@
     </div>
   </section>
 
+  <!-- ส่วนที่ 2: ประเมินอาการ -->
   <section class="p1-section">
     <h3 class="p1-sec-title blue"><span class="icon">🔍</span>ส่วนที่ 2 ประเมินอาการ</h3>
 
+    <!-- 1.1 รูปร่างผื่น (ไม่มีช่องอื่นๆ) -->
     <div class="p1-block">
       <h4>1.1 รูปร่างผื่น</h4>
       <div class="p1-two-cols">
         ${SHAPES.map((s,i)=>cb("shape_"+i,s,d.rashShapes&&d.rashShapes.includes(s))).join("")}
       </div>
-      <input id="shape_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashShapesOther||""}">
     </div>
 
+    <!-- 1.2 สีผื่น (ไม่มีช่องอื่นๆ) -->
     <div class="p1-block">
       <h4>1.2 สีผื่น</h4>
       <div class="p1-two-cols">
         ${COLORS.map((c,i)=>cb("color_"+i,c,d.rashColors&&d.rashColors.includes(c))).join("")}
       </div>
-      <input id="color_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.rashColorsOther||""}">
     </div>
 
+    <!-- 1.3 ตุ่มน้ำ -->
     <div class="p1-block">
       <h4>1.3 ตุ่มน้ำ</h4>
       <div class="p1-col p1-col-2col">
@@ -105,9 +163,10 @@
         ${cb("blister_medium","ตุ่มน้ำขนาดกลาง",d.blisters?.medium)}
         ${cb("blister_large","ตุ่มน้ำขนาดใหญ่",d.blisters?.large)}
       </div>
-      <input id="blister_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.blisters?.other||""}">
+      <input id="blister_other" class="p1-other" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" value="${d.blisters?.other||""}">
     </div>
 
+    <!-- 1.4 ผิวหนังหลุดลอก -->
     <div class="p1-block">
       <h4>1.4 ผิวหนังหลุดลอก</h4>
       <div class="p1-col p1-col-2col">
@@ -116,9 +175,10 @@
         ${cb("detach_gt30","ผิวหนังหลุดลอกเกิน 30% ของ BSA",d.skinDetach?.gt30)}
         ${cb("detach_none","ไม่พบ",d.skinDetach?.none)}
       </div>
-      <input id="detach_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.skinDetach?.other||""}">
+      <input id="detach_other" class="p1-other" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" value="${d.skinDetach?.other||""}">
     </div>
 
+    <!-- 1.5 ขุย/แห้ง/ลอก -->
     <div class="p1-block">
       <h4>1.5 ขุย/แห้ง/ลอก</h4>
       <div class="p1-col p1-col-2col">
@@ -127,9 +187,10 @@
         ${cb("scale_peel","ลอก",d.scales?.peel)}
         ${cb("scale_none","ไม่พบ",d.scales?.none)}
       </div>
-      <input id="scale_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.scales?.other||""}">
+      <input id="scale_other" class="p1-other" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" value="${d.scales?.other||""}">
     </div>
 
+    <!-- 1.6 น้ำเหลือง / สะเก็ด -->
     <div class="p1-block">
       <h4>1.6 น้ำเหลือง / สะเก็ด</h4>
       <div class="p1-col p1-col-2col">
@@ -137,9 +198,10 @@
         ${cb("ex_crust","สะเก็ด",d.exudate?.crust)}
         ${cb("ex_none","ไม่พบ",d.exudate?.none)}
       </div>
-      <input id="ex_other" class="p1-other" placeholder="อื่นๆ ระบุ..." value="${d.exudate?.other||""}">
+      <input id="ex_other" class="p1-other" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" value="${d.exudate?.other||""}">
     </div>
 
+    <!-- 1.7 คัน -->
     <div class="p1-block">
       <h4>1.7 คัน</h4>
       <div class="p1-col">
@@ -152,17 +214,18 @@
       </div>
     </div>
 
+    <!-- 1.8 ปวด / แสบ / เจ็บ (ตัด “ตึง” ออกแล้ว) -->
     <div class="p1-block">
       <h4>1.8 ปวด / แสบ / เจ็บ</h4>
       <div class="p1-col p1-col-2col">
         ${cb("pain_pain","ปวด",d.pain?.pain)}
         ${cb("pain_burn","แสบ",d.pain?.burn)}
         ${cb("pain_sore","เจ็บ",d.pain?.sore)}
-        ${cb("pain_tight","ตึง",d.pain?.tight)}   <!-- ✅ ใหม่ -->
         ${cb("pain_none","ไม่พบ",d.pain?.none)}
       </div>
     </div>
 
+    <!-- 1.9 บวม -->
     <div class="p1-block">
       <h4>1.9 บวม</h4>
       <div class="p1-col p1-col-2col">
@@ -171,6 +234,7 @@
       </div>
     </div>
 
+    <!-- 1.10 ตุ่มหนอง -->
     <div class="p1-block">
       <h4>1.10 ตุ่มหนอง</h4>
       <div class="p1-col p1-col-2col">
@@ -180,6 +244,7 @@
       <input id="pus_detail" class="p1-other" placeholder="รายละเอียด..." value="${d.pustule?.detail||""}">
     </div>
 
+    <!-- 1.11 ตำแหน่งที่พบ / การกระจายตัว -->
     <div class="p1-block">
       <h4>1.11 ตำแหน่งที่พบ / การกระจายตัว</h4>
       <div class="p1-two-cols">
@@ -192,7 +257,7 @@
       <label>การกระจายตัว
         <select id="p1_distribution">
           <option value="">เลือก...</option>
-          <option value="สมมาตร" ${d.distribution==="สมมาตร"?"selected":""}>สมมาตร</option>
+          <option value="สมมาตร" ${d.distribution==="สมาตร"?"selected":""}>สมมาตร</option>
           <option value="ไม่สมาตร" ${d.distribution==="ไม่สมาตร"?"selected":""}>ไม่สมาตร</option>
           <option value="อื่นๆ" ${d.distribution==="อื่นๆ"?"selected":""}>อื่นๆ</option>
         </select>
@@ -201,6 +266,7 @@
     </div>
   </section>
 
+  <!-- ส่วนที่ 3: ระยะเวลาการเกิด -->
   <section class="p1-section p1-section-onset">
     <h3 class="p1-sec-title purple"><span class="icon">⏱️</span>ส่วนที่ 3 ระยะเวลาการเกิดอาการ</h3>
     <label>เลือกช่วงเวลา
@@ -219,6 +285,7 @@
     <input id="p1_onset_other" class="p1-other" style="${d.onset==="other"?"":"display:none"}" placeholder="ระบุระยะเวลา" value="${d.onsetOther||""}">
   </section>
 
+  <!-- ส่วนที่ 4: แนบรูป -->
   <section class="p1-section">
     <h3 class="p1-sec-title green"><span class="icon">🖼️</span>ส่วนที่ 4 แนบรูปถ่ายอาการผู้ป่วย</h3>
     <div class="p1-upload" id="p1_drop">
@@ -238,6 +305,7 @@
 
     injectSelectFixOnce();
 
+    // dropdown dependent inputs
     const ageSelEl=document.getElementById("p1_age_sel");
     const ageOtherEl=document.getElementById("p1_age_other");
     ageSelEl.addEventListener("change",()=>{ageOtherEl.style.display=ageSelEl.value==="other"?"block":"none";});
@@ -255,18 +323,35 @@
     onsetSel.addEventListener("change",()=>{onsetOther.style.display=onsetSel.value==="other"?"block":"none";});
     onsetSel.style.position="relative";onsetSel.style.zIndex="10000";
 
+    // image upload
     const fileInput=document.getElementById("p1_file");
     const pickBtn=document.getElementById("p1_pick");
     const dropZone=document.getElementById("p1_drop");
     const fileNameEl=document.getElementById("p1_file_name");
-    function handleFile(file){const reader=new FileReader();reader.onload=(ev)=>{d.imageName=file.name;d.imageDataUrl=ev.target.result;fileNameEl.textContent="ไฟล์ปัจจุบัน: "+file.name;if(window.saveDrugAllergyData)window.saveDrugAllergyData();renderPage1();};reader.readAsDataURL(file);}
+    function handleFile(file){
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        d.imageName=file.name;
+        d.imageDataUrl=ev.target.result;
+        fileNameEl.textContent="ไฟล์ปัจจุบัน: "+file.name;
+        if(window.saveDrugAllergyData)window.saveDrugAllergyData();
+        renderPage1();
+      };
+      reader.readAsDataURL(file);
+    }
     pickBtn.addEventListener("click",()=>fileInput.click());
     fileInput.addEventListener("change",(e)=>{const f=e.target.files[0];if(f)handleFile(f);});
     dropZone.addEventListener("dragover",(e)=>{e.preventDefault();dropZone.classList.add("dragover");});
     dropZone.addEventListener("dragleave",()=>{dropZone.classList.remove("dragover");});
     dropZone.addEventListener("drop",(e)=>{e.preventDefault();dropZone.classList.remove("dragover");const f=e.dataTransfer.files[0];if(f)handleFile(f);});
 
-    document.getElementById("p1_clear").addEventListener("click",()=>{window.drugAllergyData.page1={};if(window.saveDrugAllergyData)window.saveDrugAllergyData();renderPage1();alert("ล้างข้อมูลหน้า 1 แล้ว");});
+    // clear & save
+    document.getElementById("p1_clear").addEventListener("click",()=>{
+      window.drugAllergyData.page1={};
+      if(window.saveDrugAllergyData)window.saveDrugAllergyData();
+      renderPage1();
+      alert("ล้างข้อมูลหน้า 1 แล้ว");
+    });
 
     document.getElementById("p1_save").addEventListener("click",()=>{
       const store = window.drugAllergyData.page1;
@@ -288,11 +373,9 @@
 
       store.drugAllergyHistory=document.getElementById("p1_history").value;
 
+      // ✅ เก็บตัวเลือกตามสเปคใหม่ (ไม่มี "อื่นๆ ระบุ...")
       store.rashShapes = SHAPES.filter((s,i)=>document.getElementById("shape_"+i).checked);
-      store.rashShapesOther = document.getElementById("shape_other").value;
-
       store.rashColors = COLORS.filter((c,i)=>document.getElementById("color_"+i).checked);
-      store.rashColorsOther = document.getElementById("color_other").value;
 
       store.blisters = {
         small:document.getElementById("blister_small").checked,
@@ -331,11 +414,11 @@
         none:document.getElementById("itch_none").checked
       };
 
+      // ✅ 1.8 ตัด "ตึง" ออกแล้ว
       store.pain = {
         pain:document.getElementById("pain_pain").checked,
         burn:document.getElementById("pain_burn").checked,
         sore:document.getElementById("pain_sore").checked,
-        tight:document.getElementById("pain_tight").checked,   // ✅ “ตึง”
         none:document.getElementById("pain_none").checked
       };
 
@@ -350,8 +433,10 @@
         detail:document.getElementById("pus_detail").value
       };
 
+      // ✅ 1.11 ตำแหน่งครบ 18 + mucosal >1
       store.locations = LOCS.filter(loc=>document.getElementById("loc_"+loc).checked);
-      store.mucosalCountGt1 = document.getElementById("p1_mucosal_gt1").checked; // ✅ เยื่อบุมากกว่า 1
+      store.mucosalCountGt1 = document.getElementById("p1_mucosal_gt1").checked;
+
       store.distribution = document.getElementById("p1_distribution").value;
       store.distributionOther = document.getElementById("p1_distribution_other").value;
 
