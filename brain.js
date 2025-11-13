@@ -215,6 +215,20 @@
     }).sort((a, b) => b.score - a.score);
   }
 
+  // ===== ซ่อนบล็อก "กราฟผลคะแนนย่อย (Top signals)" ถ้ามี =====
+  function hideTopSignals() {
+    // ตัวเลือกตามที่พบได้บ่อยในโปรเจ็กต์นี้
+    var cand = [
+      document.getElementById("p6TopSignals"),
+      document.querySelector(".p6-top-signals"),
+      // เผื่อกรณีเขียนเป็นการ์ดทั่วไปแล้วมีหัวข้อภาษาไทย
+      Array.from(document.querySelectorAll("section,div,details")).find(el =>
+        /กราฟผลคะแนนย่อย\s*\(Top\s*signals\)/i.test(el?.textContent || "")
+      )
+    ].filter(Boolean)[0];
+    if (cand) cand.style.display = "none";
+  }
+
   // ===== เรนเดอร์ผลเป็นเปอร์เซ็นต์ (แสดงครบทุก ADR) =====
   function renderResults(results) {
     var maxScore = results.reduce((m, r) => Math.max(m, r.score), 0) || 1;
@@ -267,6 +281,7 @@
     `;
 
     renderIntoPage6(html);
+    hideTopSignals(); // ซ่อนบล็อกกราฟคะแนนย่อย
   }
 
   // ===== ฟังก์ชันหลัก =====
@@ -274,6 +289,7 @@
     var rules = Array.isArray(window.brainRules) ? window.brainRules : [];
     if (!rules.length) {
       renderIntoPage6('<div class="p6-muted">ยังไม่มีสัญญาณ/กฎให้ประเมิน</div>');
+      hideTopSignals();
       return [];
     }
     var signals = collectSignals();
