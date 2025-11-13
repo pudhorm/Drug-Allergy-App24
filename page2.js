@@ -1,9 +1,9 @@
-// ===================== page2.js (REPLACE WHOLE FILE) =====================
+// ===================== page2.js (REPLACE WHOLE FILE)
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // โทนสีหลัก
+  // โทนสีหลักของส่วนที่ 1
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
   const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
@@ -156,11 +156,14 @@
 
     root.innerHTML = `
       <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 1.7rem;box-shadow:0 12px 28px rgba(148,163,184,.12);position:relative;">
+
         <!-- ส่วนที่ 1 -->
         <section class="p2-section" style="background:rgba(239,246,255,.95);border:1px solid rgba(59,130,246,.25);border-radius:1.05rem;padding:1rem 1rem 1.1rem;margin-bottom:1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#1d4ed8;margin:0 0 1rem;">
-            <span>🩺</span><span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
+            <span>🩺</span>
+            <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
+
           <div style="display:flex;flex-direction:column;gap:1rem;">
             ${FEATURE_GROUPS.map(group => {
               const saved = d[group.key] || {};
@@ -168,7 +171,8 @@
                 <div>
                   <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
                     <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#1f2937;margin:0 0 .55rem;">
-                      <span>${group.emoji}</span><span>${group.title}</span>
+                      <span>${group.emoji}</span>
+                      <span>${group.title}</span>
                     </h3>
                     <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
                       ${group.items.map((txt, idx) => {
@@ -196,7 +200,8 @@
         <!-- ส่วนที่ 2 -->
         <section class="p2-section" style="background:rgba(248,250,252,1);border:1px solid rgba(148,163,184,.45);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#111827;margin:0 0 1rem;">
-            <span>🫀</span><span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
+            <span>🫀</span>
+            <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
           </h2>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px,1fr));gap:.6rem;">
@@ -232,7 +237,7 @@
       </div>
     `;
 
-    // ผูก event ส่วนที่ 1
+    // ── ผูก event ส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -241,13 +246,13 @@
         cb.addEventListener("change", () => {
           input.style.display = cb.checked ? "block" : "none";
           if (!cb.checked) input.value = "";
-          collectPage2(true); // live update
+          collectPage2(); // ← จะยิง da:update ภายใน
         });
-        input.addEventListener("input", () => collectPage2(true));
+        input.addEventListener("input", collectPage2);
       });
     });
 
-    // ผูก event ส่วนที่ 2
+    // ── ผูก event ส่วนที่ 2
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
       const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
@@ -255,40 +260,40 @@
       cb.addEventListener("change", () => {
         input.style.display = cb.checked ? "block" : "none";
         if (!cb.checked) input.value = "";
-        collectPage2(true); // live update
+        collectPage2(); // ← จะยิง da:update ภายใน
       });
-      input.addEventListener("input", () => collectPage2(true));
+      input.addEventListener("input", collectPage2);
     });
 
-    // ปุ่มล้าง
+    // ── ปุ่มล้าง
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
       renderPage2();
+      // แจ้งให้รีคำนวณทันที
+      document.dispatchEvent(new Event("da:update"));
+      if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
       alert("ล้างข้อมูลหน้า 2 แล้ว");
     });
 
-    // ปุ่มบันทึกและไปหน้า 3
+    // ── ปุ่มบันทึกและไปหน้า 3
     document.getElementById("p2_save").addEventListener("click", () => {
-      collectPage2(false);   // เก็บล่าสุด
-      finalizePage2();       // mark saved + แจ้งอัปเดต
+      collectPage2();
+      finalizePage2(); // mark __saved + dispatch "da:update"
       alert("บันทึกหน้า 2 แล้ว");
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
     });
-
-    // เก็บครั้งแรกเผื่อ UI อื่นอ่านค่าได้ทันที
-    collectPage2(true);
   }
 
-  // เก็บข้อมูล (ถ้า live=true จะยิงอัปเดตสมองทันที)
-  function collectPage2(live) {
+  // เก็บข้อมูล + แจ้งทุกหน้าทันที
+  function collectPage2() {
     const root = document.getElementById("page2");
     if (!root) return;
 
     const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
 
-    // ส่วนที่ 1
+    // เก็บส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach((txt, idx) => {
@@ -302,7 +307,7 @@
       store[group.key] = groupObj;
     });
 
-    // ส่วนที่ 2
+    // เก็บส่วนที่ 2
     const organObj = {};
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
@@ -316,21 +321,20 @@
 
     store.__touched = true;
 
-    if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
-    // 🔔 อัปเดตผลประเมินแบบเรียลไทม์ (ไม่ต้องกดบันทึก)
-    if (live) {
-      document.dispatchEvent(new Event("da:update"));
-      if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
+    // 🔔 สำคัญ: ยิงสัญญาณให้สมองคำนวณใหม่ทุกครั้งที่เปลี่ยน
+    document.dispatchEvent(new Event("da:update"));
+    if (typeof window.evaluateDrugAllergy === "function") {
+      try { window.evaluateDrugAllergy(); } catch {}
     }
   }
 
-  // ทำเครื่องหมายบันทึก + แจ้งทุกหน้าให้รีเฟรช
+  // ทำเครื่องหมายบันทึก + อัปเดตตัวกลาง + แจ้งทุกหน้าให้รีเฟรช
   function finalizePage2() {
     const store = window.drugAllergyData.page2 || (window.drugAllergyData.page2 = {});
-    store.__saved  = true;
-    store.__ts     = Date.now();
+    store.__saved = true;
+    store.__ts = Date.now();
     store.__touched = true;
+
     window.drugAllergyData.page2 = Object.assign({}, store, { __saved: true, __ts: store.__ts, __touched: true });
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
