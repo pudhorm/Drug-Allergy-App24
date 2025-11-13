@@ -1,87 +1,67 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
 (function () {
-  // จุดหมายเรนเดอร์ในหน้า 6
+  // ===== จุดหมายเรนเดอร์: เฉพาะหน้า 6 =====
   function renderIntoPage6(html) {
-    const box = document.getElementById("p6BrainBox");
+    var box = document.getElementById("p6BrainBox");
     if (!box) return;
     box.innerHTML = html;
   }
 
-  // ใส่สไตล์ของกราฟแนวนอน (เฉพาะหน้า 6)
-  function ensureStyles() {
-    if (document.getElementById("p6-brain-style")) return;
-    const st = document.createElement("style");
-    st.id = "p6-brain-style";
+  // ===== ใส่สไตล์กราฟแนวนอน (เหมือนเวอร์ชันเดิม) =====
+  function ensureStyle() {
+    if (document.getElementById("p6-style")) return;
+    var st = document.createElement("style");
+    st.id = "p6-style";
     st.textContent = `
-      #p6BrainBox .brain-card{
-        background:#ffffff;
-        border-radius:16px;
-        border:1px solid rgba(15,23,42,0.05);
-        padding:16px 18px 14px;
-        box-shadow:0 10px 24px rgba(15,23,42,0.06);
+      #p6BrainBox .p6-card{
+        background:#fff;
+        border:1px solid rgba(0,0,0,.06);
+        border-radius:14px;
+        padding:14px;
+        box-shadow:0 10px 24px rgba(0,0,0,.06);
       }
-      #p6BrainBox .brain-title{
+      #p6BrainBox .p6-head{
         font-weight:800;
-        font-size:1rem;
         color:#111827;
         margin-bottom:6px;
       }
-      #p6BrainBox .brain-sub{
-        font-size:.9rem;
-        color:#4b5563;
+      #p6BrainBox .p6-sub{
+        font-size:.92rem;
+        color:#374151;
         margin-bottom:10px;
       }
-      #p6BrainBox .brain-row{
+      #p6BrainBox .p6-row{
         display:grid;
-        grid-template-columns:minmax(0,260px) 1fr 52px;
+        grid-template-columns:220px 1fr 48px;
         align-items:center;
         gap:10px;
-        margin:4px 0;
+        margin:.35rem 0;
       }
-      #p6BrainBox .brain-label{
-        font-size:.9rem;
+      #p6BrainBox .p6-label{
         color:#111827;
+        font-size:.9rem;
         white-space:nowrap;
         overflow:hidden;
         text-overflow:ellipsis;
       }
-      #p6BrainBox .brain-label-top{
-        color:#4c1d95;
-        font-weight:700;
-      }
-      #p6BrainBox .brain-bar{
-        height:16px;
+      #p6BrainBox .p6-bar{
+        height:14px;
         background:#f3f4f6;
         border-radius:999px;
         overflow:hidden;
       }
-      #p6BrainBox .brain-fill{
+      #p6BrainBox .p6-fill{
         height:100%;
         background:linear-gradient(90deg,#7c3aed,#06b6d4);
         transition:width .35s ease;
       }
-      #p6BrainBox .brain-val{
-        font-size:.85rem;
+      #p6BrainBox .p6-val{
         text-align:right;
-        color:#111827;
-        font-weight:600;
-      }
-      #p6BrainBox .brain-footer{
-        margin-top:.75rem;
-        display:flex;
-        justify-content:flex-start;
-      }
-      #p6BrainBox .brain-refresh{
-        background:#eef2ff;
-        color:#3730a3;
-        border:1px solid #c7d2fe;
-        padding:.45rem .9rem;
-        border-radius:.8rem;
         font-weight:700;
+        color:#111827;
         font-size:.9rem;
-        cursor:pointer;
       }
-      #p6BrainBox .brain-muted{
+      #p6BrainBox .p6-muted{
         font-size:.9rem;
         color:#6b7280;
       }
@@ -89,122 +69,111 @@
     document.head.appendChild(st);
   }
 
-  // ดึงคะแนนจาก brain.rules.js (โหมด C)
-  function computeFromBrainRules() {
+  // ===== ดึงคะแนนจาก brain.rules.js โหมด C =====
+  function getScoresFromBrainRules() {
+    // ถ้าไฟล์ brain.rules.js ยังไม่โหลด หรือไม่มี brainRank → บอกว่ายังไม่พร้อม
     if (typeof window.brainRank !== "function") {
       return { ready: false, results: [], top: null, anySignal: false };
     }
 
-    const ranked = window.brainRank("C") || { results: [] };
-    const raw = Array.isArray(ranked.results) ? ranked.results.slice() : [];
+    // brainRank("C") จะไป collect token จากหน้า 1–3 และคิดคะแนนให้ทุก ADR
+    var ranked = window.brainRank("C") || {};
+    var list = Array.isArray(ranked.results) ? ranked.results.slice() : [];
 
-    // ให้แน่ใจว่ามีค่า pctC และ sort จากมากไปน้อย (กันกรณีสมองในอนาคตเปลี่ยน)
-    const results = raw
-      .map(r => ({
-        key: r.key || "",
-        title: r.title || r.name || r.phenotype || r.key || "",
-        score: typeof r.pctC === "number" ? r.pctC : 0
-      }))
-      .sort((a, b) => b.score - a.score);
+    // แปลงโครงสร้างให้เหลือ (key, title, score) แล้ว sort มาก→น้อย
+    var results = list
+      .map(function (r) {
+        return {
+          key: r.key || "",
+          title: r.title || r.name || r.phenotype || r.key || "",
+          score: typeof r.pctC === "number" ? r.pctC : 0
+        };
+      })
+      .sort(function (a, b) {
+        return (b.score || 0) - (a.score || 0);
+      });
 
     if (!results.length) {
       return { ready: true, results: [], top: null, anySignal: false };
     }
 
-    let top = results[0];
-    for (const r of results) {
-      if (r.score > top.score) top = r;
+    var top = results[0];
+    for (var i = 0; i < results.length; i++) {
+      if (results[i].score > top.score) top = results[i];
     }
-    const anySignal = results.some(r => r.score > 0);
+    var anySignal = results.some(function (r) { return r.score > 0; });
 
-    return { ready: true, results, top, anySignal };
+    return { ready: true, results: results, top: top, anySignal: anySignal };
   }
 
-  // สร้าง HTML กราฟแนวนอน 21 ADR
-  function renderBrain() {
-    ensureStyles();
+  // ===== คำนวณ + สร้าง HTML กราฟ 21 ADR =====
+  function compute() {
+    ensureStyle();
 
-    const { ready, results, top, anySignal } = computeFromBrainRules();
+    var info = getScoresFromBrainRules();
+    var ready = info.ready;
+    var results = info.results;
+    var top = info.top;
+    var anySignal = info.anySignal;
 
-    if (!ready) {
-      renderIntoPage6(
-        `<div class="brain-card"><div class="brain-muted">
-          สมองประเมิน ADR (brain.rules.js) ยังไม่พร้อมใช้งาน
-        </div></div>`
-      );
-      // เคลียร์สถานะ global
-      window.brainScores = [];
-      window.brainTop = null;
-      window.brainLabels = [];
-      window.brainValues = [];
-      window.brainReady = false;
-      document.dispatchEvent(new Event("brain:update"));
-      return;
-    }
-
-    // อัปเดตตัวแปรให้ส่วนอื่นใช้ (เช่นถ้าจะเอาไปวาดกราฟแบบอื่น)
-    window.brainScores = results;
+    // อัปเดตตัวแปร global เผื่อหน้า 6 ส่วนอื่นจะใช้ต่อ
+    window.brainScores = results || [];
     window.brainTop = top || null;
-    window.brainLabels = results.map(r => r.title);
-    window.brainValues = results.map(r => r.score);
-    window.brainReady = anySignal;
+    window.brainLabels = (results || []).map(function (r) { return r.title; });
+    window.brainValues = (results || []).map(function (r) { return r.score; });
+    window.brainReady = !!anySignal;
     document.dispatchEvent(new Event("brain:update"));
 
-    if (!results.length) {
+    // ถ้า brain.rules.js ยังไม่พร้อม
+    if (!ready) {
       renderIntoPage6(
-        `<div class="brain-card"><div class="brain-muted">
-          ยังไม่มีข้อมูลเพียงพอ ระบบจะแสดงกราฟเมื่อมีการกรอกข้อมูลในหน้า 1–3
-        </div></div>`
+        '<div class="p6-card"><div class="p6-muted">สมองประเมิน ADR (brain.rules.js) ยังไม่พร้อมใช้งาน</div></div>'
       );
       return;
     }
 
-    const summaryLine = anySignal
-      ? `ระบบพบลักษณะเด่นที่เข้าได้มากที่สุดกับ <strong>${top.title}</strong> (ประมาณ ${top.score}%)`
-      : `ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก ระบบจะแสดงคะแนนเมื่อมีการกรอกข้อมูลเพิ่ม`;
+    // ถ้ายังไม่มีผลเลย
+    if (!results.length) {
+      renderIntoPage6(
+        '<div class="p6-card"><div class="p6-muted">ยังไม่มีข้อมูลเพียงพอ ระบบจะแสดงกราฟเมื่อมีการกรอกข้อมูลในหน้า 1–3</div></div>'
+      );
+      return;
+    }
 
-    const rowsHtml = results
-      .map((r) => {
-        const labelClass =
-          top && r.key === top.key && r.score > 0
-            ? "brain-label brain-label-top"
-            : "brain-label";
-        return `
-          <div class="brain-row">
-            <div class="${labelClass}">${r.title}</div>
-            <div class="brain-bar">
-              <div class="brain-fill" style="width:${r.score}%;"></div>
-            </div>
-            <div class="brain-val">${r.score}%</div>
-          </div>
-        `;
+    var summary = anySignal
+      ? 'ระบบพบลักษณะเด่นที่เข้าได้มากที่สุดกับ <strong>' +
+        (top.title || '-') +
+        "</strong> (" + (top.score || 0) + '%)'
+      : "ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก ระบบจะแสดงคะแนนเมื่อมีการกรอกข้อมูลเพิ่ม";
+
+    var rows = results
+      .map(function (r) {
+        return (
+          '<div class="p6-row">' +
+            '<div class="p6-label">' + r.title + "</div>" +
+            '<div class="p6-bar"><div class="p6-fill" style="width:' + r.score + '%"></div></div>' +
+            '<div class="p6-val">' + r.score + "%</div>" +
+          "</div>"
+        );
       })
       .join("");
 
-    renderIntoPage6(`
-      <div class="brain-card">
-        <div class="brain-title">ผลการประเมินเบื้องต้น</div>
-        <div class="brain-sub">${summaryLine}</div>
-        ${rowsHtml}
-        <div class="brain-footer">
-          <button id="brain_refresh" class="brain-refresh">
-            🔄 รีเฟรชผลประเมิน
-          </button>
-        </div>
-      </div>
-    `);
-
-    const btn = document.getElementById("brain_refresh");
-    if (btn) btn.onclick = renderBrain;
+    renderIntoPage6(
+      '<div class="p6-card">' +
+        '<div class="p6-head">ผลการประเมินเบื้องต้น</div>' +
+        '<div class="p6-sub">' + summary + "</div>" +
+        rows +
+      "</div>"
+    );
   }
 
-  // ให้ภายนอกเรียกใช้ได้
-  window.evaluateDrugAllergy = renderBrain;
-  window.refreshBrain = renderBrain;
+  // ===== Public API =====
+  window.evaluateDrugAllergy = compute; // ใช้กับปุ่ม "รีเฟรชผลประเมิน"
+  window.refreshBrain = compute;
 
-  // คำนวณใหม่เมื่อข้อมูลหน้า 1–3 เปลี่ยน
-  document.addEventListener("da:update", renderBrain);
+  // คำนวณใหม่ทุกครั้งที่มี event จากหน้า 1–3
+  document.addEventListener("da:update", compute);
 
-  // คำนวณครั้งแรกเมื่อโหลดไฟล์
-  setTimeout(renderBrain, 0);
+  // คำนวณครั้งแรกหลังโหลดไฟล์
+  setTimeout(compute, 0);
 })();
