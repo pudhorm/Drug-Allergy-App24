@@ -1,152 +1,327 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
 (function () {
-  // -------------------- helpers --------------------
+  // ===== จุดหมายการเรนเดอร์หน้า 6 =====
   function renderIntoPage6(html) {
     var box = document.getElementById("p6BrainBox");
-    if (!box) return;
-    box.innerHTML = html;
+    if (box) box.innerHTML = html;
   }
 
-  // หน้าไหนต้อง "บันทึก" ก่อนถึงจะยอมคำนวณ
-  // ==> หน้า 1 และ 2 ต้องมี __saved; หน้า 3 (Lab) เป็น optional
-  function corePagesReady() {
+  // ===== Helper: อ่านค่าจากหน้า 1–3 แบบ "นับเฉพาะที่ติ๊ก/เลือก" =====
+  function collectSignals() {
     var d = window.drugAllergyData || {};
-    var p1ok = !!(d.page1 && d.page1.__saved);
-    var p2ok = !!(d.page2 && d.page2.__saved);
-    return { ok: p1ok && p2ok, hasP3: !!(d.page3 && d.page3.__saved) };
+    var p1 = d.page1 || {};
+    var p2 = d.page2 || {};
+    var p3 = d.page3 || {};
+
+    var set = new Set();
+
+    // ---- หน้า 1: รูปร่าง ----
+    (p1.rashShapes || []).forEach((s) => set.add("shape:" + s));
+    if (p1.rashShapesOther && p1.rashShapesOther.trim()) set.add("shape:อื่นๆ");
+
+    // สี
+    (p1.rashColors || []).forEach((c) => set.add("color:" + c));
+    if (p1.rashColorsOther && p1.rashColorsOther.trim()) set.add("color:อื่นๆ");
+
+    // ตุ่มน้ำ
+    if (p1.blisters?.small) set.add("derm:ตุ่มน้ำเล็ก");
+    if (p1.blisters?.medium) set.add("derm:ตุ่มน้ำกลาง");
+    if (p1.blisters?.large) set.add("derm:ตุ่มน้ำใหญ่");
+
+    // ผิวหลุดลอก
+    if (p1.skinDetach?.center) set.add("derm:ผิวหนังหลุดลอกตรงกลางผื่น");
+    if (p1.skinDetach?.lt10) set.add("derm:ผิวหลุด<10%");
+    if (p1.skinDetach?.gt30) set.add("derm:ผิวหลุด>30%");
+
+    // ขุย/แห้ง/ลอก
+    if (p1.scales?.scale) set.add("derm:ขุย");
+    if (p1.scales?.dry) set.add("derm:แห้ง");
+    if (p1.scales?.peel) set.add("derm:ลอก");
+
+    // น้ำเหลือง/สะเก็ด
+    if (p1.exudate?.serous) set.add("derm:น้ำเหลือง");
+    if (p1.exudate?.crust) set.add("derm:สะเก็ด");
+
+    // คัน
+    if (p1.itch?.has) set.add("derm:คัน");
+    if (p1.itch?.none) set.add("derm:ไม่คัน");
+
+    // ปวด/แสบ/เจ็บ/ตึง
+    if (p1.pain?.pain) set.add("derm:เจ็บ"); // รวมเป็นเจ็บ
+    if (p1.pain?.burn) set.add("derm:แสบ");
+    if (p1.pain?.sore) set.add("derm:เจ็บ");
+    if (p1.pain?.tight) set.add("derm:ตึง");
+
+    // บวม
+    if (p1.swelling?.has) set.add("derm:บวม");
+
+    // ตุ่มหนอง (เก็บจาก input รายละเอียดด้วย)
+    if (p1.pustule?.has) set.add("derm:ตุ่มหนอง");
+
+    // ตำแหน่ง
+    (p1.locations || []).forEach((loc) => set.add("pos:" + loc));
+    if (p1.distribution === "สมมาตร") set.add("pos:สมมาตร");
+    if (p1.mucosalCountGt1) set.add("mucosa:>1");
+
+    // Onset
+    switch (p1.onset) {
+      case "1h":
+        set.add("onset:1h");
+        break;
+      case "1to6h":
+        set.add("onset:1-6h");
+        break;
+      case "6to24h":
+        set.add("onset:6-24h");
+        break;
+      case "1w":
+        set.add("onset:1w");
+        break;
+      case "2w":
+        set.add("onset:2w");
+        break;
+      case "3w":
+        set.add("onset:3w");
+        break;
+      case "4w":
+        set.add("onset:4w");
+        break;
+      default:
+        break;
+    }
+
+    // ---- หน้า 2: แผนที่คีย์สากลถูกสร้างแล้วใน collectPage2() ----
+    // Respiratory
+    if (p2?.resp?.wheeze) set.add("sys:wheeze");
+    if (p2?.resp?.dyspnea) set.add("sys:dyspnea");
+
+    // Cardiovascular
+    if (p2?.cv?.hypotension) set.add("sys:hypotension");
+    if (p2?.cv?.shock) set.add("sys:bp_drop"); // ใช้แทน ≥40 mmHg (proxy จาก UI ≥30%)
+
+    // Vitals flags จากหน้า 2
+    if (p2?.examHRHigh || (typeof p2?.HR === "number" && p2.HR > 100)) set.add("sys:HR>100");
+    if (typeof p2?.SpO2 === "number" && p2.SpO2 < 94) set.add("sys:SpO2<94");
+
+    // GI
+    if (p2?.gi?.nausea) set.add("sys:คลื่นไส้อาเจียน");
+    if (p2?.gi?.dysphagia) set.add("sys:กลืนลำบาก");
+    if (p2?.gi?.diarrhea) set.add("sys:ท้องเสีย");
+    if (p2?.gi?.cramp) set.add("sys:ปวดบิดท้อง");
+    if (p2?.misc?.bleedingGI) set.add("sys:เลือดออกในทางเดินอาหาร");
+
+    // Eye/ENT/Other
+    if (p2?.misc?.conjunctivitis) set.add("sys:เยื่อบุตาอักเสบ");
+    if (p2?.misc?.soreThroat) set.add("sys:เจ็บคอ");
+    if (p2?.misc?.fever) set.add("sys:ไข้");
+    if (p2?.misc?.fatigue) set.add("sys:อ่อนเพลีย");
+    if (p2?.misc?.chill) set.add("sys:หนาวสั่น");
+
+    // Skin hemorrhage
+    if (p2?.misc?.petechiae) set.add("derm:จุดเลือดออก");
+    if (p2?.misc?.hemorrhageSkin) set.add("derm:ปื้น/จ้ำเลือด");
+
+    // GU flags (เก็บเป็นข้อความไทยไว้แล้ว)
+    if (p2?.misc?.["ปัสสาวะสีชา/สีดำ"]) set.add("sys:ปัสสาวะสีชา/สีดำ");
+    if (p2?.misc?.["ปัสสาวะออกน้อย"]) set.add("sys:ปัสสาวะออกน้อย");
+    if (p2?.misc?.["ปัสสาวะขุ่น"]) set.add("sys:ปัสสาวะขุ่น");
+
+    // Organs
+    var org = p2?.organsFlags || {};
+    if (org.kidneyFail) set.add("organ:AKI");
+    if (org.hepatitis) set.add("organ:hepatitis");
+    if (org.pneumonia) set.add("organ:pneumonia");
+    if (org.myocarditis) set.add("organ:myocarditis");
+
+    // ---- หน้า 3: Lab (นับเฉพาะช่องที่ "ติ๊ก" จริงเท่านั้น) ----
+    function labChecked(group, item) {
+      var g = p3[group];
+      var row = g && g[item];
+      return !!(row && row.checked);
+    }
+    function labNumber(group, item) {
+      var g = p3[group];
+      var row = g && g[item];
+      var v = row && row.value;
+      var n = Number((v || "").toString().replace(/[, ]+/g, ""));
+      return Number.isFinite(n) ? n : NaN;
+    }
+    // CBC
+    if (labChecked("cbc", "wbc")) {
+      var wbc = labNumber("cbc", "wbc");
+      if (wbc > 11000) set.add("lab:WBC>11000");
+      if (wbc < 4000) set.add("lab:WBC<4000");
+    }
+    if (labChecked("cbc", "eos")) {
+      var eop = labNumber("cbc", "eos");
+      if (eop >= 10) set.add("lab:Eo>=10");
+      if (eop > 5) set.add("lab:Eo>5");
+    }
+    if (labChecked("cbc", "neut")) {
+      var np = labNumber("cbc", "neut");
+      if (np > 75) set.add("lab:Neut>75");
+    }
+    if (labChecked("cbc", "hb")) {
+      var hb = labNumber("cbc", "hb");
+      if (hb < 10) set.add("lab:Hb<10");
+      // เงื่อนไขลดลง ≥2–3 g/dL ต้องเทียบ baseline — ไม่มีใน UI: ข้ามไป นับด้วยคีย์เฉพาะเมื่อผู้ใช้กรอกใน detail
+      if ((p3.cbc.hb.detail || "").includes("↓≥2-3")) set.add("lab:Hb↓≥2-3g/dL/48h");
+    }
+    if (labChecked("cbc", "plt")) {
+      var plt = labNumber("cbc", "plt");
+      if (plt < 100000) set.add("lab:Plt<100k");
+      if (plt < 150000) set.add("lab:Plt<150k");
+    }
+    if (labChecked("cbc", "atypical")) {
+      var aty = labNumber("cbc", "atypical");
+      if (aty > 0) set.add("lab:AtypicalLym");
+    }
+
+    // LFT
+    if (labChecked("lft", "ast") || labChecked("lft", "alt")) {
+      var ast = labChecked("lft", "ast") ? labNumber("lft", "ast") : NaN;
+      var alt = labChecked("lft", "alt") ? labNumber("lft", "alt") : NaN;
+      if ((ast >= 40 && !isNaN(ast)) || (alt >= 40 && !isNaN(alt))) set.add("lab:ALT/AST>=40");
+      // >=2x ULN (สมมติ ULN ~ 40)
+      if ((ast >= 80 && !isNaN(ast)) || (alt >= 80 && !isNaN(alt))) set.add("lab:ALT/AST>=2x");
+    }
+
+    // RFT
+    if (labChecked("rft", "cre")) {
+      var cr = labNumber("rft", "cre");
+      // ไม่มี baseline → ใช้ detail ช่วยระบุ
+      if ((p3.rft.cre.detail || "").match(/(rise|increase|≥0\.3|1\.5x)/i)) set.add("lab:CrRise");
+    }
+    if (labChecked("rft", "egfr")) {
+      var eg = labNumber("rft", "egfr");
+      if (!isNaN(eg) && eg < 60) set.add("lab:eGFR<60");
+    }
+    if (labChecked("ua", "protein")) set.add("lab:UA:protein+");
+
+    // Lung/Heart/Vitals
+    if (labChecked("lung", "spo2")) {
+      var sp = labNumber("lung", "spo2");
+      if (sp < 94) set.add("sys:SpO2<94");
+    }
+    // EKG / Troponin
+    if (labChecked("heart", "ekg")) set.add("lab:EKGผิดปกติ");
+    if (labChecked("heart", "tropi")) {
+      var ti = labNumber("heart", "tropi");
+      if (ti > 0.04) set.add("lab:TropI>0.04");
+    }
+    if (labChecked("heart", "tropt")) {
+      var tt = labNumber("heart", "tropt");
+      if (tt > 0.01) set.add("lab:TropT>0.01-0.03");
+    }
+
+    // Complement / IgG (ถ้ามีบันทึกใน detail)
+    if (p3.immuno?.c3c4?.checked) {
+      var txt = (p3.immuno.c3c4.detail || "").toLowerCase();
+      if (txt.includes("c3<90")) set.add("lab:C3<90");
+      if (txt.includes("c4<10")) set.add("lab:C4<10");
+      if (txt.includes("c3+")) set.add("lab:C3+");
+    }
+    if (p3.immuno?.ige?.checked) {
+      var iged = (p3.immuno.ige.detail || "").toLowerCase();
+      if (iged.includes("igg+")) set.add("lab:IgG+");
+      if (iged.includes("ldh")) set.add("lab:LDHสูง");
+    }
+
+    return set;
   }
 
-  // ใส่สไตล์กราฟแนวนอนครั้งเดียว
-  function ensureStyles() {
-    if (document.getElementById("p6-brain-style")) return;
-    var css = `
-      #p6BrainBox { font-size: 0.92rem; color:#111827; }
-      .p6-brain-wrap{margin-top:0.25rem;}
-      .p6-brain-row{
-        display:grid;
-        grid-template-columns: minmax(140px, 220px) 1fr 40px;
-        gap:10px;
-        align-items:center;
-        margin:0.25rem 0;
-      }
-      .p6-brain-label{white-space:normal;}
-      .p6-brain-bar{
-        position:relative;
-        height:16px;
-        border-radius:999px;
-        overflow:hidden;
-        background:#f3f4f6;
-      }
-      .p6-brain-bar-fill{
-        height:100%;
-        border-radius:999px;
-        background:linear-gradient(90deg,#7c3aed 0%,#06b6d4 100%);
-        transition:width .35s ease;
-      }
-      .p6-brain-val{
-        text-align:right;
-        font-weight:700;
-        font-size:0.8rem;
-      }
-      .p6-brain-summary{
-        font-weight:600;
-        margin-bottom:0.35rem;
-      }
-      .p6-muted{
-        color:#6b7280;
-        font-size:0.9rem;
-      }
+  // ===== คำนวณคะแนนแต่ละ ADR =====
+  function computeScores(signals, rules) {
+    var results = rules.map((adr) => {
+      var score = 0;
+      var hits = [];
+      adr.tokens.forEach((tok) => {
+        var key = typeof tok === "string" ? tok : tok.key;
+        var w = typeof tok === "string" ? 1 : (tok.w || 1);
+        if (signals.has(key)) {
+          score += w;
+          hits.push({ key, w });
+        }
+      });
+      return { id: adr.id, name: adr.name, score, hits };
+    });
+    results.sort((a, b) => b.score - a.score);
+    return results;
+  }
+
+  // ===== เรนเดอร์ผล + กราฟ "สีชมพูนม" =====
+  function renderResults(results) {
+    var top = results.slice(0, 5);
+    var max = top[0] ? Math.max(1, top[0].score) : 1;
+
+    var html = `
+      <div class="p6-card" style="background:linear-gradient(180deg,#ffeaf4 0%,#fff7fb 60%,#ffffff 100%);border:1px solid rgba(236,72,153,.25);border-radius:1.2rem;padding:1rem 1rem 1.2rem;box-shadow:0 10px 24px rgba(236,72,153,.15);">
+        <h3 style="margin:0 0 .6rem;font-weight:800;color:#9d174d;">📊 สรุปคะแนนความสอดคล้อง (Top 5)</h3>
+        <div style="display:flex;flex-direction:column;gap:.5rem;">
+          ${top
+            .map((r, i) => {
+              var pct = Math.round((r.score / max) * 100);
+              return `
+                <div style="display:flex;align-items:center;gap:.6rem;">
+                  <div style="flex:0 0 2rem;text-align:right;font-weight:700;color:#9d174d;">#${i + 1}</div>
+                  <div style="flex:1 1 auto;">
+                    <div style="font-weight:700;color:#4a044e;margin-bottom:.15rem;">${r.name}</div>
+                    <div style="height:14px;background:#fde7f2;border-radius:999px;overflow:hidden;border:1px solid rgba(236,72,153,.3);">
+                      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#fbcfe8,#f9a8d4,#f472b6);"></div>
+                    </div>
+                  </div>
+                  <div style="flex:0 0 3.2rem;text-align:right;color:#4a044e;font-weight:800;">${r.score}</div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <details style="margin-top:.8rem;">
+          <summary style="cursor:pointer;color:#9d174d;font-weight:700;">ดูรายละเอียดตัวแปรที่ถูกนับ</summary>
+          <div style="margin-top:.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.6rem;">
+            ${top
+              .map((r) => {
+                return `
+                  <div style="background:#fff;border:1px solid rgba(236,72,153,.2);border-radius:.8rem;padding:.6rem;">
+                    <div style="font-weight:700;color:#be185d;margin-bottom:.3rem;">${r.name}</div>
+                    ${
+                      r.hits.length
+                        ? `<ul style="margin:0;padding-left:1rem;font-size:.92rem;color:#6b21a8;">${r.hits
+                            .map((h) => `<li>${h.key} <b style="color:#9d174d;">(+${h.w})</b></li>`)
+                            .join("")}</ul>`
+                        : `<div style="color:#6b7280;">ไม่มีตัวแปรที่ถูกนับ</div>`
+                    }
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        </details>
+      </div>
     `;
-    var tag = document.createElement("style");
-    tag.id = "p6-brain-style";
-    tag.textContent = css;
-    document.head.appendChild(tag);
+
+    renderIntoPage6(html);
   }
 
-  // -------------------- main compute + render --------------------
-  function brainComputeAndRender() {
-    ensureStyles();
-
-    var ready = corePagesReady();
-    if (!ready.ok) {
-      renderIntoPage6(
-        '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–2 หรือยังไม่ได้กดบันทึก</div>'
-      );
-      return;
-    }
-
-    if (typeof window.brainRank !== "function") {
-      renderIntoPage6(
-        '<div class="p6-muted">ยังไม่พบโมดูลสมอง (brain.rules.js) กรุณาตรวจสอบว่าโหลดไฟล์ดังกล่าวแล้ว</div>'
-      );
-      return;
-    }
-
-    // ใช้โหมด C จาก brain.rules.js (แมตช์ตรงตัว, ไม่ปนข้อใหญ่)
-    var out = window.brainRank("C") || {};
-    var results = Array.isArray(out.results) ? out.results.slice() : [];
-
-    // เรียงจาก % มาก → น้อย เผื่อ brainRank ยังไม่ได้ sort
-    results.sort(function (a, b) {
-      return (b.pctC || 0) - (a.pctC || 0);
-    });
-
-    // ถ้าทุกตัวเป็น 0 ให้แสดงข้อความแทนกราฟ
-    var hasSignal = results.some(function (r) {
-      return (r.pctC || 0) > 0;
-    });
-
-    if (!results.length || !hasSignal) {
-      renderIntoPage6(
-        '<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>'
-      );
-      return;
-    }
-
-    // สรุปตัวที่เด่นสุด
-    var top = results[0];
-    var summaryHtml =
-      '<div class="p6-brain-summary">ผลเด่น: <strong>' +
-      (top.title || top.name || top.key || "-") +
-      "</strong> (" +
-      (top.pctC || 0) +
-      "%)</div>";
-
-    // วาดกราฟ 21 แถว (หรือเท่าที่ brainRank คืนมา) ตามลำดับคะแนน
-    var rows = results
-      .map(function (r) {
-        var name = r.title || r.name || r.phenotype || r.key;
-        var pct = r.pctC || 0;
-        return (
-          '<div class="p6-brain-row">' +
-          '<div class="p6-brain-label">' +
-          name +
-          "</div>" +
-          '<div class="p6-brain-bar">' +
-          '<div class="p6-brain-bar-fill" style="width:' +
-          pct +
-          '%;"></div>' +
-          "</div>" +
-          '<div class="p6-brain-val">' +
-          pct +
-          "%</div>" +
-          "</div>"
-        );
-      })
-      .join("");
-
-    renderIntoPage6('<div class="p6-brain-wrap">' + summaryHtml + rows + "</div>");
+  // ===== ฟังก์ชันหลัก =====
+  function evaluate() {
+    var rules = window.brainRules || [];
+    // รวมสัญญาณจากหน้า 1–3 (เฉพาะติ๊ก/เลือก)
+    var signals = collectSignals();
+    var results = computeScores(signals, rules);
+    renderResults(results);
+    return results;
   }
 
-  // -------------------- public API & hooks --------------------
-  window.brainComputeAndRender = brainComputeAndRender;
-  // ให้โค้ดเก่าเรียกชื่อเดิมได้ด้วย
-  window.evaluateDrugAllergy = brainComputeAndRender;
-  window.refreshBrain = brainComputeAndRender;
+  // ===== ผูก event =====
+  document.addEventListener("da:update", () => {
+    try { evaluate(); } catch (e) { /* no-op */ }
+  });
 
-  // เมื่อหน้า 1–3 กดบันทึกแล้วยิง event da:update → คำนวณใหม่
-  document.addEventListener("da:update", brainComputeAndRender);
+  // ให้หน้า 6 เรียกได้เอง
+  window.evaluateDrugAllergy = evaluate;
 
-  // เผื่อโหลดหน้า 6 ตอนข้อมูลพร้อมแล้ว ให้ลองคำนวณครั้งแรกเลย
-  setTimeout(brainComputeAndRender, 0);
+  // คำนวณครั้งแรกถ้าพร้อม
+  setTimeout(() => { try { evaluate(); } catch {} }, 0);
 })();
