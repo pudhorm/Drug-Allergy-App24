@@ -1,536 +1,777 @@
-// ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
-// โครงสร้างกฎแบบ "แยก ADR" ไม่แชร์ token กัน
-// น้ำหนักค่าเริ่มต้น = 1 เว้นแต่กำกับ (x2) หรือ (x3) ตามสเปคผู้ใช้
-// *ทุกเงื่อนไขจะถูกนับ "ก็ต่อเมื่อผู้ใช้ติ๊ก/เลือกจริง" ตามข้อมูลจาก page1/page2/page3 เท่านั้น*
-
+// สมองประเมิน ADR — โหมด C: ใช้ token/เงื่อนไขต่อ-ADR แบบไม่แชร์กัน
 (function () {
-  // ยูทิลช่วยสร้างรายการแบบมีน้ำหนัก
-  function w(list, weight) {
-    return list.map((k) => ({ key: k, w: weight || 1 }));
+  // ---------------------------------------------------------------------------
+  // Helpers (numeric & safe getters)
+  // ---------------------------------------------------------------------------
+  function num(v) {
+    const n = Number(String(v ?? "").toString().replace(/[, ]+/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function arr(v) {
+    return Array.isArray(v) ? v : [];
+  }
+  function has(arrLike, val) {
+    return arr(arrLike).includes(val);
+  }
+  function truthy(v) {
+    if (v === true) return true;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return false;
+      return !/^(false|null|undefined|0|no|ไม่|ไม่มี)$/i.test(s);
+    }
+    return !!v;
   }
 
-  // ---- Normalized keys (อ้างอิงจากหน้า 1–3 ที่เก็บจริง) ----
-  // รูปร่าง (shape:)
-  const shape = {
-    ตุ่มนูน: "shape:ตุ่มนูน",
-    ตุ่มแบนราบ: "shape:ตุ่มแบนราบ",
-    ปื้นนูน: "shape:ปื้นนูน",
-    นูนหนา: "shape:นูนหนา",
-    วงกลมชั้นเดียว: "shape:วงกลมชั้นเดียว",
-    วงกลม3ชั้น: "shape:วงกลม 3 ชั้น",
-    วงรี: "shape:วงรี",
-    ขอบหยัก: "shape:ขอบหยัก",
-    ขอบเรียบ: "shape:ขอบเรียบ",
-    ขอบไม่ชัดเจน: "shape:ขอบไม่ชัดเจน",
-    จุดเล็ก: "shape:จุดเล็ก",
-    ปื้นแดง: "shape:ปื้นแดง", // ใช้กับบาง ADR
-    ผื่นแดง: "shape:ผื่นแดง",
-    เป้าไม่ครบ3: "shape:วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
-  };
+  // ---------------------------------------------------------------------------
+  // Shortcuts to app data
+  // ---------------------------------------------------------------------------
+  function getD() { return window.drugAllergyData || {}; }
+  function P1() { return getD().page1 || {}; }
+  function P2() { return getD().page2 || {}; }
+  function P3() { return getD().page3 || {}; }
 
-  // สี (color:)
-  const color = {
-    แดง: "color:แดง",
-    แดงซีด: "color:แดงซีด",
-    แดงไหม้: "color:แดงไหม้",
-    ซีด: "color:ซีด",
-    ใส: "color:ใส",
-    เหลือง: "color:เหลือง",
-    มันเงา: "color:มันเงา",
-    เทา: "color:เทา",
-    ดำคล้ำ: "color:ดำ/คล้ำ",
-    ม่วงคล้ำ: "color:ม่วง/คล้ำ",
-    ผิวปกติ: "color:สีผิวปกติ",
-  };
+  // หน้า 1
+  function shapes() { return arr(P1().rashShapes); }
+  function colors() { return arr(P1().rashColors); }
+  function locs()   { return arr(P1().locations); }
+  function onset()  { return P1().onset || ""; } // "1h","1to6h","6to24h","1w","2w","3w","4w","other"
 
-  // อาการผิวหนัง/อื่นๆ (derm:/sys:/lab:/pos:/onset:)
-  const derm = {
-    คัน: "derm:คัน",
-    บวม: "derm:บวม",
-    ตึง: "derm:ตึง",
-    เจ็บ: "derm:เจ็บ",
-    แสบ: "derm:แสบ",
-    น้ำเหลือง: "derm:น้ำเหลือง",
-    สะเก็ด: "derm:สะเก็ด",
-    ผิวหลุดกลาง: "derm:ผิวหนังหลุดลอกตรงกลางผื่น",
-    BSA_lt10: "derm:ผิวหลุด<10%",
-    BSA_gt30: "derm:ผิวหลุด>30%",
-    พอง: "derm:พอง",
-    ตุ่มน้ำเล็ก: "derm:ตุ่มน้ำเล็ก",
-    ตุ่มน้ำกลาง: "derm:ตุ่มน้ำกลาง",
-    ตุ่มน้ำใหญ่: "derm:ตุ่มน้ำใหญ่",
-    แห้ง: "derm:แห้ง",
-    ลอก: "derm:ลอก",
-    ขุย: "derm:ขุย",
-    จุดเลือดออก: "derm:จุดเลือดออก",
-    ปื้นจ้ำเลือด: "derm:ปื้น/จ้ำเลือด",
-  };
+  // หน้า 1: blocks/booleans
+  function itch()    { return (P1().itch && P1().itch.has) || false; }
+  function swelling(){ return (P1().swelling && P1().swelling.has) || false; }
+  function painKey(k){ return !!(P1().pain && P1().pain[k]); }
+  function blisters(k){ return !!(P1().blisters && P1().blisters[k]); } // small/medium/large
+  function exu(k){ return !!(P1().exudate && P1().exudate[k]); } // serous, crust
+  function scaleKey(k){ return !!(P1().scales && P1().scales[k]); } // scale,dry,peel
+  function detachKey(k){ return !!(P1().skinDetach && P1().skinDetach[k]); } // center, lt10, gt30
+  function mucosalGt1(){ return !!P1().mucosalCountGt1; }
+  function distribution(){ return P1().distribution || ""; }
 
-  const sys = {
-    ไข้: "sys:ไข้",
-    หนาวสั่น: "sys:หนาวสั่น",
-    อ่อนเพลีย: "sys:อ่อนเพลีย",
-    คลื่นไส้อาเจียน: "sys:คลื่นไส้อาเจียน",
-    ปวดบิดท้อง: "sys:ปวดบิดท้อง",
-    กลืนลำบาก: "sys:กลืนลำบาก",
-    ท้องเสีย: "sys:ท้องเสีย",
-    เจ็บคอ: "sys:เจ็บคอ",
-    ปวดข้อ: "sys:ปวดข้อ",
-    ข้ออักเสบ: "sys:ข้ออักเสบ",
-    ปวดเมื่อย: "sys:ปวดเมื่อยกล้ามเนื้อ",
-    เยื่อบุตาอักเสบ: "sys:เยื่อบุตาอักเสบ",
-    ดีซ่าน: "sys:ดีซ่าน",
-    ปัสสาวะชาดำ: "sys:ปัสสาวะสีชา/สีดำ",
-    ปัสสาวะน้อย: "sys:ปัสสาวะออกน้อย",
-    ปัสสาวะขุ่น: "sys:ปัสสาวะขุ่น",
-    เลือดออกGI: "sys:เลือดออกในทางเดินอาหาร",
-    wheeze: "sys:wheeze",
-    dyspnea: "sys:dyspnea",
-    hypotension: "sys:hypotension",
-    bp_drop: "sys:bp_drop", // ใช้แทน ≥30% หรือ ≥40 mmHg ตามที่หน้า 2 เก็บได้
-    HRสูง: "sys:HR>100",
-    SpO2ต่ำ: "sys:SpO2<94",
-  };
+  // หน้า 2: mapped tokens (ตาม page2.js เวอร์ชันล่าสุด)
+  function P2has(path) {
+    const p2 = P2();
+    const seg = path.split(".");
+    let cur = p2;
+    for (const s of seg) {
+      if (cur == null) return false;
+      cur = cur[s];
+    }
+    return truthy(cur);
+  }
+  function resp(t){ return P2has("resp."+t); }  // dyspnea, wheeze
+  function cv(t){ return P2has("cv."+t); }      // hypotension, shock
+  function gi(t){ return P2has("gi."+t); }      // nausea, dysphagia, diarrhea, cramp
+  function misc(t){ return P2has('misc["'+t+'"]') || P2has("misc."+t); }
+  function organFlag(k){ return !!(P2().organsFlags && P2().organsFlags[k]); }
 
-  const pos = {
-    ทั่วร่างกาย: "pos:ทั่วร่างกาย",
-    มือ: "pos:มือ",
-    เท้า: "pos:เท้า",
-    แขน: "pos:แขน",
-    ขา: "pos:ขา",
-    หน้า: "pos:หน้า",
-    รอบดวงตา: "pos:รอบดวงตา",
-    ลำคอ: "pos:ลำคอ",
-    ลำตัว: "pos:ลำตัว",
-    หลัง: "pos:หลัง",
-    ริมฝีปาก: "pos:ริมฝีปาก",
-    ลิ้น: "pos:ลิ้น",
-    อวัยวะเพศ: "pos:อวัยวะเพศ",
-    ช่องปาก: "pos:ช่องปาก",
-    จมูก: "pos:จมูก",
-    ทวาร: "pos:ทวาร",
-    ศีรษะ: "pos:ศีรษะ",
-    รักแร้: "pos:รักแร้",
-    ขาหนีบ: "pos:ขาหนีบ",
-    ตำแหน่งเดิม: "pos:ตำแหน่งเดิม",
-    สมมาตร: "pos:สมมาตร",
-  };
+  // หน้า 2: บาง vital proxy (ตั้งไว้ใน page2 เพื่อกระตุ้นเงื่อนไข)
+  function HR(){ return num(P2().HR); }
+  function RR(){ return num(P2().RR); }
+  function SpO2(){ return num(P2().SpO2); }
 
-  const onset = {
-    h1: "onset:1h",
-    h1_6: "onset:1-6h",
-    h6_24: "onset:6-24h",
-    w1: "onset:1w",
-    w2: "onset:2w",
-    w3: "onset:3w",
-    w4: "onset:4w",
-  };
+  // หน้า 3: labs (ยังไม่บังคับต้องมี)
+  function lab(path) {
+    // path เช่น "cbc.wbc.value", "cbc.neutPct.value", "cbc.eosPct.value", "lft.ast.value"
+    const p3 = P3();
+    const seg = path.split(".");
+    let cur = p3;
+    for (const s of seg) {
+      if (cur == null) return NaN;
+      cur = cur[s];
+    }
+    return num(cur && cur.value != null ? cur.value : cur);
+  }
 
-  const organ = {
-    ต่อมน้ำเหลืองโต: "organ:LN",
-    ม้ามโต: "organ:SP",
-    ตับอักเสบ: "organ:hepatitis",
-    ไตอักเสบ: "organ:nephritis",
-    ไตวาย: "organ:AKI",
-    ปอดอักเสบ: "organ:pneumonia",
-    กล้ามเนื้อหัวใจอักเสบ: "organ:myocarditis",
-    ตับโต: "organ:hepatomegaly",
-    ขาบวม: "organ:legEdema",
-  };
+  // onset helpers
+  function onsetAny(keys) { return keys.some(k => onset() === k); }
 
-  const lab = {
-    WBCสูง: "lab:WBC>11000",
-    NEสูง: "lab:Neut>75",
-    Eo5: "lab:Eo>5",
-    Eo10: "lab:Eo>=10",
-    CrRise: "lab:CrRise",
-    eGFRlt60: "lab:eGFR<60",
-    UAprotein: "lab:UA:protein+",
-    ALTAST2x: "lab:ALT/AST>=2x",
-    ALT40: "lab:ALT/AST>=40",
-    HRสูง: sys.HRสูง, // reuse sys flags ที่มาจาก vitals
-    SpO2ต่ำ: sys.SpO2ต่ำ,
-    ANC1500: "lab:ANC<1500",
-    HbLow10: "lab:Hb<10",
-    PltLow100k: "lab:Plt<100k",
-    PltLow150k: "lab:Plt<150k",
-    LDHสูง: "lab:LDHสูง",
-    IgGpos: "lab:IgG+",
-    C3pos: "lab:C3+",
-    C3low: "lab:C3<90",
-    C4low: "lab:C4<10",
-    RBC_UA_5_10: "lab:UA:RBC5-10",
-    EKGผิดปกติ: "lab:EKGผิดปกติ",
-    TropI: "lab:TropI>0.04",
-    TropT: "lab:TropT>0.01-0.03",
-  };
+  // addScore: เก็บรายละเอียด token ที่ทำคะแนน
+  function mkScoreBox() {
+    const sb = Object.create(null);
+    sb.total = 0;
+    sb.tokens = []; // [{label, w}]
+    sb.add = (label, w = 1) => { sb.total += w; sb.tokens.push({label, w}); };
+    return sb;
+  }
 
-  // ========= กฎของแต่ละ ADR (token แยก ไม่แชร์) =========
-  // แต่ละรายการ: { id, name, tokens: [{key,w}], notes? }
-  const ADRS = [
+  // ---------------------------------------------------------------------------
+  // ADR RULES (แยกชุด — ไม่แชร์ token)
+  // ใส่คะแนนตามที่สเปคกำหนด (x2/x3/x4)
+  // ---------------------------------------------------------------------------
+  const RULES = [
     {
-      id: "A.urticaria",
-      name: "Urticaria (Type I / Pseudoallergy)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.ขอบหยัก, shape.วงกลมชั้นเดียว, shape.ขอบเรียบ], 1),
-        // 2 สี
-        ...w([color.แดง, color.แดงซีด, color.ซีด, color.ผิวปกติ], 1),
-        // 3 ลักษณะสำคัญ (x2)
-        ...w([shape.ตุ่มนูน, shape.ปื้นนูน], 2),
-        // 4 อาการเพิ่มเติม
-        ...w([derm.คัน], 1),
-        // 5 อาการที่พบน้อย
-        ...w([derm.บวม], 1),
-        // 6 ตำแหน่ง
-        ...w([pos.ทั่วร่างกาย, pos.มือ, pos.เท้า, pos.แขน, pos.ขา, pos.หน้า, pos.รอบดวงตา, pos.ลำคอ, pos.ลำตัว, pos.หลัง], 1),
-        // 7 ระยะเวลา
-        ...w([onset.h1], 1),
-      ],
+      key: "urticaria",
+      label: "Urticaria (Type I / Pseudoallergy)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง (ที่กำหนด)
+        if (has(shapes(), "ขอบหยัก")) s.add("ขอบหยัก");
+        if (has(shapes(), "วงกลม")) s.add("วงกลม");
+        if (has(shapes(), "ขอบวงนูนแดงด้านในเรียบ")) s.add("ขอบวงนูนแดงด้านในเรียบ");
+        // 2. สี
+        ["แดง","แดงซีด","ซีด","สีผิวปกติ"].forEach(c => { if (has(colors(), c)) s.add("สี: "+c); });
+        // 3. ลักษณะสำคัญ x2
+        if (has(shapes(), "ตุ่มนูน")) s.add("ตุ่มนูน (x2)", 2);
+        if (has(shapes(), "ปื้นนูน")) s.add("ปื้นนูน (x2)", 2);
+        // 4. อาการเพิ่ม
+        if (itch()) s.add("คัน");
+        // 5. พบไม่บ่อย
+        if (swelling()) s.add("บวม (พบไม่บ่อย)");
+        // 6. ตำแหน่ง
+        ["ทั่วร่างกาย","มือ","เท้า","แขน","ขา","หน้า","รอบดวงตา","ลำคอ","ลำตัว","หลัง"].forEach(L=>{
+          if (has(locs(), L)) s.add("ตำแหน่ง: "+L);
+        });
+        // 7. เวลา
+        if (onset() === "1h") s.add("ภายใน 1 ชั่วโมง");
+        return s;
+      }
     },
 
     {
-      id: "A.anaphylaxis",
-      name: "Anaphylaxis (Type I / Pseudoallergy)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.ตุ่มนูน, shape.ปื้นนูน, derm.บวม, shape.นูนหนา, derm.ตึง], 1),
-        // 2 ลักษณะสำคัญ x2
-        ...w([sys.wheeze, sys.dyspnea], 2),
-        // 3 ผิวหนัง
-        ...w([derm.คัน, color.แดง, color.ผิวปกติ], 1),
-        // 4 อาการ GI
-        ...w([sys.ท้องเสีย, sys.กลืนลำบาก, sys.ปวดบิดท้อง, sys.คลื่นไส้อาเจียน], 1),
-        // 5 ระยะเวลา
-        ...w([onset.h1, onset.h1_6], 1),
-        // 6 ระบบอื่น
-        ...w([sys.hypotension, sys.bp_drop], 1), // bp_drop มาจากหน้า 2 (≥30% proxy ให้ ≥40 mmHg)
-        // 7 Lab/Vitals
-        ...w([sys.HRสูง, sys.SpO2ต่ำ], 1),
-      ],
+      key: "anaphylaxis",
+      label: "Anaphylaxis (Type I / Pseudoallergy)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        ["ตุ่มนูน","ปื้นนูน","บวม","นูนหนา","ผิวหนังตึง"].forEach(shape=>{
+          if (has(shapes(), shape)) s.add("รูปร่าง: "+shape);
+        });
+        // 2. สำคัญ x2
+        if (resp("wheeze")) s.add("หายใจมีเสียงวี๊ด (x2)", 2);
+        if (resp("dyspnea") || RR() > 21 || HR() > 100 || SpO2() > 0 && SpO2() < 94) s.add("หอบเหนื่อย/หายใจลำบาก (x2)", 2);
+        // 3. ผิวหนัง
+        if (itch()) s.add("คัน");
+        ["แดง","สีผิวปกติ"].forEach(c => { if (has(colors(), c)) s.add("สีผิว: "+c); });
+        // 4. พบไม่บ่อย (GI)
+        if (gi("diarrhea")) s.add("ท้องเสีย (พบไม่บ่อย)");
+        if (gi("dysphagia")) s.add("กลืนลำบาก (พบไม่บ่อย)");
+        if (gi("cramp")) s.add("ปวดบิดท้อง (พบไม่บ่อย)");
+        if (gi("nausea")) s.add("คลื่นไส้/อาเจียน (พบไม่บ่อย)");
+        // 5. เวลา
+        if (onsetAny(["1h","1to6h"])) s.add("ระยะเวลาเข้าเกณฑ์ (≤6ชม.)");
+        // 6. ระบบอื่น
+        if (cv("hypotension")) s.add("BP ต่ำ (<90/60)");
+        if (cv("shock")) s.add("BP ลดลง ≥40 mmHg ของ baseline systolic เดิม");
+        // 7. Lab/vital proxy
+        if (HR() > 100) s.add("HR >100");
+        if (SpO2() > 0 && SpO2() < 94) s.add("SpO₂ <94%");
+        return s;
+      }
     },
 
     {
-      id: "A.angioedema",
-      name: "Angioedema (Type I / Pseudoallergy)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.นูนหนา, shape.ขอบไม่ชัดเจน], 1),
-        // 2 สี
-        ...w([color.ผิวปกติ, color.แดง], 1),
-        // 3 ลักษณะสำคัญ x2
-        ...w([derm.บวม], 2),
-        // 4 เพิ่มเติม
-        ...w([derm.ตึง], 1),
-        // 5 พบน้อย
-        ...w([derm.คัน, "derm:ไม่คัน", derm.เจ็บ, derm.แสบ], 1),
-        // 6 ตำแหน่ง
-        ...w([pos.ริมฝีปาก, pos.รอบดวงตา, pos.ลิ้น, pos.อวัยวะเพศ], 1),
-        // 7 เวลา
-        ...w([onset.h1], 1),
-      ],
+      key: "angioedema",
+      label: "Angioedema (Type I / Pseudoallergy)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(), "นูนหนา")) s.add("นูนหนา");
+        if (has(shapes(), "ขอบไม่ชัดเจน")) s.add("ขอบไม่ชัดเจน");
+        // 2. สี
+        ["สีผิวปกติ","แดง"].forEach(c => { if (has(colors(), c)) s.add("สี: "+c); });
+        // 3. ลักษณะสำคัญ x2
+        if (swelling()) s.add("บวม (x2)", 2);
+        // 4. เพิ่มเติม
+        if (has(shapes(), "ผิวหนังตึง")) s.add("ผิวหนังตึง");
+        if (itch()) s.add("คัน (พบน้อย)");
+        if (!itch()) s.add("ไม่คัน (พบน้อย)");
+        if (painKey("pain")) s.add("ปวด (พบน้อย)");
+        if (painKey("burn")) s.add("แสบ (พบน้อย)");
+        // 5. ตำแหน่งเด่น
+        ["ริมฝีปาก","รอบดวงตา","ลิ้น","อวัยวะเพศ"].forEach(L=>{ if (has(locs(), L)) s.add("ตำแหน่ง: "+L); });
+        // 6. เวลา
+        if (onset() === "1h") s.add("ภายใน 1 ชั่วโมง");
+        return s;
+      }
     },
 
     {
-      id: "A.maculopapular",
-      name: "Maculopapular rash (Type IV)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.ปื้นแดง, shape.ปื้นนูน, shape.ตุ่มนูน], 1),
-        // 2 สี
-        ...w([color.แดง], 1),
-        // 3 สำคัญ x2
-        ...w([ "derm:จุดเล็กแดง" ], 2),
-        // 4 เพิ่มเติม
-        ...w([derm.คัน], 1),
-        // 5 พบน้อย
-        ...w([sys.ไข้, "lab:Eo>5"], 1),
-        // 6 ตำแหน่ง/การกระจาย
-        ...w([pos.สมมาตร, pos.ลำตัว, pos.แขน, pos.หน้า, pos.ลำคอ], 1),
-        // 7 เวลา
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2], 1),
-        // 8 อวัยวะ
-        ...w([organ.ต่อมน้ำเหลืองโต, sys.ข้ออักเสบ, organ.ไตอักเสบ, organ.ตับอักเสบ], 1),
-      ],
+      key: "mpr",
+      label: "Maculopapular rash (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ปื้นแดง")) s.add("ปื้นแดง");
+        if (has(shapes(),"ปื้นนูน")) s.add("ปื้นนูน");
+        if (has(shapes(),"ตุ่มนูน")) s.add("ตุ่มนูน");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("สีแดง");
+        // 3. สำคัญ x2
+        if (has(shapes(),"จุดเล็กแดง")) s.add("จุดเล็กแดง (x2)", 2);
+        // 4. เพิ่มเติม
+        if (itch()) s.add("คัน");
+        // 5. พบน้อย
+        if (truthy(P2has("misc.fever") || num(P3()?.cbc?.eosPct?.value) > 5)) s.add("ไข้/Eosinophil >5%");
+        // 6. ตำแหน่ง/การกระจาย
+        if (distribution()==="สมมาตร") s.add("การกระจาย: สมมาตร");
+        ["ลำตัว","แขน","หน้า","ลำคอ"].forEach(L=>{ if (has(locs(), L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w"])) s.add("ระยะเวลาเข้าเกณฑ์");
+        // 8. อวัยวะ
+        if (organFlag("hepatitis")) s.add("ตับอักเสบ");
+        if (organFlag("kidneyFail") || organFlag("nephritis")) s.add("ไตอักเสบ/ไตวาย");
+        return s;
+      }
     },
 
     {
-      id: "A.fde",
-      name: "Fixed drug eruption (Type IV)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.วงกลมชั้นเดียว, shape.วงรี], 1),
-        // 2 สี
-        ...w([color.แดง, color.ดำคล้ำ], 1),
-        // 3 สำคัญ x3
-        ...w([color.ม่วงคล้ำ], 3),
-        // 4 เพิ่มเติม
-        ...w([derm.ผิวหลุดกลาง, derm.เจ็บ, derm.แสบ, derm.ตึง], 1),
-        // 5 พบน้อย
-        ...w([derm.บวม, derm.พอง, derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่], 1),
-        // 6 ตำแหน่ง
-        ...w([pos.ริมฝีปาก, pos.หน้า, pos.มือ, pos.เท้า, pos.แขน, pos.ขา, pos.อวัยวะเพศ, pos.ตำแหน่งเดิม], 1),
-        // 7 เวลา
-        ...w([onset.w1, onset.w2], 1),
-        // 8 ระบบอื่น
-        ...w([sys.ไข้, sys.คลื่นไส้อาเจียน, sys.ปวดเมื่อย], 1),
-        // 9 ขอบ
-        ...w([shape.ขอบเรียบ, "shape:ขอบเขตชัดเจน"], 1),
-      ],
+      key: "fde",
+      label: "Fixed drug eruption (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"วงกลม")) s.add("วงกลม");
+        if (has(shapes(),"วงรี")) s.add("วงรี");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        if (has(colors(),"ดำ/คล้ำ")) s.add("ดำ/คล้ำ");
+        // 3. สำคัญ x3
+        if (has(colors(),"ม่วง/คล้ำ")) s.add("ม่วง/คล้ำ (x3)", 3);
+        // 4. ผิวหนังเพิ่ม
+        if (detachKey("center")) s.add("ผิวหลุดลอกตรงกลาง");
+        if (painKey("sore")) s.add("เจ็บ");
+        if (painKey("burn")) s.add("แสบ");
+        if (has(shapes(),"ผิวหนังตึง")) s.add("ตึง");
+        // 5. พบน้อย
+        if (swelling()) s.add("บวม (พบน้อย)");
+        if (blisters("small")) s.add("ตุ่มน้ำขนาดเล็ก (พบน้อย)");
+        if (blisters("medium")) s.add("ตุ่มน้ำขนาดกลาง (พบน้อย)");
+        if (blisters("large")) s.add("ตุ่มน้ำขนาดใหญ่ (พบน้อย)");
+        // 6. ตำแหน่ง
+        ["ริมฝีปาก","หน้า","มือ","เท้า","แขน","ขา","อวัยวะเพศ","ตำแหน่งเดิมกับครั้งก่อน"].forEach(L=>{
+          if (has(locs(), L)) s.add("ตำแหน่ง: "+L);
+        });
+        // 7. เวลา
+        if (onsetAny(["1w","2w"])) s.add("ภายใน 1–2 สัปดาห์");
+        // 8. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (gi("nausea")) s.add("คลื่นไส้/อาเจียน");
+        if (P2has("msk") && (P2has('msk["ปวดเมื่อยกล้ามเนื้อ"].checked') || false)) s.add("ปวดเมื่อยกล้ามเนื้อ");
+        // 9. ขอบ
+        if (has(shapes(),"ขอบเรียบ")) s.add("ขอบเรียบ");
+        if (has(shapes(),"ขอบเขตชัด")) s.add("ขอบเขตชัด");
+        return s;
+      }
     },
 
     {
-      id: "A.agep",
-      name: "AGEP (Type IV)",
-      tokens: [
-        // 1 รูปร่าง
-        ...w([shape.ผื่นแดง], 1),
-        // 2 สี
-        ...w([color.แดง, color.เหลือง], 1),
-        // 3 สำคัญ x3
-        ...w([derm.ตุ่มน้ำใหญ่ /*ใช้แทนตุ่มหนอง*/, "derm:ตุ่มหนอง"], 3),
-        // 4 เพิ่มเติม
-        ...w([derm.บวม, derm.คัน, derm.เจ็บ], 1),
-        // 5 พบน้อย
-        ...w([derm.ปื้นจ้ำเลือด, derm.แห้ง, derm.ลอก, derm.ขุย], 1),
-        // 6 ตำแหน่ง
-        ...w([pos.หน้า, pos.รักแร้, pos.ทั่วร่างกาย, pos.ขาหนีบ], 1),
-        // 7 เวลา
-        ...w([onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-        // 8 ระบบอื่น
-        ...w([sys.ไข้], 1),
-        // 9 Lab
-        ...w([lab.WBCสูง, lab.NEสูง], 1),
-      ],
+      key: "agep",
+      label: "AGEP (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง/สี
+        if (has(shapes(),"ปื้นแดง")) s.add("ผื่น/ปื้นแดง");
+        if (has(colors(),"แดง")) s.add("สีแดง");
+        if (has(colors(),"เหลือง")) s.add("สีเหลือง");
+        // 3. สำคัญ x3
+        if (truthy(P1().pustule && P1().pustule.has)) s.add("ตุ่มหนอง (x3)", 3);
+        // 4. เพิ่มเติม
+        if (swelling()) s.add("บวม");
+        if (itch()) s.add("คัน");
+        if (painKey("sore")) s.add("เจ็บ");
+        // 5. พบน้อย (เลือดออกผิว/แห้ง/ลอก/ขุย)
+        if (misc("ปื้น/จ้ำเลือด")) s.add("ปื้น/จ้ำเลือด");
+        if (scaleKey("dry"))  s.add("แห้ง");
+        if (scaleKey("peel")) s.add("ลอก");
+        if (scaleKey("scale")) s.add("ขุย");
+        // 6. ตำแหน่ง
+        ["หน้า","รักแร้","ทั่วร่างกาย","ขาหนีบ"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        // 8. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้ >37.5°C");
+        // 9. Lab (ถ้ามี)
+        const wbc = lab("cbc.wbc.value"); if (wbc > 11000) s.add("WBC >11000");
+        const neut = lab("cbc.neutPct.value"); if (neut > 75) s.add("Neutrophil >75%");
+        return s;
+      }
     },
 
     {
-      id: "A.sjs",
-      name: "SJS (Type IV)",
-      tokens: [
-        ...w([shape.เป้าไม่ครบ3], 1),
-        ...w([color.ดำคล้ำ, color.เทา, color.แดง], 1),
-        ...w([derm.BSA_lt10], 3), // สำคัญ x3
-        ...w([derm.น้ำเหลือง, derm.พอง, derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่], 1),
-        ...w([derm.สะเก็ด], 1),
-        ...w([pos.ลำตัว], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-        ...w([sys.ไข้, sys.ปวดเมื่อย, sys.คลื่นไส้อาเจียน, sys.เลือดออกGI], 1),
-        ...w([pos.ริมฝีปาก, pos.รอบดวงตา, pos.ลำตัว, pos.แขน, pos.ขา, pos.หน้า, pos.มือ, pos.เท้า], 1),
-        ...w(["mucosa:>1"], 1), // เยื่อบุ >1 ตำแหน่ง
-      ],
+      key: "sjs",
+      label: "SJS (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง/สี
+        if (has(colors(),"ดำ/คล้ำ")) s.add("ดำ/คล้ำ");
+        if (has(colors(),"เทา")) s.add("เทา");
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3. สำคัญ x3
+        if (detachKey("lt10")) s.add("ผิวหนังหลุดลอก ≤10% BSA (x3)", 3);
+        // 4. เพิ่มเติม
+        if (exu("serous")) s.add("น้ำเหลือง");
+        if (blisters("small")) s.add("ตุ่มน้ำเล็ก");
+        if (blisters("medium")) s.add("ตุ่มน้ำกลาง");
+        if (blisters("large")) s.add("ตุ่มน้ำใหญ่");
+        // 5. พบ
+        if (exu("crust")) s.add("สะเก็ด");
+        // 6. ตำแหน่ง
+        if (has(locs(),"ลำตัว")) s.add("ลำตัว");
+        // 7. เวลา (ครอบคลุมตามสเปค)
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        // 8. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (P2has("misc.fatigue") || P2has("msk") ) s.add("ปวดเมื่อยกล้ามเนื้อ/อ่อนเพลีย");
+        if (gi("nausea")) s.add("คลื่นไส้/อาเจียน");
+        if (misc("เลือดออกในทางเดินอาหาร")) s.add("เลือดออกในทางเดินอาหาร");
+        // 9. อวัยวะมิวโคซา
+        if (mucosalGt1()) s.add("จำนวนผื่นบริเวณเยื่อบุ > 1 (mucosal)");
+        return s;
+      }
     },
 
     {
-      id: "A.ten",
-      name: "TEN (Type IV)",
-      tokens: [
-        ...w([shape.ผื่นแดง, shape.ปื้นแดง, shape.เป้าไม่ครบ3], 1),
-        ...w([color.แดง, color.ดำคล้ำ], 1),
-        ...w([derm.BSA_gt30], 3),
-        ...w([derm.ตุ่มน้ำใหญ่, derm.น้ำเหลือง, derm.สะเก็ด], 1),
-        ...w([sys.ซีด, "sys:โลหิตจาง", sys.เลือดออกGI, sys.กลืนลำบาก], 1),
-        ...w([pos.ลำตัว, pos.แขน, pos.ขา, pos.หน้า, pos.มือ, pos.เท้า, pos.ศีรษะ, pos.ทั่วร่างกาย, pos.ริมฝีปาก], 1),
-        ...w([onset.w1, onset.w2, onset.w3], 1),
-        ...w([sys.ไข้, sys.ปวดเมื่อย, sys.คลื่นไส้อาเจียน, sys.เจ็บคอ, sys.ปวดข้อ, sys.ท้องเสีย, sys.เยื่อบุตาอักเสบ], 1),
-        ...w([organ.ไตวาย, organ.ตับอักเสบ, organ.ปอดอักเสบ], 1),
-        ...w([lab.CrRise, lab.UAprotein, sys.SpO2ต่ำ, lab.ALTAST2x, lab.ALT40], 1),
-      ],
+      key: "ten",
+      label: "TEN (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ปื้นแดง")) s.add("ปื้นแดง");
+        if (has(shapes(),"วงกลม")) s.add("เป้าธนูไม่ครบ 3 ชั้น (อนุมานจากวง)");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        if (has(colors(),"ดำ/คล้ำ")) s.add("ดำ/คล้ำ");
+        // 3. สำคัญ x3
+        if (detachKey("gt30")) s.add("ผิวหนังหลุดลอก >30% BSA (x3)", 3);
+        // 4. เพิ่มเติม
+        if (blisters("large")) s.add("ตุ่มน้ำขนาดใหญ่");
+        if (exu("serous")) s.add("น้ำเหลือง");
+        if (exu("crust")) s.add("สะเก็ด");
+        // 5. พบน้อย
+        if (has(colors(),"ซีด")) s.add("ซีด");
+        if (misc("เลือดออกในทางเดินอาหาร")) s.add("เลือดออก GI");
+        if (gi("dysphagia")) s.add("กลืนลำบาก");
+        // 6. ตำแหน่ง
+        ["ลำตัว","แขน","ขา","หน้า","มือ","เท้า","ศีรษะ","ทั่วร่างกาย","ริมฝีปาก"].forEach(L=>{
+          if (has(locs(),L)) s.add("ตำแหน่ง: "+L);
+        });
+        // 7. เวลา
+        if (onsetAny(["1w","2w","3w"])) s.add("เวลา 1–3 สัปดาห์");
+        // 8. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (P2has("misc.fatigue") || P2has("msk")) s.add("ปวดเมื่อยกล้ามเนื้อ/อ่อนเพลีย");
+        if (gi("nausea")) s.add("คลื่นไส้/อาเจียน");
+        if (P2has("misc.soreThroat")) s.add("เจ็บคอ");
+        if (gi("diarrhea")) s.add("ท้องเสีย");
+        if (P2has("misc.conjunctivitis")) s.add("เยื่อบุตาอักเสบ");
+        // 9. อวัยวะ
+        if (organFlag("kidneyFail")) s.add("ไตวาย");
+        if (organFlag("hepatitis")) s.add("ตับอักเสบ");
+        if (organFlag("pneumonia")) s.add("ปอดอักเสบ");
+        // 10. Lab (เผื่อมี)
+        const cr = lab("rft.cr.value"); if (cr >= 0.3) s.add("Creatinine ↑ (ตามเกณฑ์)");
+        const alt = lab("lft.alt.value"); const ast = lab("lft.ast.value");
+        if ((alt >= 40) || (ast >= 40)) s.add("ALT/AST ≥ 40 U/L");
+        if (SpO2() > 0 && SpO2() < 94) s.add("SpO₂ <94%");
+        return s;
+      }
     },
 
     {
-      id: "A.dress",
-      name: "DRESS (Type IV)",
-      tokens: [
-        ...w([shape.ผื่นแดง, shape.ปื้นแดง], 1),
-        ...w([color.แดง], 1),
-        ...w([lab.Eo10, "lab:AtypicalLym"], 3),
-        ...w([derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่, derm.ปื้นจ้ำเลือด], 1),
-        ...w([pos.หน้า, pos.ลำตัว, pos.แขน, pos.ขา], 1),
-        ...w([sys.ไข้], 1),
-        ...w([onset.w1, onset.w2, onset.w3, onset.w4], 1),
-        ...w([ "onset:5w", "onset:6w" ], 1),
-        ...w([lab.ALTAST2x, lab.ALT40, lab.CrRise, lab.UAprotein, sys.SpO2ต่ำ, lab.EKGผิดปกติ, lab.TropI, lab.TropT], 1),
-        ...w([organ.ต่อมน้ำเหลืองโต, organ.ตับอักเสบ, organ.ไตอักเสบ, organ.ไตวาย, organ.ปอดอักเสบ, organ.กล้ามเนื้อหัวใจอักเสบ, "organ:thyroiditis"], 1),
-      ],
+      key: "dress",
+      label: "DRESS (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง/สี
+        if (has(shapes(),"ปื้นแดง") || has(shapes(),"ผื่นราบ")) s.add("ผื่น/ปื้นแดง");
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3. สำคัญ x3 — Eos ≥10% หรือ atypical lymphocyte
+        const eosPct = lab("cbc.eosPct.value");
+        if (eosPct >= 10) s.add("Eosinophil ≥10% (x3)", 3);
+        // 4. ผิวหนังเพิ่ม
+        if (blisters("small")) s.add("ตุ่มน้ำเล็ก");
+        if (blisters("medium")) s.add("ตุ่มน้ำกลาง");
+        if (blisters("large")) s.add("ตุ่มน้ำใหญ่");
+        if (misc("ปื้น/จ้ำเลือด")) s.add("จ้ำเลือด");
+        // 5. ตำแหน่ง
+        ["หน้า","ลำตัว","แขน","ขา"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 6. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        // 7. เวลา — 1–6 สัปดาห์ (หน้า 1 มีถึง 4w + other)
+        if (onsetAny(["1w","2w","3w","4w"])) s.add("ระยะเวลา ≤4สัปดาห์ (ครอบช่วงส่วนหนึ่ง)");
+        // 8. Lab
+        const alt = lab("lft.alt.value"), ast = lab("lft.ast.value");
+        if ((alt >= 40) || (ast >= 40)) s.add("ALT/AST ≥ 40 U/L");
+        const cr = lab("rft.cr.value"); if (cr >= 0.3) s.add("Creatinine ↑ เกณฑ์ AKI");
+        // UA protein+
+        const protein = lab("ua.protein.value"); if (protein > 0) s.add("Urine protein +");
+        if (SpO2() > 0 && SpO2() < 94) s.add("SpO₂ <94%");
+        // 9. อวัยวะ
+        if (P2has("misc.lymph") || truthy(P2().organs && P2().organs["ต่อมน้ำเหลืองโต"]?.checked)) s.add("ต่อมน้ำเหลืองโต");
+        if (organFlag("hepatitis")) s.add("ตับอักเสบ");
+        if (organFlag("nephritis") || organFlag("kidneyFail")) s.add("ไตอักเสบ/ไตวาย");
+        if (organFlag("pneumonia")) s.add("ปอดอักเสบ");
+        if (organFlag("myocarditis")) s.add("กล้ามเนื้อหัวใจอักเสบ");
+        return s;
+      }
     },
 
     {
-      id: "A.em",
-      name: "Erythema multiforme (Type IV)",
-      tokens: [
-        ...w([shape.ตุ่มนูน, "shape:ขอบวงนูนแดงด้านในเรียบ"], 1),
-        ...w([color.แดง, color.แดงซีด], 1),
-        ...w([shape.วงกลม3ชั้น], 3),
-        ...w([derm.พอง, derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง], 1),
-        ...w([derm.สะเก็ด], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1], 1),
-        ...w([pos.ช่องปาก, pos.จมูก, pos.ทวาร, pos.อวัยวะเพศ], 1),
-        ...w([sys.ไข้, sys.อ่อนเพลีย, sys.ปวดเมื่อย, sys.เจ็บคอ, sys.ปวดข้อ], 1),
-        ...w([pos.มือ, pos.เท้า, pos.แขน, pos.ขา, pos.หน้า, pos.ลำตัว, pos.หลัง, pos.ลำคอ], 1),
-      ],
+      key: "em",
+      label: "Erythema multiforme (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ตุ่มนูน")) s.add("ตุ่มนูน");
+        if (has(shapes(),"ขอบวงนูนแดงด้านในเรียบ")) s.add("ขอบวงนูนแดงด้านในเรียบ");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        if (has(colors(),"แดงซีด")) s.add("แดงซีด");
+        // 3. สำคัญ x3
+        if (has(shapes(),"วงกลม 3 ชั้น")) s.add("วงกลม 3 ชั้น (x3)", 3);
+        // 4. เพิ่มเติม
+        if (blisters("small")) s.add("ตุ่มน้ำเล็ก");
+        if (blisters("medium")) s.add("ตุ่มน้ำกลาง");
+        if (exu("serous")) s.add("พอง/น้ำเหลือง");
+        // 5. พบน้อย
+        if (exu("crust")) s.add("สะเก็ด");
+        // 6–7 เวลา
+        if (onsetAny(["1to6h","6to24h","1w"])) s.add("เวลาเข้าเกณฑ์");
+        // 9. ตำแหน่งแขน/ขา/มือ/เท้า/หน้า/ลำตัว/หลัง/ลำคอ
+        ["มือ","เท้า","แขน","ขา","หน้า","ลำตัว","หลัง","ลำคอ"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // mucosal (ช่องปาก/จมูก/ทวาร/อวัยวะเพศ)
+        if (has(locs(),"ทวาร") || has(locs(),"อวัยวะเพศ")) s.add("มิวโคซาเกี่ยวข้อง (อนุมาน)");
+        return s;
+      }
     },
 
     {
-      id: "A.photo",
-      name: "Photosensitivity drug eruption (Type IV)",
-      tokens: [
-        ...w([ "shape:ขอบเขตชัดเจน", shape.ปื้นแดง, "derm:จุดแดงเล็ก" ], 1),
-        ...w([color.ดำคล้ำ, color.แดง], 1),
-        ...w([color.แดงไหม้], 2),
-        ...w([derm.น้ำเหลือง, derm.สะเก็ด], 1),
-        ...w([derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่, derm.ลอก, derm.ขุย, derm.คัน], 1),
-        ...w([pos.หน้า, "pos:หน้าอก", pos.มือ, pos.แขน, pos.ขา], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.h1], 1),
-        ...w([derm.แสบ], 2),
-      ],
+      key: "photosens",
+      label: "Photosensitivity drug eruption (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ขอบเขตชัด")) s.add("ขอบเขตชัด");
+        if (has(shapes(),"ปื้นแดง")) s.add("ปื้นแดง");
+        if (has(shapes(),"จุดเล็กแดง")) s.add("จุดแดงเล็ก");
+        // 2. สี
+        if (has(colors(),"ดำ/คล้ำ")) s.add("ดำ/คล้ำ");
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3. สำคัญ x2
+        if (has(colors(),"แดงไหม้")) s.add("แดงไหม้ (x2)", 2);
+        // 4. เพิ่มเติม
+        if (exu("serous")) s.add("น้ำเหลือง");
+        if (exu("crust")) s.add("สะเก็ด");
+        // 5. อาจพบ
+        if (blisters("small")) s.add("ตุ่มน้ำเล็ก");
+        if (blisters("medium")) s.add("ตุ่มน้ำกลาง");
+        if (blisters("large")) s.add("ตุ่มน้ำใหญ่");
+        if (scaleKey("peel")) s.add("ลอก");
+        if (scaleKey("scale")) s.add("ขุย");
+        if (itch()) s.add("คัน");
+        // 6. ตำแหน่ง
+        ["หน้า","มือ","แขน","ขา"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["1h","1to6h","6to24h","1w"])) s.add("เวลาเข้าเกณฑ์");
+        // 8. เด่น x2
+        if (painKey("burn")) s.add("แสบเด่น (x2)", 2);
+        return s;
+      }
     },
 
     {
-      id: "A.exfoliative",
-      name: "Exfoliative dermatitis (Type IV)",
-      tokens: [
-        ...w([derm.ตึง], 1),
-        ...w([color.แดง], 1),
-        ...w([derm.แห้ง], 3),
-        ...w([derm.ขุย], 3),
-        ...w([derm.คัน], 1),
-        ...w([pos.ทั่วร่างกาย, pos.มือ, pos.เท้า, "pos:ศีรษะ"], 1),
-        ...w([ "onset:3w", onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w4, "onset:<4w" ], 1),
-        ...w([sys.ไข้, sys.หนาวสั่น, sys.อ่อนเพลีย, sys.ดีซ่าน], 1),
-        ...w([organ.ต่อมน้ำเหลืองโต, organ.ตับโต, organ.ม้ามโต, organ.ขาบวม], 1),
-        ...w([color.มันเงา, derm.ลอก], 3),
-      ],
+      key: "exfol",
+      label: "Exfoliative dermatitis (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ผิวหนังตึง")) s.add("ผิวหนังตึง");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3–4 สำคัญ x3
+        if (scaleKey("dry"))  s.add("แห้ง (x3)", 3);
+        if (scaleKey("scale")) s.add("ขุย (x3)", 3);
+        // 5. อื่นๆ
+        if (itch()) s.add("คัน");
+        // 6. ตำแหน่ง
+        ["ทั่วร่างกาย","มือ","เท้า","ศีรษะ"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["3w","1to6h","6to24h","1w","2w","4w"])) s.add("เวลาเข้าเกณฑ์");
+        // 8. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (P2has("misc.chill")) s.add("หนาวสั่น");
+        if (P2has("misc.fatigue")) s.add("อ่อนเพลีย");
+        if (gi("nausea")) s.add("ดีซ่าน/ตับ (อนุมานได้จาก GI)");
+        // 9. อวัยวะ
+        if (truthy(P2().organs && P2().organs["ต่อมน้ำเหลืองโต"]?.checked)) s.add("ต่อมน้ำเหลืองโต");
+        if (truthy(P2().organs && P2().organs["ตับโต"]?.checked)) s.add("ตับโต");
+        if (truthy(P2().organs && P2().organs["ม้ามโต"]?.checked)) s.add("ม้ามโต");
+        if (truthy(P2().organs && P2().organs["ขาบวม"]?.checked)) s.add("ขาบวม");
+        // 10. เด่น x3
+        if (has(colors(),"มันเงา")) s.add("มันเงา (x3)", 3);
+        if (scaleKey("peel")) s.add("ลอก (x3)", 3);
+        return s;
+      }
     },
 
     {
-      id: "A.eczematous",
-      name: "Eczematous drug eruption (Type IV)",
-      tokens: [
-        ...w([shape.ตุ่มนูน, shape.ปื้นแดง], 1),
-        ...w([color.แดง], 1),
-        ...w([derm.คัน], 2),
-        ...w([shape.นูนหนา, shape.ผื่นแดง], 1),
-        ...w([ "derm:จุดเล็กแดง", derm.น้ำเหลือง, derm.สะเก็ด ], 1),
-        ...w([pos.ลำตัว, pos.แขน, pos.ขา, pos.หน้า, pos.ลำคอ], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-        ...w([derm.ขุย, derm.แห้ง, derm.ลอก], 2),
-        ...w([pos.สมมาตร], 1),
-        ...w([derm.ตุ่มน้ำเล็ก, derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่], 1),
-      ],
+      key: "eczema",
+      label: "Eczematous drug eruption (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (has(shapes(),"ตุ่มนูน")) s.add("ตุ่มนูน");
+        if (has(shapes(),"ปื้นแดง")) s.add("ปื้นแดง");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3. สำคัญ x2
+        if (itch()) s.add("คัน (x2)", 2);
+        // 4. เพิ่มเติม
+        if (has(shapes(),"นูนหนา")) s.add("นูนหนา");
+        if (has(shapes(),"ปื้นแดง")) s.add("ผื่นแดง");
+        // 5. อื่นๆ
+        if (has(shapes(),"จุดเล็กแดง")) s.add("จุดเล็กแดง");
+        if (exu("serous")) s.add("น้ำเหลือง");
+        if (exu("crust")) s.add("สะเก็ด");
+        // 6. ตำแหน่ง
+        ["ลำตัว","แขน","ขา","หน้า","ลำคอ"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        // 8. อาจพบ x2
+        if (scaleKey("scale")) s.add("ขุย (x2)", 2);
+        if (scaleKey("dry")) s.add("แห้ง (x2)", 2);
+        if (scaleKey("peel")) s.add("ลอก (x2)", 2);
+        // 9. การกระจาย
+        if (distribution()==="สมมาตร") s.add("สมมาตร");
+        // 10. ตุ่มน้ำ
+        if (blisters("small")) s.add("ตุ่มน้ำเล็ก");
+        if (blisters("medium")) s.add("ตุ่มน้ำกลาง");
+        if (blisters("large")) s.add("ตุ่มน้ำใหญ่");
+        return s;
+      }
     },
 
     {
-      id: "A.bullous",
-      name: "Bullous drug eruption (Type IV)",
-      tokens: [
-        ...w([derm.ตุ่มน้ำเล็ก, derm.พอง, derm.ตึง], 1),
-        ...w([color.แดง], 1),
-        ...w([derm.ตุ่มน้ำกลาง, derm.ตุ่มน้ำใหญ่], 2),
-        ...w([derm.เจ็บ, derm.แสบ], 1),
-        ...w([color.ใส], 3),
-        ...w([pos.ลำตัว, pos.แขน, pos.ขา, pos.เท้า], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-      ],
+      key: "bullous",
+      label: "Bullous drug eruption (Type IV)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. รูปร่าง
+        if (blisters("small")) s.add("ตุ่มน้ำขนาดเล็ก");
+        if (has(shapes(),"พอง")) s.add("พอง");
+        if (has(shapes(),"ผิวหนังตึง")) s.add("ตึง");
+        // 2. สี
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 3. สำคัญ x2
+        if (blisters("medium")) s.add("ตุ่มน้ำขนาดกลาง (x2)", 2);
+        if (blisters("large")) s.add("ตุ่มน้ำขนาดใหญ่ (x2)", 2);
+        // 4. เพิ่มเติม
+        if (painKey("sore")) s.add("เจ็บ");
+        if (painKey("burn")) s.add("แสบ");
+        // 5. สีด้านใน (ใส) x3 — อนุมานจากสีผิว "ใส"
+        if (has(colors(),"ใส")) s.add("ภายในใส (x3)", 3);
+        // 6. ตำแหน่ง
+        ["ลำตัว","แขน","ขา","เท้า"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        // 7. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
 
     {
-      id: "A.serumSickness",
-      name: "Serum sickness (Type III)",
-      tokens: [
-        ...w([shape.ตุ่มนูน, color.แดง, derm.บวม, derm.คัน], 1),
-        ...w([sys.ไข้], 2),
-        ...w([organ.ต่อมน้ำเหลืองโต, organ.ไตอักเสบ], 1),
-        ...w([lab.UAprotein, lab.C3low, lab.C4low], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-        ...w([lab.RBC_UA_5_10], 1),
-        ...w([sys.ปวดข้อ, sys.ข้ออักเสบ], 2),
-        ...w([pos.รอบดวงตา, pos.มือ, pos.เท้า, pos.ลำตัว, pos.แขน, pos.ขา], 1),
-      ],
+      key: "serumSickness",
+      label: "Serum sickness (Type III)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. อาการ
+        if (has(shapes(),"ตุ่มนูน")) s.add("ตุ่มนูน");
+        if (has(colors(),"แดง")) s.add("แดง");
+        if (swelling()) s.add("บวม");
+        if (itch()) s.add("คัน");
+        // 2. สำคัญ x2
+        if (P2has("misc.fever")) s.add("ไข้ >37.5°C (x2)", 2);
+        // 3. อวัยวะ
+        if (truthy(P2().organs && P2().organs["ต่อมน้ำเหลืองโต"]?.checked)) s.add("ต่อมน้ำเหลืองโต");
+        if (organFlag("nephritis")) s.add("ไตอักเสบ");
+        // 4. Lab
+        const protein = lab("ua.protein.value"); if (protein > 0) s.add("protein +");
+        // C3/C4 ไม่พร้อมก็ข้าม
+        // 5. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        // 6. Lab2 RBC (ไม่บังคับ)
+        // 7. ระบบอื่น x2
+        if (P2has('msk')) {
+          // map จาก page2 (ปวดข้อ/ข้ออักเสบ)
+          s.add("ปวดข้อ/ข้ออักเสบ (x2)", 2);
+        }
+        // 8. ตำแหน่ง
+        ["รอบดวงตา","มือ","เท้า","ลำตัว","แขน","ขา"].forEach(L=>{ if (has(locs(),L)) s.add("ตำแหน่ง: "+L); });
+        return s;
+      }
     },
 
     {
-      id: "A.vasculitis",
-      name: "Vasculitis (Type III)",
-      tokens: [
-        ...w([shape.ตุ่มนูน, shape.ผื่นแดง, color.แดง], 1),
-        ...w([sys.ไข้, sys.ปวดข้อ, sys.ข้ออักเสบ, sys.ปวดเมื่อย, organ.ต่อมน้ำเหลืองโต], 1),
-        ...w([organ.ไตอักเสบ, organ.ไตวาย, organ.ต่อมน้ำเหลืองโต], 1),
-        ...w([ "sys:ไอเป็นเลือด", "sys:ถุงลมเลือดออก", sys.เลือดออกGI ], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1, onset.w2, onset.w3], 1),
-        ...w([lab.UAprotein, lab.C3low, lab.C4low], 1),
-        ...w([lab.CrRise], 1),
-        ...w([derm.ปื้นจ้ำเลือด, pos.ขา], 2),
-      ],
+      key: "vasculitis",
+      label: "Vasculitis (Type III)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. อาการผิว
+        if (has(shapes(),"ตุ่มนูน")) s.add("ตุ่มนูน");
+        if (has(shapes(),"ปื้นแดง")) s.add("ผื่นแดง/ปื้นแดง");
+        if (has(colors(),"แดง")) s.add("แดง");
+        // 2. ระบบอื่น
+        if (P2has("misc.fever")) s.add("ไข้");
+        // arthralgia/arthritis/myalgia/lymph
+        if (P2has("msk")) s.add("ปวดข้อ/ข้ออักเสบ/กล้ามเนื้อ");
+        if (truthy(P2().organs && P2().organs["ต่อมน้ำเหลืองโต"]?.checked)) s.add("ต่อมน้ำเหลืองโต");
+        // 3. อวัยวะ
+        if (organFlag("nephritis") || organFlag("kidneyFail")) s.add("ไตอักเสบ/ไตวาย");
+        // 4. อาการเลือดออก
+        if (resp("hemoptysis") || misc("ไอเป็นเลือด")) s.add("ไอเป็นเลือด/ถุงลมเลือดออก");
+        if (misc("เลือดออกในทางเดินอาหาร")) s.add("เลือดออก GI");
+        // 5. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        // 6–7 labs (protein+, C3/C4, Cr↑) — ใส่ได้เมื่อ page3 พร้อม
+        const protein = lab("ua.protein.value"); if (protein > 0) s.add("protein +");
+        const cr = lab("rft.cr.value"); if (cr >= 0.3) s.add("Creatinine ↑");
+        // 8. เด่น x2
+        if (misc("ปื้น/จ้ำเลือด") || misc("จ้ำเลือด")) s.add("จ้ำเลือด (x2)", 2);
+        if (has(locs(),"ขา")) s.add("ตำแหน่งขา (x2)", 2);
+        return s;
+      }
     },
 
     {
-      id: "A.hemolytic",
-      name: "Hemolytic anemia (Type II)",
-      tokens: [
-        ...w([ "sys:ซีด", sys.ดีซ่าน ], 2),
-        ...w([sys.ปัสสาวะชาดำ], 3),
-        ...w([organ.ไตวาย], 1),
-        ...w([lab.IgGpos, lab.C3pos], 1),
-        ...w([onset.h1_6, onset.h6_24, onset.w1], 1),
-        ...w([ "lab:Hb↓≥2-3g/dL/48h" ], 3),
-        ...w([ lab.LDHสูง ], 1),
-        ...w([ sys.hypotension, sys.bp_drop ], 1),
-        ...w([ "sys:ปวดหลังเอว", "sys:ปวดชายโครงขวา" ], 1),
-      ],
+      key: "hemolytic",
+      label: "Hemolytic anemia (Type II)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. สำคัญ x2
+        if (has(colors(),"ซีด")) s.add("ซีด (x2)", 2);
+        if (gi("nausea")) {/*no-op*/} // ไม่เกี่ยวโดยตรง
+        if (P2has('gi')) {/*no-op*/}
+        if (P2has("gi") && misc("ดีซ่าน (ตัวเหลือง/ตาเหลือง)")) s.add("ดีซ่าน (x2)", 2);
+        // 2. ระบบอื่น x3
+        if (misc("ปัสสาวะสีชา/สีดำ")) s.add("ปัสสาวะสีชา/สีดำ (x3)", 3);
+        // 3. อวัยวะ
+        if (organFlag("kidneyFail")) s.add("ไตวาย");
+        // 6. Hb drop x3 (ต้องใช้ lab หลังอัปเดต)
+        // 7. LDH สูง (รอ lab)
+        // 8. BP
+        if (cv("hypotension")) s.add("BP ต่ำ");
+        if (cv("shock")) s.add("BP ลดลง ≥40");
+        // 9. อื่น
+        if (truthy(P2().gu && P2().gu["ปวดหลังส่วนเอว"]?.checked)) s.add("ปวดหลังส่วนเอว");
+        if (truthy(P2().gi && P2().gi["ปวดแน่นชายโครงขวา"]?.checked)) s.add("ปวดแน่นชายโครงขวา");
+        // เวลา
+        if (onsetAny(["1to6h","6to24h","1w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
 
     {
-      id: "A.pancytopenia",
-      name: "Pancytopenia (Type II)",
-      tokens: [
-        ...w([ "sys:ซีด", sys.อ่อนเพลีย ], 1),
-        ...w([ sys.ปัสสาวะชาดำ, sys.หนาวสั่น, sys.เจ็บคอ, "sys:แผลในปาก" ], 1),
-        ...w([ derm.จุดเลือดออก, "derm:ฟกช้ำ", "sys:เลือดกำเดาไหล", "sys:เหงือกเลือดออก" ], 3),
-        ...w([ sys.HRสูง ], 1),
-        ...w([ onset.h1_6, onset.h6_24, onset.w1, onset.w2 ], 1),
-        ...w([ sys.ไข้ ], 1),
-        ...w([ lab.HbLow10 ], 2),
-        ...w([ "lab:Hct<30%" ], 2),
-        ...w([ "lab:WBC<4000" ], 2),
-        ...w([ lab.PltLow100k ], 2),
-      ],
+      key: "pancytopenia",
+      label: "Pancytopenia (Type II)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. อาการ
+        if (has(colors(),"ซีด")) s.add("ซีด");
+        if (P2has("misc.fatigue")) s.add("อ่อนเพลีย");
+        // 2. ระบบอื่น
+        if (misc("ปัสสาวะสีชา/สีดำ")) s.add("ปัสสาวะสีชา/สีดำ");
+        if (P2has("misc.chill")) s.add("หนาวสั่น");
+        if (P2has("misc.soreThroat")) s.add("เจ็บคอ");
+        if (truthy(P2().gi && P2().gi["แผลในปาก"]?.checked)) s.add("แผลในปาก");
+        // 3. ผิดปกติ x3 (เลือดออกง่าย)
+        if (misc("จุดเลือดออก")) s.add("จุดเลือดออก (x3)", 3);
+        if (misc("ฟกช้ำ")) s.add("ฟกช้ำ (x3)", 3);
+        if (truthy(P2().ent && P2().ent["เลือดกำเดาไหล"]?.checked)) s.add("เลือดกำเดาไหล (x3)", 3);
+        if (truthy(P2().gi && P2().gi["เหงือกเลือดออก"]?.checked)) s.add("เหงือกเลือดออก (x3)", 3);
+        // 4. HR สูง
+        if (HR() > 100 || P2().examHRHigh) s.add("HR >100");
+        // 5–10 labs (Hb/Hct/WBC/Plt) — จะคิดจริงเมื่อ page3 เสร็จ
+        const hb  = lab("cbc.hb.value");  if (hb > 0 && hb < 10) s.add("Hb <10 g/dL (x2)", 2);
+        const hct = lab("cbc.hct.value"); if (hct > 0 && hct < 30) s.add("Hct <30% (x2)", 2);
+        const wbc = lab("cbc.wbc.value"); if (wbc > 0 && wbc < 4000) s.add("WBC <4000 (x2)", 2);
+        const plt = lab("cbc.plt.value"); if (plt > 0 && plt < 100000) s.add("Plt <100,000 (x2)", 2);
+        // เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
 
     {
-      id: "A.neutropenia",
-      name: "Neutropenia (Type II)",
-      tokens: [
-        ...w([ sys.หนาวสั่น, sys.เจ็บคอ, "sys:แผลในปาก" ], 1),
-        ...w([ sys.ไข้, "sys:แผลในปาก", "sys:ทอนซิลอักเสบ" ], 1),
-        ...w([ organ.ปอดอักเสบ ], 1),
-        ...w([ lab.ANC1500 ], 4),
-      ],
+      key: "neutropenia",
+      label: "Neutropenia (Type II)",
+      eval() {
+        const s = mkScoreBox();
+        if (P2has("misc.chill")) s.add("หนาวสั่น");
+        if (P2has("misc.soreThroat")) s.add("เจ็บคอ");
+        if (truthy(P2().gi && P2().gi["แผลในปาก"]?.checked)) s.add("แผลในปาก");
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (organFlag("pneumonia")) s.add("ปอดอักเสบ");
+        const anc = lab("cbc.anc.value");
+        if (anc > 0 && anc < 1500) s.add("ANC <1500 (x4)", 4);
+        if (onsetAny(["1to6h","6to24h","1w","2w","3w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
 
     {
-      id: "A.thrombocytopenia",
-      name: "Thrombocytopenia (Type II)",
-      tokens: [
-        ...w([ derm.จุดเลือดออก, derm.ปื้นจ้ำเลือด ], 2),
-        ...w([ "sys:เหงือกเลือดออก", sys.เลือดออกGI, "sys:ปัสสาวะเลือด" ], 1),
-        ...w([ lab.PltLow150k ], 1),
-        ...w([ onset.h1_6, onset.h6_24, onset.w1 ], 1),
-      ],
+      key: "thrombocytopenia",
+      label: "Thrombocytopenia (Type II)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. อาการ x2
+        if (misc("จุดเลือดออก")) s.add("จุดเลือดออก (x2)", 2);
+        if (misc("ปื้น/จ้ำเลือด")) s.add("ปื้น/จ้ำเลือด (x2)", 2);
+        // 2. ระบบอื่น
+        if (truthy(P2().gi && P2().gi["เหงือกเลือดออก"]?.checked)) s.add("เหงือกเลือดออก");
+        if (misc("เลือดออกในทางเดินอาหาร")) s.add("เลือดออก GI");
+        if (truthy(P2().gu && P2().gu["ปัสสาวะเลือดออก"]?.checked)) s.add("ปัสสาวะเลือดออก");
+        // 3. Lab
+        const plt = lab("cbc.plt.value"); if (plt > 0 && plt < 150000) s.add("Plt <150,000");
+        // 4. เวลา
+        if (onsetAny(["1to6h","6to24h","1w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
 
     {
-      id: "A.nephritis",
-      name: "Nephritis (Type II)",
-      tokens: [
-        ...w([ sys.ไข้, sys.ปวดข้อ, sys.อ่อนเพลีย ], 1),
-        ...w([ sys.ปัสสาวะน้อย, sys.ปัสสาวะขุ่น ], 1),
-        ...w([ organ.ขาบวม, derm.บวม ], 1),
-        ...w([ lab.CrRise, lab.eGFRlt60 ], 3),
-        ...w([ onset.h1_6, onset.h6_24, onset.w1, onset.w2 ], 1),
-      ],
+      key: "nephritis",
+      label: "Nephritis (Type II)",
+      eval() {
+        const s = mkScoreBox();
+        // 1. อาการ
+        if (P2has("misc.fever")) s.add("ไข้");
+        if (P2has("msk")) s.add("ปวดข้อ");
+        if (P2has("misc.fatigue")) s.add("อ่อนเพลีย");
+        // 2. ระบบปัสสาวะ
+        if (misc("ปัสสาวะออกน้อย")) s.add("ปัสสาวะออกน้อย");
+        if (misc("ปัสสาวะขุ่น")) s.add("ปัสสาวะขุ่น");
+        // 3. อวัยวะ
+        if (truthy(P2().organs && P2().organs["ขาบวม"]?.checked)) s.add("ขาบวม");
+        if (swelling()) s.add("บวม");
+        // 4. Lab
+        const cr = lab("rft.cr.value"); if (cr >= 0.3) s.add("Creatinine ↑ (x3)", 3);
+        const egfr = lab("rft.egfr.value"); if (egfr > 0 && egfr < 60) s.add("eGFR <60 (x3)", 3);
+        // 5. เวลา
+        if (onsetAny(["1to6h","6to24h","1w","2w"])) s.add("เวลาเข้าเกณฑ์");
+        return s;
+      }
     },
   ];
 
-  window.brainRules = ADRS;
+  // ---------------------------------------------------------------------------
+  // Public compute: คืนรายการ {key,label,total,tokens[]}
+  // ---------------------------------------------------------------------------
+  function computeAll() {
+    const results = [];
+    for (const R of RULES) {
+      try {
+        const box = R.eval();
+        if (!box || !Number.isFinite(box.total)) continue;
+        results.push({ key: R.key, label: R.label, total: box.total, tokens: box.tokens });
+      } catch (e) {
+        // ป้องกันทั้งระบบล้ม
+        results.push({ key: R.key, label: R.label, total: 0, tokens: [{label:"(rule error suppressed)", w:0}] });
+      }
+    }
+    results.sort((a,b)=>b.total - a.total);
+    return results;
+  }
+
+  // export
+  window.brainRules = { computeAll };
 })();
