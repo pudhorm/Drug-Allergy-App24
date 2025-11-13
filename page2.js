@@ -3,7 +3,7 @@
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page2) window.drugAllergyData.page2 = {};
 
-  // โทนสีหลักของส่วนที่ 1
+  // โทนสีหลัก
   const COMMON_BG = "linear-gradient(90deg, rgba(239,246,255,1), rgba(219,234,254,1))";
   const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
@@ -40,7 +40,7 @@
         "เจ็บหน้าอก",
         "ใจสั่น",
         "BP ต่ำ (<90/60)",
-        "BP ลดลง ≥30% ของ baseline systolic เดิม", // เพิ่มตามสเปค
+        "BP ลดลง ≥30% ของ baseline systolic เดิม",
         "HR สูง (>100)",
         "หน้ามืด/หมดสติ",
         "โลหิตจาง",
@@ -143,8 +143,8 @@
     "กล้ามเนื้อหัวใจอักเสบ",
     "ต่อมไทรอยด์อักเสบ",
     "ปอดอักเสบ",
-    "ตับโต",   // เพิ่ม
-    "ขาบวม",  // เพิ่ม
+    "ตับโต",
+    "ขาบวม",
     "ไม่พบ"
   ];
 
@@ -156,14 +156,11 @@
 
     root.innerHTML = `
       <div class="p2-wrapper" style="background:radial-gradient(circle at top, #dbeafe 0%, #eef2ff 35%, #fff 95%);border:1px solid rgba(59,130,246,.15);border-radius:1.4rem;padding:1.2rem 1.2rem 1.7rem;box-shadow:0 12px 28px rgba(148,163,184,.12);position:relative;">
-
         <!-- ส่วนที่ 1 -->
         <section class="p2-section" style="background:rgba(239,246,255,.95);border:1px solid rgba(59,130,246,.25);border-radius:1.05rem;padding:1rem 1rem 1.1rem;margin-bottom:1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#1d4ed8;margin:0 0 1rem;">
-            <span>🩺</span>
-            <span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
+            <span>🩺</span><span>ส่วนที่ 1 อาการ/อาการแสดงระบบอื่นๆ</span>
           </h2>
-
           <div style="display:flex;flex-direction:column;gap:1rem;">
             ${FEATURE_GROUPS.map(group => {
               const saved = d[group.key] || {};
@@ -171,8 +168,7 @@
                 <div>
                   <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
                     <h3 style="display:flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:700;color:#1f2937;margin:0 0 .55rem;">
-                      <span>${group.emoji}</span>
-                      <span>${group.title}</span>
+                      <span>${group.emoji}</span><span>${group.title}</span>
                     </h3>
                     <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
                       ${group.items.map((txt, idx) => {
@@ -200,8 +196,7 @@
         <!-- ส่วนที่ 2 -->
         <section class="p2-section" style="background:rgba(248,250,252,1);border:1px solid rgba(148,163,184,.45);border-radius:1.05rem;padding:1rem 1rem 1.1rem;">
           <h2 style="display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:#111827;margin:0 0 1rem;">
-            <span>🫀</span>
-            <span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
+            <span>🫀</span><span>ส่วนที่ 2 อวัยวะที่ผิดปกติ</span>
           </h2>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px,1fr));gap:.6rem;">
@@ -237,7 +232,7 @@
       </div>
     `;
 
-    // ── ผูก event ส่วนที่ 1
+    // ผูก event ส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -246,13 +241,13 @@
         cb.addEventListener("change", () => {
           input.style.display = cb.checked ? "block" : "none";
           if (!cb.checked) input.value = "";
-          collectPage2();
+          collectPage2(true); // live update
         });
-        input.addEventListener("input", collectPage2);
+        input.addEventListener("input", () => collectPage2(true));
       });
     });
 
-    // ── ผูก event ส่วนที่ 2
+    // ผูก event ส่วนที่ 2
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
       const input = root.querySelector(`.p2-org-detail[data-org="${org}"]`);
@@ -260,12 +255,12 @@
       cb.addEventListener("change", () => {
         input.style.display = cb.checked ? "block" : "none";
         if (!cb.checked) input.value = "";
-        collectPage2();
+        collectPage2(true); // live update
       });
-      input.addEventListener("input", collectPage2);
+      input.addEventListener("input", () => collectPage2(true));
     });
 
-    // ── ปุ่มล้าง (popup)
+    // ปุ่มล้าง
     document.getElementById("p2_clear").addEventListener("click", () => {
       window.drugAllergyData.page2 = {};
       if (window.saveDrugAllergyData) window.saveDrugAllergyData();
@@ -273,105 +268,41 @@
       alert("ล้างข้อมูลหน้า 2 แล้ว");
     });
 
-    // ── ปุ่มบันทึกและไปหน้า 3 (popup)
+    // ปุ่มบันทึกและไปหน้า 3
     document.getElementById("p2_save").addEventListener("click", () => {
-      collectPage2();
-      finalizePage2(); // mark __saved + dispatch "da:update"
+      collectPage2(false);   // เก็บล่าสุด
+      finalizePage2();       // mark saved + แจ้งอัปเดต
       alert("บันทึกหน้า 2 แล้ว");
       const btn3 = document.querySelector('.tabs button[data-target="page3"]');
       if (btn3) btn3.click();
     });
+
+    // เก็บครั้งแรกเผื่อ UI อื่นอ่านค่าได้ทันที
+    collectPage2(true);
   }
 
-  // เก็บข้อมูล (ไม่ยิง event)
-  function collectPage2() {
+  // เก็บข้อมูล (ถ้า live=true จะยิงอัปเดตสมองทันที)
+  function collectPage2(live) {
     const root = document.getElementById("page2");
     if (!root) return;
 
     const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
 
-    // เตรียม containers ให้กฎอ่านง่าย
-    store.misc = store.misc || {};
-    store.gi = store.gi || {};
-    store.cv = store.cv || {};
-    store.resp = store.resp || {};
-
-    // เก็บส่วนที่ 1
+    // ส่วนที่ 1
     FEATURE_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
         const input = root.querySelector(`.p2-detail[data-group="${group.key}"][data-text="${txt}"]`);
         if (!cb || !input) return;
-
-        // เก็บตามข้อความ (คงเดิม)
         if (cb.checked || input.value.trim() !== "") {
           groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
-        }
-
-        // ── สร้างคีย์เสริม/แมปเข้าสู่ฟิลด์ที่ brain.rules ใช้ ──
-        if (group.key === "resp") {
-          if (txt === "หายใจมีเสียงวี๊ด" && cb.checked) {
-            store.resp.wheeze = true;
-          }
-          if (txt.indexOf("หอบเหนื่อย/หายใจลำบาก") >= 0 && cb.checked) {
-            // แมตช์กับตัวอ่าน: dyspneaCombo + dyspnea + tachypnea และให้ vitals proxy
-            store.resp.dyspneaCombo = true;
-            store.resp.dyspnea = true;
-            store.resp.tachypnea = true;
-            // ตัวกฎจะสร้าง token vital เอง แต่กันพลาด ให้ flag ไว้
-            store.vital = Object.assign({}, store.vital, { RRover21: true, HRover100: true, SpO2lt94: true });
-          }
-        }
-
-        if (group.key === "cv") {
-          if (txt === "BP ต่ำ (<90/60)" && cb.checked) {
-            store.cv.hypotension = true;
-          }
-          if (txt.indexOf("BP ลดลง ≥30%") >= 0 && cb.checked) {
-            store.cv.drop30 = true;
-          }
-          if (txt.indexOf("HR สูง") === 0 && cb.checked) {
-            // ให้กฎจับได้ผ่าน examHRHigh (และสำรอง HR เป็นตัวเลขเผื่อใช้)
-            store.examHRHigh = true;
-            store.HR = 101;
-          }
-        }
-
-        if (group.key === "gi") {
-          if (txt === "ท้องเสีย" && cb.checked) store.gi.diarrhea = true;
-          if (txt === "กลืนลำบาก" && cb.checked) store.gi.dysphagia = true;
-          if (txt === "ปวดบิดท้อง" && cb.checked) store.gi.cramp = true;
-          if (txt === "คลื่นไส้/อาเจียน" && cb.checked) store.gi.nausea = true;
-          if (txt === "แผลในปาก" && cb.checked) store.misc.oralUlcer = true;
-          if (txt === "เลือดออกในทางเดินอาหาร" && cb.checked) store.misc.bleedingGI = true;
-        }
-
-        if (group.key === "eye") {
-          if (txt.indexOf("เยื่อบุตาอักเสบ") === 0 && cb.checked) store.misc.conjunctivitis = true;
-          if (txt === "แผลที่กระจกตา" && cb.checked) store.misc.corneal = true;
-        }
-
-        if (group.key === "skin_extra") {
-          if (txt === "ปื้น/จ้ำเลือด" && cb.checked) store.misc.hemorrhageSkin = true;
-          if (txt === "จุดเลือดออก" && cb.checked) store.misc.petechiae = true;
-        }
-
-        if (group.key === "ent") {
-          if (txt === "เจ็บคอ" && cb.checked) store.misc.soreThroat = true;
-          if (txt === "ทอนซิลอักเสบ" && cb.checked) store.misc.tonsillitis = true; // เผื่อใช้ต่อไป
-        }
-
-        if (group.key === "other") {
-          if (txt.indexOf("ไข้") === 0 && cb.checked) store.misc.fever = true;
-          if (txt === "อ่อนเพลีย" && cb.checked) store.misc.fatigue = true;
-          if (txt === "หนาวสั่น" && cb.checked) store.misc.chill = true;
         }
       });
       store[group.key] = groupObj;
     });
 
-    // เก็บส่วนที่ 2 (อวัยวะ)
+    // ส่วนที่ 2
     const organObj = {};
     ORGANS.forEach((org, idx) => {
       const cb = document.getElementById(`org_${idx}`);
@@ -380,29 +311,26 @@
       if (cb.checked || input.value.trim() !== "") {
         organObj[org] = { checked: cb.checked, detail: input.value.trim() };
       }
-
-      // สะพานไปยังคีย์ที่กฎอ่าน (store.org.*)
-      if (cb && cb.checked) {
-        store.org = store.org || {};
-        if (org === "ไตอักเสบ") store.org.kidneyFail = true;        // ให้กฎจับเป็น org:ไตอักเสบ/ไตวาย ได้บางส่วน
-        if (org === "ตับอักเสบ") store.org.hepatitis = true;
-        if (org === "ปอดอักเสบ") store.org.pneumonia = true;
-        if (org === "กล้ามเนื้อหัวใจอักเสบ") store.org.myocarditis = true;
-      }
     });
     store.organs = organObj;
 
-    // ทำเครื่องหมายว่ามีการแก้ไข
     store.__touched = true;
+
+    if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+
+    // 🔔 อัปเดตผลประเมินแบบเรียลไทม์ (ไม่ต้องกดบันทึก)
+    if (live) {
+      document.dispatchEvent(new Event("da:update"));
+      if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
+    }
   }
 
-  // ทำเครื่องหมายบันทึก + อัปเดตตัวกลาง + แจ้งทุกหน้าให้รีเฟรช
+  // ทำเครื่องหมายบันทึก + แจ้งทุกหน้าให้รีเฟรช
   function finalizePage2() {
     const store = window.drugAllergyData.page2 || (window.drugAllergyData.page2 = {});
-    store.__saved = true;
-    store.__ts = Date.now();
+    store.__saved  = true;
+    store.__ts     = Date.now();
     store.__touched = true;
-
     window.drugAllergyData.page2 = Object.assign({}, store, { __saved: true, __ts: store.__ts, __touched: true });
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
