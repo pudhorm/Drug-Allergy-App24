@@ -1,387 +1,152 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
 (function () {
-  // จุดหมายเรนเดอร์ในหน้า 6 (ใช้กล่อง p6BrainBox ที่ page6.js สร้างไว้)
+  // -------------------- helpers --------------------
   function renderIntoPage6(html) {
-    const box = document.getElementById("p6BrainBox");
+    var box = document.getElementById("p6BrainBox");
     if (!box) return;
     box.innerHTML = html;
   }
 
-  // --------------------------- รายการผลลัพธ์ 21 รายการ ---------------------------
-  const ADR_LIST = [
-    "Urticaria",
-    "Anaphylaxis",
-    "Angioedema",
-    "Maculopapular rash",
-    "Fixed drug eruption",
-    "AGEP",
-    "SJS",
-    "TEN",
-    "DRESS",
-    "Erythema multiforme (EM)",
-    "Photosensitivity drug eruption",
-    "Exfoliative dermatitis",
-    "Eczematous drug eruption",
-    "Bullous Drug Eruption",
-    "Serum sickness",
-    "Vasculitis",
-    "Hemolytic anemia",
-    "Pancytopenia / Neutropenia / Thrombocytopenia",
-    "Nephritis",
-    "Angioedema (duplicate guard)", // กันช่องหาย – คงให้โชว์ 21 ช่องถ้วน
-    "Others"
-  ];
+  // หน้าไหนต้อง "บันทึก" ก่อนถึงจะยอมคำนวณ
+  // ==> หน้า 1 และ 2 ต้องมี __saved; หน้า 3 (Lab) เป็น optional
+  function corePagesReady() {
+    var d = window.drugAllergyData || {};
+    var p1ok = !!(d.page1 && d.page1.__saved);
+    var p2ok = !!(d.page2 && d.page2.__saved);
+    return { ok: p1ok && p2ok, hasP3: !!(d.page3 && d.page3.__saved) };
+  }
 
-  // --------------------------- ดึงแฟ็กต์จากหน้า 1–3 ---------------------------
-  function collectFacts() {
-    const d1 = (window.drugAllergyData && window.drugAllergyData.page1) || {};
-    const d2 = (window.drugAllergyData && window.drugAllergyData.page2) || {};
-    const d3 = (window.drugAllergyData && window.drugAllergyData.page3) || {}; // เผื่อใช้ต่อในอนาคต
-
-    // helper page2: มีข้อความนี้ถูกติ๊กไหม
-    function hasP2(txt) {
-      for (const k of Object.keys(d2 || {})) {
-        if (!d2[k] || typeof d2[k] !== "object") continue;
-        if (d2[k][txt] && d2[k][txt].checked) return true;
+  // ใส่สไตล์กราฟแนวนอนครั้งเดียว
+  function ensureStyles() {
+    if (document.getElementById("p6-brain-style")) return;
+    var css = `
+      #p6BrainBox { font-size: 0.92rem; color:#111827; }
+      .p6-brain-wrap{margin-top:0.25rem;}
+      .p6-brain-row{
+        display:grid;
+        grid-template-columns: minmax(140px, 220px) 1fr 40px;
+        gap:10px;
+        align-items:center;
+        margin:0.25rem 0;
       }
-      return false;
-    }
-
-    // onset
-    const onset = d1.onset || "";
-    const onsetFacts = {
-      onset_1h: onset === "1h",
-      onset_1to6h: onset === "1to6h",
-      onset_6to24h: onset === "6to24h",
-      onset_1w: onset === "1w",
-      onset_2w: onset === "2w",
-      onset_3w: onset === "3w",
-      onset_4w: onset === "4w",
-      onset_other: onset === "other"
-    };
-
-    // shapes / colors / locations
-    const shapes = new Set(d1.rashShapes || []);
-    const colors = new Set(d1.rashColors || []);
-    const locs = new Set(d1.locations || []);
-
-    // page1 grouped flags
-    const f = {
-      // รูปทรง
-      shape_wheals: shapes.has("ตุ่มนูน") || shapes.has("ปื้นนูน"),
-      shape_plaque: shapes.has("ปื้นนูน"),
-      shape_circle:
-        shapes.has("วงกลมชั้นเดียว") ||
-        shapes.has("วงรี") ||
-        shapes.has("วงกลม 3 ชั้น"),
-      shape_target3: shapes.has("วงกลม 3 ชั้น"),
-      shape_edge_irregular:
-        shapes.has("ขอบหยัก") || shapes.has("ขอบไม่ชัดเจน"),
-      shape_edge_smooth: shapes.has("ขอบเรียบ"),
-
-      // สี
-      color_red: colors.has("แดง"),
-      color_red_pale: colors.has("แดงซีด"),
-      color_pale: colors.has("ซีด"),
-      color_burnt: colors.has("แดงไหม้"),
-      color_purple: colors.has("ม่วง"),
-      color_yellow: colors.has("เหลือง"),
-      color_black: colors.has("ดำ"),
-      color_gray: colors.has("เทา"),
-
-      // blister / bulla
-      blister_small: !!d1.blisters?.small,
-      blister_medium: !!d1.blisters?.medium,
-      blister_large: !!d1.blisters?.large,
-
-      // detachment
-      detach_center: !!d1.skinDetach?.center,
-      detach_lt10: !!d1.skinDetach?.lt10,
-      detach_gt30: !!d1.skinDetach?.gt30,
-
-      // scales / crust / dry / peel
-      scale_scales: !!d1.scales?.scale,
-      scale_dry: !!d1.scales?.dry,
-      scale_peel: !!d1.scales?.peel,
-      exudate_serous: !!d1.exudate?.serous,
-      exudate_crust: !!d1.exudate?.crust,
-
-      // itch / pain
-      itch: !!d1.itch?.has,
-      itch_severe: !!d1.itch?.severe,
-      itch_mild: !!d1.itch?.mild,
-      pain_pain: !!d1.pain?.pain,
-      pain_burn: !!d1.pain?.burn,
-      pain_sore: !!d1.pain?.sore,
-
-      // swelling / pustule
-      swelling: !!d1.swelling?.has,
-      pustule: !!d1.pustule?.has,
-
-      // ตำแหน่ง
-      loc_trunk: locs.has("ลำตัว"),
-      loc_face: locs.has("หน้า"),
-      loc_lips: locs.has("ริมฝีปาก"),
-      loc_eyes: locs.has("รอบดวงตา"),
-      loc_hands: locs.has("มือ"),
-      loc_feet: locs.has("เท้า"),
-      loc_genital: locs.has("อวัยวะเพศ"),
-
-      // การกระจาย
-      distrib_sym: d1.distribution === "สมมาตร",
-
-      // mucosal count >1 (checkbox ใหม่ในหน้า 1)
-      mucosal_gt1: !!d1.mucosalMany
-    };
-
-    // page2 systemic
-    const s = {
-      wheeze: hasP2("หายใจมีเสียงวี๊ด"),
-      resp_comp: hasP2(
-        "หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)"
-      ),
-      cough_blood: hasP2("ไอเป็นเลือด"),
-      chest_pain: hasP2("เจ็บหน้าอก"),
-      palpitation: hasP2("ใจสั่น"),
-      bp_low: hasP2("BP ต่ำ (<90/60)"),
-      bp_drop30: hasP2("BP ลดลง ≥30% ของ baseline systolic เดิม"),
-      hr_high: hasP2("HR สูง (>100)"),
-      syncope: hasP2("หน้ามืด/หมดสติ"),
-      fever: hasP2("ไข้ Temp > 37.5 °C"),
-      myalgia: hasP2("ปวดเมื่อยกล้ามเนื้อ"),
-      n_v: hasP2("คลื่นไส้/อาเจียน"),
-      abd_cramp: hasP2("ปวดบิดท้อง"),
-      diarrhea: hasP2("ท้องเสีย"),
-      dysphagia: hasP2("กลืนลำบาก"),
-      gi_bleed: hasP2("เลือดออกในทางเดินอาหาร"),
-      eye_conj: hasP2("เยื่อบุตาอักเสบ (ตาแดง)")
-    };
-
-    return { onsetFacts, f, s, raw: { d1, d2, d3 } };
+      .p6-brain-label{white-space:normal;}
+      .p6-brain-bar{
+        position:relative;
+        height:16px;
+        border-radius:999px;
+        overflow:hidden;
+        background:#f3f4f6;
+      }
+      .p6-brain-bar-fill{
+        height:100%;
+        border-radius:999px;
+        background:linear-gradient(90deg,#7c3aed 0%,#06b6d4 100%);
+        transition:width .35s ease;
+      }
+      .p6-brain-val{
+        text-align:right;
+        font-weight:700;
+        font-size:0.8rem;
+      }
+      .p6-brain-summary{
+        font-weight:600;
+        margin-bottom:0.35rem;
+      }
+      .p6-muted{
+        color:#6b7280;
+        font-size:0.9rem;
+      }
+    `;
+    var tag = document.createElement("style");
+    tag.id = "p6-brain-style";
+    tag.textContent = css;
+    document.head.appendChild(tag);
   }
 
-  // --------------------------- Rule Engine (แยกข้อใหญ่, ไม่รวมกลุ่ม) ---------------------------
-  const RULES = {
-    Urticaria: [
-      { fact: "shape_wheals", w: 2 },
-      { fact: "itch", w: 1 },
-      { fact: "color_red", w: 1 },
-      { fact: "onset_1h", w: 2 }
-    ],
-    Anaphylaxis: [
-      { fact: "wheeze", w: 2 },
-      { fact: "resp_comp", w: 2 },
-      { fact: "bp_low", w: 3 },
-      { fact: "bp_drop30", w: 3 },
-      { fact: "hr_high", w: 2 },
-      { fact: "onset_1h", w: 2 }
-    ],
-    Angioedema: [
-      { fact: "swelling", w: 3 },
-      { fact: "shape_edge_irregular", w: 1 },
-      { fact: "color_pale", w: 1 },
-      { fact: "onset_1h", w: 2 },
-      { fact: "loc_lips", w: 2 },
-      { fact: "loc_eyes", w: 1 },
-      { fact: "loc_genital", w: 1 }
-    ],
-    "Maculopapular rash": [
-      { fact: "color_red", w: 1 },
-      { fact: "shape_plaque", w: 2 },
-      { fact: "itch", w: 1 },
-      { fact: "onset_1to6h", w: 1 },
-      { fact: "onset_6to24h", w: 1 },
-      { fact: "onset_1w", w: 1 },
-      { fact: "distrib_sym", w: 1 }
-    ],
-    "Fixed drug eruption": [
-      { fact: "shape_circle", w: 1 },
-      { fact: "color_black", w: 3 },
-      { fact: "pain_burn", w: 1 },
-      { fact: "loc_lips", w: 2 }
-    ],
-    AGEP: [
-      { fact: "pustule", w: 3 },
-      { fact: "color_red", w: 1 },
-      { fact: "fever", w: 1 }
-    ],
-    SJS: [
-      { fact: "detach_lt10", w: 3 },
-      { fact: "color_black", w: 1 },
-      { fact: "color_gray", w: 1 },
-      { fact: "color_red", w: 1 },
-      { fact: "exudate_serous", w: 1 },
-      { fact: "blister_small", w: 1 },
-      { fact: "blister_medium", w: 1 },
-      { fact: "blister_large", w: 1 },
-      { fact: "loc_trunk", w: 1 },
-      { fact: "onset_1to6h", w: 1 },
-      { fact: "onset_6to24h", w: 1 },
-      { fact: "onset_1w", w: 1 },
-      { fact: "onset_2w", w: 1 },
-      { fact: "onset_3w", w: 1 },
-      { fact: "fever", w: 1 },
-      { fact: "myalgia", w: 1 },
-      { fact: "n_v", w: 1 },
-      { fact: "gi_bleed", w: 1 },
-      { fact: "mucosal_gt1", w: 2 } // ✅ จำนวนผื่นบริเวณเยื่อบุ > 1
-    ],
-    TEN: [
-      { fact: "detach_gt30", w: 3 },
-      { fact: "color_red", w: 1 },
-      { fact: "exudate_serous", w: 1 },
-      { fact: "blister_large", w: 2 }
-    ],
-    DRESS: [
-      { fact: "fever", w: 1 },
-      { fact: "color_red", w: 1 },
-      { fact: "onset_1w", w: 1 },
-      { fact: "onset_2w", w: 1 },
-      { fact: "onset_3w", w: 1 },
-      { fact: "onset_4w", w: 1 }
-    ],
-    "Erythema multiforme (EM)": [
-      { fact: "shape_target3", w: 3 },
-      { fact: "color_red", w: 1 },
-      { fact: "color_red_pale", w: 1 }
-    ],
-    "Photosensitivity drug eruption": [
-      { fact: "color_burnt", w: 2 },
-      { fact: "exudate_crust", w: 1 },
-      { fact: "onset_1h", w: 1 },
-      { fact: "onset_1to6h", w: 1 },
-      { fact: "onset_6to24h", w: 1 }
-    ],
-    "Exfoliative dermatitis": [
-      { fact: "color_red", w: 1 },
-      { fact: "scale_dry", w: 3 },
-      { fact: "scale_scales", w: 3 },
-      { fact: "scale_peel", w: 3 }
-    ],
-    "Eczematous drug eruption": [
-      { fact: "shape_wheals", w: 1 },
-      { fact: "color_red", w: 1 },
-      { fact: "itch", w: 2 },
-      { fact: "exudate_crust", w: 1 }
-    ],
-    "Bullous Drug Eruption": [
-      { fact: "blister_medium", w: 2 },
-      { fact: "blister_large", w: 2 },
-      { fact: "pain_burn", w: 1 },
-      { fact: "exudate_serous", w: 1 }
-    ],
-    "Serum sickness": [
-      { fact: "fever", w: 2 },
-      { fact: "pain_sore", w: 1 }
-    ],
-    Vasculitis: [
-      { fact: "exudate_crust", w: 1 },
-      { fact: "color_purple", w: 2 }
-    ],
-    "Hemolytic anemia": [
-      { fact: "bp_low", w: 1 } // placeholder เบื้องต้น
-    ],
-    "Pancytopenia / Neutropenia / Thrombocytopenia": [
-      { fact: "fever", w: 1 },
-      { fact: "hr_high", w: 1 }
-    ],
-    Nephritis: [
-      { fact: "bp_high", w: 0 } // placeholder ให้ครบ 21 ช่อง
-    ],
-    "Angioedema (duplicate guard)": [
-      { fact: "swelling", w: 1 }
-    ],
-    Others: []
-  };
+  // -------------------- main compute + render --------------------
+  function brainComputeAndRender() {
+    ensureStyles();
 
-  // คำนวณคะแนนเป็น 0–100 (normalize ตามน้ำหนักรวมของกฎ)
-  function scoreADR(adName, facts) {
-    const rules = RULES[adName] || [];
-    let got = 0;
-    let max = 0;
-    for (const r of rules) {
-      const w = r.w || 1;
-      max += w;
-      if (facts[r.fact]) got += w;
+    var ready = corePagesReady();
+    if (!ready.ok) {
+      renderIntoPage6(
+        '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–2 หรือยังไม่ได้กดบันทึก</div>'
+      );
+      return;
     }
-    if (max === 0) return 0;
-    return Math.round((got / max) * 100);
-  }
 
-  function computeAll() {
-    const { f, s, onsetFacts } = collectFacts();
-    const facts = { ...f, ...s, ...onsetFacts }; // รวมเป็นกุญแจชุดเดียว
-
-    const scores = {};
-    for (const name of ADR_LIST) {
-      scores[name] = scoreADR(name, facts);
+    if (typeof window.brainRank !== "function") {
+      renderIntoPage6(
+        '<div class="p6-muted">ยังไม่พบโมดูลสมอง (brain.rules.js) กรุณาตรวจสอบว่าโหลดไฟล์ดังกล่าวแล้ว</div>'
+      );
+      return;
     }
-    return scores;
-  }
 
-  // --------------------------- เรนเดอร์ผลลัพธ์เป็นกราฟแนวนอน ---------------------------
-  function renderBrain() {
-    const scores = computeAll();
-    const values = Object.values(scores);
-    const anySignal = values.some((v) => v > 0);
+    // ใช้โหมด C จาก brain.rules.js (แมตช์ตรงตัว, ไม่ปนข้อใหญ่)
+    var out = window.brainRank("C") || {};
+    var results = Array.isArray(out.results) ? out.results.slice() : [];
 
-    if (!anySignal) {
+    // เรียงจาก % มาก → น้อย เผื่อ brainRank ยังไม่ได้ sort
+    results.sort(function (a, b) {
+      return (b.pctC || 0) - (a.pctC || 0);
+    });
+
+    // ถ้าทุกตัวเป็น 0 ให้แสดงข้อความแทนกราฟ
+    var hasSignal = results.some(function (r) {
+      return (r.pctC || 0) > 0;
+    });
+
+    if (!results.length || !hasSignal) {
       renderIntoPage6(
         '<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>'
       );
       return;
     }
 
-    const rows = ADR_LIST.map((name) => {
-      const pct = scores[name] ?? 0;
-      return `
-        <div style="margin:.35rem 0;">
-          <div style="font-weight:600;color:#111827;margin-bottom:.15rem;">
-            ${name}
-          </div>
-          <div style="
-            background:#f3f4f6;
-            border-radius:.75rem;
-            overflow:hidden;
-            height:16px;
-            position:relative;
-          ">
-            <div style="
-              width:${pct}%;
-              height:100%;
-              background:linear-gradient(90deg,#7c3aed,#06b6d4);
-              transition:width .35s ease;
-            "></div>
-            <div style="
-              position:absolute;
-              right:.5rem;
-              top:0;
-              height:100%;
-              display:flex;
-              align-items:center;
-              font-size:.8rem;
-              color:#111827;
-              font-weight:700;
-            ">
-              ${pct}%
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+    // สรุปตัวที่เด่นสุด
+    var top = results[0];
+    var summaryHtml =
+      '<div class="p6-brain-summary">ผลเด่น: <strong>' +
+      (top.title || top.name || top.key || "-") +
+      "</strong> (" +
+      (top.pctC || 0) +
+      "%)</div>";
 
-    renderIntoPage6(rows);
+    // วาดกราฟ 21 แถว (หรือเท่าที่ brainRank คืนมา) ตามลำดับคะแนน
+    var rows = results
+      .map(function (r) {
+        var name = r.title || r.name || r.phenotype || r.key;
+        var pct = r.pctC || 0;
+        return (
+          '<div class="p6-brain-row">' +
+          '<div class="p6-brain-label">' +
+          name +
+          "</div>" +
+          '<div class="p6-brain-bar">' +
+          '<div class="p6-brain-bar-fill" style="width:' +
+          pct +
+          '%;"></div>' +
+          "</div>" +
+          '<div class="p6-brain-val">' +
+          pct +
+          "%</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    renderIntoPage6('<div class="p6-brain-wrap">' + summaryHtml + rows + "</div>");
   }
 
-  // --------------------------- Public API & Event hook ---------------------------
-  // ให้ page6.js เรียกใช้
-  window.brainComputeAndRender = renderBrain;
-  // เผื่อส่วนอื่นเรียกชื่อเดิม
-  window.evaluateDrugAllergy = renderBrain;
+  // -------------------- public API & hooks --------------------
+  window.brainComputeAndRender = brainComputeAndRender;
+  // ให้โค้ดเก่าเรียกชื่อเดิมได้ด้วย
+  window.evaluateDrugAllergy = brainComputeAndRender;
+  window.refreshBrain = brainComputeAndRender;
 
-  // อัปเดตอัตโนมัติเมื่อมี event da:update (ตอนกดบันทึกหน้า 1–3)
-  document.addEventListener("da:update", renderBrain);
+  // เมื่อหน้า 1–3 กดบันทึกแล้วยิง event da:update → คำนวณใหม่
+  document.addEventListener("da:update", brainComputeAndRender);
 
-  // render ครั้งแรกหลังโหลดไฟล์ (ถ้าหน้า 6 ถูกเปิดอยู่แล้ว)
-  setTimeout(renderBrain, 0);
+  // เผื่อโหลดหน้า 6 ตอนข้อมูลพร้อมแล้ว ให้ลองคำนวณครั้งแรกเลย
+  setTimeout(brainComputeAndRender, 0);
 })();
