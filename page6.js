@@ -284,6 +284,72 @@
     const root = document.getElementById("p6Root");
     if (!root) return;
 
+    // ==== [ADD - ONLY FOR SECTION 1] helpers อยู่ “ภายใน” renderPage6 ====
+    function __p6DrawBarChart(scoresObj) {
+      const host = document.getElementById("p6ChartBox");
+      if (!host) return;
+
+      host.innerHTML = "";
+      const entries = Object.entries(scoresObj || {})
+        .map(([k, v]) => ({ name: String(k), value: Number(v) || 0 }))
+        .filter(d => d.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 12);
+
+      if (!entries.length) {
+        const p = document.createElement("p");
+        p.style.cssText = "color:#6b7280;margin:0;";
+        p.textContent = "ยังไม่มีคะแนนให้แสดงกราฟ";
+        host.appendChild(p);
+        return;
+      }
+
+      const max = Math.max(1, ...entries.map(d => d.value));
+      entries.forEach(d => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:.5rem;margin:.3rem 0;";
+
+        const label = document.createElement("div");
+        label.textContent = d.name;
+        label.style.cssText = "flex:0 0 210px;text-align:right;color:#111827;font-size:12px;font-weight:600;";
+        row.appendChild(label);
+
+        const barWrap = document.createElement("div");
+        barWrap.style.cssText = "flex:1 1 auto;background:rgba(249,168,212,.20);border-radius:9999px;height:22px;position:relative;overflow:hidden;";
+        const bar = document.createElement("div");
+        bar.style.cssText = `
+          width:${Math.max(4, (d.value / max) * 100)}%;
+          height:100%;
+          background:linear-gradient(90deg,#f9a8d4 0%, #f472b6 100%);
+          border-radius:9999px;
+          box-shadow:0 8px 18px rgba(236,72,153,.20);
+        `;
+        barWrap.appendChild(bar);
+
+        const val = document.createElement("div");
+        val.textContent = d.value;
+        val.style.cssText = "min-width:38px;text-align:left;color:#be185d;font-weight:700;font-size:12px;";
+        row.appendChild(barWrap);
+        row.appendChild(val);
+
+        host.appendChild(row);
+      });
+    }
+    function __p6RefreshChartFromBrain() {
+      // รองรับหลายชื่อที่สมองอาจเปิดเผยออกมา
+      const r =
+        (window.brainResult && (window.brainResult.scores || window.brainResult)) ||
+        (window.brainLast && (window.brainLast.scores || window.brainLast)) ||
+        (window.__p6Scores) ||
+        null;
+      if (r) __p6DrawBarChart(r);
+      else {
+        // ถ้าไม่มีอะไรเลย ให้ขึ้น placeholder
+        __p6DrawBarChart({});
+      }
+    }
+    // ==== [END helpers] ====
+
     if (!window.__p6RenderedOnce) {
       window.__p6RenderedOnce = true;
 
@@ -344,9 +410,15 @@
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
               <div id="p6BrainBox" class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>
-              <div style="margin-top:.6rem;">
+              <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
                 <button id="p6BrainRefreshBtn" class="p6-btn p6-btn-outline">🔄 รีเฟรชผลประเมิน</button>
               </div>
+            </div>
+
+            <!-- [NEW – ONLY IN SECTION 1] กราฟผลคะแนนแบบแท่ง โทนชมพูนม -->
+            <div class="p6-subcard">
+              <div class="p6-sub-title">กราฟผลคะแนนย่อย (Top signals)</div>
+              <div id="p6ChartBox" style="padding:.25rem .1rem;"></div>
             </div>
           </div>
 
@@ -410,12 +482,21 @@
 
       // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
       const btn = document.getElementById("p6BrainRefreshBtn");
-if (btn) btn.addEventListener("click", () => {
-  if (typeof window.brainComputeAndRender === "function") {
-    window.brainComputeAndRender();
-  }
-});
-
+      if (btn) btn.addEventListener("click", () => {
+        let ret = null;
+        if (typeof window.brainComputeAndRender === "function") {
+          try { ret = window.brainComputeAndRender(); } catch {}
+        } else {
+          try { computeLocalBrain(); } catch {}
+        }
+        // อัปเดตกราฟหลังคำนวณ
+        if (ret && (ret.scores || ret.result)) {
+          window.__p6Scores = ret.scores || ret.result;
+        }
+        setTimeout(() => {
+          __p6RefreshChartFromBrain();
+        }, 0);
+      });
 
       // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
@@ -425,11 +506,18 @@ if (btn) btn.addEventListener("click", () => {
     }
 
     // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
+    let ret2 = null;
     if (typeof window.brainComputeAndRender === "function") {
-      window.brainComputeAndRender();
+      try { ret2 = window.brainComputeAndRender(); } catch {}
     } else {
       computeLocalBrain();
     }
+    if (ret2 && (ret2.scores || ret2.result)) {
+      window.__p6Scores = ret2.scores || ret2.result;
+    }
+    // วาดกราฟรอบนี้ด้วย
+    __p6RefreshChartFromBrain();
+
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
