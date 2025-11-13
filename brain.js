@@ -16,12 +16,14 @@
     var set = new Set();
 
     // ---- หน้า 1: รูปร่าง ----
-    (p1.rashShapes || []).forEach((s) => set.add("shape:" + s));
-    if (p1.rashShapesOther && p1.rashShapesOther.trim()) set.add("shape:อื่นๆ");
+    (p1.rashShapes || []).forEach((s) => {
+      set.add("shape:" + s);
+      // special: ถ้าเป็น "ผิวหนังตึง" ให้สะท้อนเป็นสัญญาณผิวด้วย
+      if (s === "ผิวหนังตึง") set.add("derm:ตึง");
+    });
 
-    // สี
+    // สีผื่น
     (p1.rashColors || []).forEach((c) => set.add("color:" + c));
-    if (p1.rashColorsOther && p1.rashColorsOther.trim()) set.add("color:อื่นๆ");
 
     // ตุ่มน้ำ
     if (p1.blisters?.small) set.add("derm:ตุ่มน้ำเล็ก");
@@ -46,60 +48,45 @@
     if (p1.itch?.has) set.add("derm:คัน");
     if (p1.itch?.none) set.add("derm:ไม่คัน");
 
-    // ปวด/แสบ/เจ็บ/ตึง
-    if (p1.pain?.pain) set.add("derm:เจ็บ"); // รวมเป็นเจ็บ
+    // ปวด/แสบ/เจ็บ (ไม่บวกซ้ำคีย์เดียวกัน)
+    if (p1.pain?.pain) set.add("derm:ปวด");
     if (p1.pain?.burn) set.add("derm:แสบ");
     if (p1.pain?.sore) set.add("derm:เจ็บ");
-    if (p1.pain?.tight) set.add("derm:ตึง");
 
     // บวม
     if (p1.swelling?.has) set.add("derm:บวม");
 
-    // ตุ่มหนอง (เก็บจาก input รายละเอียดด้วย)
+    // ตุ่มหนอง
     if (p1.pustule?.has) set.add("derm:ตุ่มหนอง");
 
-    // ตำแหน่ง
+    // ตำแหน่ง/การกระจาย
     (p1.locations || []).forEach((loc) => set.add("pos:" + loc));
     if (p1.distribution === "สมมาตร") set.add("pos:สมมาตร");
     if (p1.mucosalCountGt1) set.add("mucosa:>1");
 
     // Onset
     switch (p1.onset) {
-      case "1h":
-        set.add("onset:1h");
-        break;
-      case "1to6h":
-        set.add("onset:1-6h");
-        break;
-      case "6to24h":
-        set.add("onset:6-24h");
-        break;
-      case "1w":
-        set.add("onset:1w");
-        break;
-      case "2w":
-        set.add("onset:2w");
-        break;
-      case "3w":
-        set.add("onset:3w");
-        break;
-      case "4w":
-        set.add("onset:4w");
-        break;
-      default:
-        break;
+      case "1h":     set.add("onset:1h"); break;
+      case "1to6h":  set.add("onset:1-6h"); break;
+      case "6to24h": set.add("onset:6-24h"); break;
+      case "1w":     set.add("onset:1w"); break;
+      case "2w":     set.add("onset:2w"); break;
+      case "3w":     set.add("onset:3w"); break;
+      case "4w":     set.add("onset:4w"); break;
+      default: break;
     }
 
-    // ---- หน้า 2: แผนที่คีย์สากลถูกสร้างแล้วใน collectPage2() ----
+    // ---- หน้า 2: คีย์สากลจาก collectPage2() ----
     // Respiratory
     if (p2?.resp?.wheeze) set.add("sys:wheeze");
     if (p2?.resp?.dyspnea) set.add("sys:dyspnea");
 
     // Cardiovascular
     if (p2?.cv?.hypotension) set.add("sys:hypotension");
-    if (p2?.cv?.shock) set.add("sys:bp_drop"); // ใช้แทน ≥40 mmHg (proxy จาก UI ≥30%)
+    // ใช้ proxy ของ “BP ลดลง ≥30% baseline systolic เดิม”
+    if (p2?.cv?.shock) set.add("sys:bp_drop");
 
-    // Vitals flags จากหน้า 2
+    // Vitals flags
     if (p2?.examHRHigh || (typeof p2?.HR === "number" && p2.HR > 100)) set.add("sys:HR>100");
     if (typeof p2?.SpO2 === "number" && p2.SpO2 < 94) set.add("sys:SpO2<94");
 
@@ -121,16 +108,16 @@
     if (p2?.misc?.petechiae) set.add("derm:จุดเลือดออก");
     if (p2?.misc?.hemorrhageSkin) set.add("derm:ปื้น/จ้ำเลือด");
 
-    // GU flags (เก็บเป็นข้อความไทยไว้แล้ว)
+    // GU flags
     if (p2?.misc?.["ปัสสาวะสีชา/สีดำ"]) set.add("sys:ปัสสาวะสีชา/สีดำ");
     if (p2?.misc?.["ปัสสาวะออกน้อย"]) set.add("sys:ปัสสาวะออกน้อย");
     if (p2?.misc?.["ปัสสาวะขุ่น"]) set.add("sys:ปัสสาวะขุ่น");
 
     // Organs
     var org = p2?.organsFlags || {};
-    if (org.kidneyFail) set.add("organ:AKI");
-    if (org.hepatitis) set.add("organ:hepatitis");
-    if (org.pneumonia) set.add("organ:pneumonia");
+    if (org.kidneyFail)  set.add("organ:AKI");
+    if (org.hepatitis)   set.add("organ:hepatitis");
+    if (org.pneumonia)   set.add("organ:pneumonia");
     if (org.myocarditis) set.add("organ:myocarditis");
 
     // ---- หน้า 3: Lab (นับเฉพาะช่องที่ "ติ๊ก" จริงเท่านั้น) ----
@@ -146,6 +133,7 @@
       var n = Number((v || "").toString().replace(/[, ]+/g, ""));
       return Number.isFinite(n) ? n : NaN;
     }
+
     // CBC
     if (labChecked("cbc", "wbc")) {
       var wbc = labNumber("cbc", "wbc");
@@ -164,7 +152,6 @@
     if (labChecked("cbc", "hb")) {
       var hb = labNumber("cbc", "hb");
       if (hb < 10) set.add("lab:Hb<10");
-      // เงื่อนไขลดลง ≥2–3 g/dL ต้องเทียบ baseline — ไม่มีใน UI: ข้ามไป นับด้วยคีย์เฉพาะเมื่อผู้ใช้กรอกใน detail
       if ((p3.cbc.hb.detail || "").includes("↓≥2-3")) set.add("lab:Hb↓≥2-3g/dL/48h");
     }
     if (labChecked("cbc", "plt")) {
@@ -182,14 +169,11 @@
       var ast = labChecked("lft", "ast") ? labNumber("lft", "ast") : NaN;
       var alt = labChecked("lft", "alt") ? labNumber("lft", "alt") : NaN;
       if ((ast >= 40 && !isNaN(ast)) || (alt >= 40 && !isNaN(alt))) set.add("lab:ALT/AST>=40");
-      // >=2x ULN (สมมติ ULN ~ 40)
       if ((ast >= 80 && !isNaN(ast)) || (alt >= 80 && !isNaN(alt))) set.add("lab:ALT/AST>=2x");
     }
 
     // RFT
     if (labChecked("rft", "cre")) {
-      var cr = labNumber("rft", "cre");
-      // ไม่มี baseline → ใช้ detail ช่วยระบุ
       if ((p3.rft.cre.detail || "").match(/(rise|increase|≥0\.3|1\.5x)/i)) set.add("lab:CrRise");
     }
     if (labChecked("rft", "egfr")) {
@@ -203,7 +187,6 @@
       var sp = labNumber("lung", "spo2");
       if (sp < 94) set.add("sys:SpO2<94");
     }
-    // EKG / Troponin
     if (labChecked("heart", "ekg")) set.add("lab:EKGผิดปกติ");
     if (labChecked("heart", "tropi")) {
       var ti = labNumber("heart", "tropi");
@@ -214,7 +197,7 @@
       if (tt > 0.01) set.add("lab:TropT>0.01-0.03");
     }
 
-    // Complement / IgG (ถ้ามีบันทึกใน detail)
+    // Complement / IgE/IgG (จาก detail)
     if (p3.immuno?.c3c4?.checked) {
       var txt = (p3.immuno.c3c4.detail || "").toLowerCase();
       if (txt.includes("c3<90")) set.add("lab:C3<90");
@@ -235,7 +218,7 @@
     var results = rules.map((adr) => {
       var score = 0;
       var hits = [];
-      adr.tokens.forEach((tok) => {
+      (adr.tokens || []).forEach((tok) => {
         var key = typeof tok === "string" ? tok : tok.key;
         var w = typeof tok === "string" ? 1 : (tok.w || 1);
         if (signals.has(key)) {
@@ -251,6 +234,13 @@
 
   // ===== เรนเดอร์ผล + กราฟ "สีชมพูนม" =====
   function renderResults(results) {
+    if (!Array.isArray(results) || !results.length) {
+      renderIntoPage6(
+        `<div class="p6-muted">ยังไม่มีคะแนน (ยังไม่ได้กำหนดกฎใน <code>brain.rules.js</code> หรือยังไม่ติ๊กข้อมูลเพียงพอ)</div>`
+      );
+      return;
+    }
+
     var top = results.slice(0, 5);
     var max = top[0] ? Math.max(1, top[0].score) : 1;
 
@@ -306,9 +296,8 @@
 
   // ===== ฟังก์ชันหลัก =====
   function evaluate() {
-    var rules = window.brainRules || [];
-    // รวมสัญญาณจากหน้า 1–3 (เฉพาะติ๊ก/เลือก)
-    var signals = collectSignals();
+    var rules = Array.isArray(window.brainRules) ? window.brainRules : [];
+    var signals = collectSignals();          // รวมสัญญาณจากหน้า 1–3 (เฉพาะติ๊ก/เลือก)
     var results = computeScores(signals, rules);
     renderResults(results);
     return results;
@@ -319,7 +308,9 @@
     try { evaluate(); } catch (e) { /* no-op */ }
   });
 
-  // ให้หน้า 6 เรียกได้เอง
+  // ให้หน้า 6 เรียกได้ (เข้ากับ page6.js เวอร์ชันที่ใช้ brainComputeAndRender)
+  window.brainComputeAndRender = evaluate;
+  // คง alias เดิมเผื่อโค้ดส่วนอื่นเรียกอยู่
   window.evaluateDrugAllergy = evaluate;
 
   // คำนวณครั้งแรกถ้าพร้อม
