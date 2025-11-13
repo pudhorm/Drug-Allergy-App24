@@ -7,6 +7,7 @@
   const COMMON_BORDER = "rgba(59,130,246,.5)";
   const COMMON_INPUT_BORDER = "rgba(59,130,246,.6)";
 
+  // กลุ่มอาการระบบอื่น ๆ (ตาม UI)
   const FEATURE_GROUPS = [
     {
       key: "resp",
@@ -127,6 +128,7 @@
     }
   ];
 
+  // อวัยวะผิดปกติ
   const ORGANS = [
     "ต่อมน้ำเหลืองโต",
     "ม้ามโต",
@@ -140,6 +142,14 @@
     "ขาบวม",
     "ไม่พบ"
   ];
+
+  // ===== Helper: แปลงข้อความ → token (สั้น กระชับ ใช้ได้ซ้ำในสมอง) =====
+  function normToken(groupKey, text) {
+    // ตัด "ไม่พบ" ออกจาก token (ไม่ใช้คิดคะแนน)
+    if (!text || /ไม่พบ/.test(text)) return null;
+    // สร้าง token แบบ "gk:ข้อความไทย" เพื่อแยกกลุ่ม
+    return `${groupKey}:${text}`.replace(/\s+/g, " ").trim();
+  }
 
   function renderPage2() {
     const root = document.getElementById("page2");
@@ -229,7 +239,7 @@
       </div>
     `;
 
-    // bind events (ทุกครั้งจะเรียก collectPage2 ซึ่งยิง da:update)
+    // bind events
     FEATURE_GROUPS.forEach(group => {
       group.items.forEach((txt, idx) => {
         const cb = document.getElementById(`${group.key}_${idx}`);
@@ -274,12 +284,14 @@
     });
   }
 
+  // ===== เก็บข้อมูลหน้า 2: "คิดคะแนนเฉพาะที่ติ้กจริง ๆ" =====
   function collectPage2() {
     const root = document.getElementById("page2");
     if (!root) return;
 
     const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
-    // เก็บแบบเดิม (ไทย)
+
+    // 1) เก็บโครงสร้างเดิม (ตาม UI) — เฉพาะช่องที่ติ้กหรือมีรายละเอียด
     FEATURE_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach((txt, idx) => {
@@ -303,37 +315,51 @@
       }
     });
     store.organs = organObj;
-    store.__touched = true;
 
-    // ====== สร้าง "คีย์สากล" ให้ brain.rules.js อ่านได้ ======
-    // ช่วยให้คะแนนคำนวณทันทีแม้ UI เก็บเป็นข้อความไทย
-    // สร้างอ็อบเจ็กต์ปลายทางให้ชัด
-    store.resp = store.resp || {};
-    store.cv = store.cv || {};
-    store.gi = store.gi || {};
-    store.misc = store.misc || {};
-    // วิตัล
-    // เคลียร์ค่าที่เคยตั้งไว้ เพื่อกันทับซ้อน
+    // 2) สร้างรายการรวมแบบ "flat tokens" — เอาเฉพาะที่ติ้กจริง ๆ เท่านั้น
+    const tokens = [];
+    FEATURE_GROUPS.forEach(group => {
+      const saved = store[group.key] || {};
+      Object.keys(saved).forEach(txt => {
+        if (saved[txt]?.checked) {
+          const t = normToken(group.key, txt);
+          if (t) tokens.push(t);
+        }
+      });
+    });
+    // อวัยวะผิดปกติเป็น tokens เช่นกัน (ยกเว้น "ไม่พบ")
+    Object.keys(store.organs || {}).forEach(org => {
+      if (store.organs[org]?.checked && !/ไม่พบ/.test(org)) {
+        tokens.push(`org:${org}`);
+      }
+    });
+    store.__tokens = tokens;        // << สมองอ่านก้อนนี้ได้ทันที
+    store.__selected = tokens.map(t => ({ token: t })); // เผื่อหน้า 6 ใช้อ่านรายการ
+
+    // 3) คีย์สากล/ธงที่สมองใช้อยู่ (ถ้ามี) — ตั้งค่าเฉพาะที่ติ้กจริง ๆ
+    // เคลียร์ของเก่ากันทับซ้อน
+    store.resp = {}; store.cv = {}; store.gi = {}; store.misc = {};
     delete store.HR; delete store.RR; delete store.SpO2;
     delete store.examHRHigh;
 
+    // Helper
     const has = (g, t) => !!(store[g] && store[g][t] && store[g][t].checked);
 
     // Respiratory
     store.resp.wheeze   = has("resp","หายใจมีเสียงวี๊ด") || undefined;
     if (has("resp","หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)")) {
       store.resp.dyspnea = true;
-      // ตั้งค่าส่งสัญญาณ vital ให้สมองจับ (อย่างน้อยหนึ่งในเกณฑ์)
-      store.RR = 22;   // ทำให้ brain สร้าง token vital:RR>21
-      store.HR = Math.max(101, store.HR || 0);
-      store.SpO2 = 93;
+      // วาง vital เพื่อให้สมองรับรู้ว่าผ่านเกณฑ์ (อย่างน้อยหนึ่งข้อ)
+      store.RR   = 22;                 // RR>21
+      store.HR   = Math.max(101, store.HR || 0); // HR>100
+      store.SpO2 = 93;                 // SpO2<94%
     }
 
     // Cardiovascular
     store.cv.hypotension = has("cv","BP ต่ำ (<90/60)") || undefined;
-    store.cv.shock       = has("cv","BP ลดลง ≥30% ของ baseline systolic เดิม") || undefined; // brain แปลงเป็น "cv:BPลดลง≥40"
+    store.cv.shock       = has("cv","BP ลดลง ≥30% ของ baseline systolic เดิม") || undefined; // ให้สมอง map ต่อ
     if (has("cv","HR สูง (>100)")) {
-      store.examHRHigh = true; // brain มอง exam:HR>100
+      store.examHRHigh = true; // สำหรับกฎที่ใช้ exam:HR>100
       store.HR = Math.max(101, store.HR || 0);
     }
 
@@ -350,7 +376,6 @@
 
     // ENT / อื่นๆ
     store.misc.soreThroat = has("ent","เจ็บคอ") || undefined;
-    store.misc.lymph      = has("other","ไข้ Temp > 37.5 °C") ? undefined : store.misc.lymph; // กัน override
     store.misc.fever      = has("other","ไข้ Temp > 37.5 °C") || undefined;
     store.misc.fatigue    = has("other","อ่อนเพลีย") || undefined;
     store.misc.chill      = has("other","หนาวสั่น") || undefined;
@@ -359,12 +384,12 @@
     store.misc.hemorrhageSkin = has("skin_extra","ปื้น/จ้ำเลือด") || undefined;
     store.misc.petechiae      = has("skin_extra","จุดเลือดออก") || undefined;
 
-    // GU ที่ brain ต้องการเป็น token "sys:..."
+    // GU (คงข้อความไทยไว้ให้สมองแปลงเองได้)
     store.misc["ปัสสาวะสีชา/สีดำ"] = has("gu","ปัสสาวะสีชา/สีดำ") || undefined;
     store.misc["ปัสสาวะออกน้อย"]   = has("gu","ปัสสาวะออกน้อย") || undefined;
     store.misc["ปัสสาวะขุ่น"]      = has("gu","ปัสสาวะสีขุ่น") || undefined;
 
-    // Organs → แผนที่คีย์
+    // Organs flags
     const orgHas = name => !!(store.organs && store.organs[name] && store.organs[name].checked);
     const org = store.organsFlags = {};
     org.kidneyFail  = orgHas("ไตวาย") || undefined;
@@ -372,7 +397,9 @@
     org.pneumonia   = orgHas("ปอดอักเสบ") || undefined;
     org.myocarditis = orgHas("กล้ามเนื้อหัวใจอักเสบ") || undefined;
 
-    // แจ้งให้สมองคำนวณใหม่ทันที
+    store.__touched = true;
+
+    // แจ้งให้สมอง/หน้า 6 อัปเดตทันที
     document.dispatchEvent(new Event("da:update"));
     if (typeof window.evaluateDrugAllergy === "function") {
       try { window.evaluateDrugAllergy(); } catch {}
@@ -390,5 +417,6 @@
     if (typeof window.evaluateDrugAllergy === "function") window.evaluateDrugAllergy();
   }
 
+  // export
   window.renderPage2 = renderPage2;
 })();
