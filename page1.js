@@ -1,4 +1,3 @@
-// ===================== page1.js (REPLACE WHOLE FILE)
 (function () {
   // ---------- 1.1 รูปร่างผื่น (15 รายการ) ----------
   const SHAPES = [
@@ -83,6 +82,12 @@
     }).join("");
   }
   function cb(id,label,checked){return `<label class="p1-chk"><input type="checkbox" id="${id}" ${checked?"checked":""}><span>${label}</span></label>`;}
+
+  // ป้องกัน id ของ checkbox มีช่องว่าง/อักขระไม่ถูกต้อง
+  const safeId = (prefix, txt) => {
+    const idtxt = String(txt).trim().replace(/\s+/g, "_").replace(/[^0-9A-Za-zก-๙_/-]/g, "_");
+    return `${prefix}${idtxt}`;
+  };
 
   // ---------- select visibility fix ----------
   function injectSelectFixOnce(){
@@ -248,7 +253,11 @@
     <div class="p1-block">
       <h4>1.11 ตำแหน่งที่พบ / การกระจายตัว</h4>
       <div class="p1-two-cols">
-        ${LOCS.map(loc=>cb("loc_"+loc,loc,d.locations&&d.locations.includes(loc))).join("")}
+        ${LOCS.map(loc=>{
+          const id = safeId("loc_", loc);
+          const checked = d.locations && Array.isArray(d.locations) && d.locations.includes(loc);
+          return cb(id, loc, checked);
+        }).join("")}
       </div>
       <label class="p1-chk" style="margin-top:.5rem;">
         <input type="checkbox" id="p1_mucosal_gt1" ${d.mucosalCountGt1?"checked":""}>
@@ -257,8 +266,8 @@
       <label>การกระจายตัว
         <select id="p1_distribution">
           <option value="">เลือก...</option>
-          <option value="สมมาตร" ${d.distribution==="สมาตร"?"selected":""}>สมมาตร</option>
-          <option value="ไม่สมาตร" ${d.distribution==="ไม่สมาตร"?"selected":""}>ไม่สมาตร</option>
+          <option value="สมมาตร" ${d.distribution==="สมมาตร"?"selected":""}>สมมาตร</option>
+          <option value="ไม่สมมาตร" ${d.distribution==="ไม่สมมาตร"?"selected":""}>ไม่สมมาตร</option>
           <option value="อื่นๆ" ${d.distribution==="อื่นๆ"?"selected":""}>อื่นๆ</option>
         </select>
       </label>
@@ -433,8 +442,12 @@
         detail:document.getElementById("pus_detail").value
       };
 
-      // ✅ 1.11 ตำแหน่งครบ 18 + mucosal >1
-      store.locations = LOCS.filter(loc=>document.getElementById("loc_"+loc).checked);
+      // ✅ 1.11 ตำแหน่งครบ 18 + mucosal >1 (ใช้ safeId)
+      store.locations = LOCS.filter(loc=>{
+        const id = safeId("loc_", loc);
+        const el = document.getElementById(id);
+        return el && el.checked;
+      });
       store.mucosalCountGt1 = document.getElementById("p1_mucosal_gt1").checked;
 
       store.distribution = document.getElementById("p1_distribution").value;
