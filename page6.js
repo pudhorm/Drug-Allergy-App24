@@ -7,12 +7,13 @@
 
   // --------- UTIL ---------
   // ใช้มาตรฐานเดียวกับ brain.js: __saved หรือมีข้อมูลจริง >=1 ฟิลด์ก็นับว่า “พร้อม”
-  function __hasRealData(pageObj){
+  function __hasRealData(pageObj) {
     if (!pageObj) return false;
     if (pageObj.__saved) return true;
-    const keys = Object.keys(pageObj).filter(k => !k.startsWith("__"));
+    const keys = Object.keys(pageObj).filter((k) => !k.startsWith("__"));
     return keys.length > 0;
   }
+
   function corePagesReady() {
     const d = window.drugAllergyData || {};
     const p1 = __hasRealData(d.page1);
@@ -29,14 +30,31 @@
     if (!str) return "—";
     const pure = String(str).trim().split(" ")[0];
     let d;
-    if (pure.includes("-")) { const [y,m,dd]=pure.split("-").map(Number); if (y&&m&&dd) d=new Date(y,m-1,dd); }
-    else if (pure.includes("/")) { const [dd,m,y]=pure.split("/").map(Number); if (y&&m&&dd) d=new Date(y,m-1,dd); }
-    return d ? d.toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"}) : str;
+    if (pure.includes("-")) {
+      const [y, m, dd] = pure.split("-").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    } else if (pure.includes("/")) {
+      const [dd, m, y] = pure.split("/").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    }
+    return d
+      ? d.toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : str;
   }
-  function fmtTime(str){ if(!str) return ""; const t=String(str).slice(0,5); return t+" น."; }
-  function rangeStr(sD,sT,eD,eT){
-    const start=`${fmtDateTH(sD)}${sT?(" "+fmtTime(sT)):""}`;
-    const end = eD ? `${fmtDateTH(eD)}${eT?(" "+fmtTime(eT)):""}` : "ปัจจุบัน";
+
+  function fmtTime(str) {
+    if (!str) return "";
+    const t = String(str).slice(0, 5);
+    return t + " น.";
+  }
+
+  function rangeStr(sD, sT, eD, eT) {
+    const start = `${fmtDateTH(sD)}${sT ? " " + fmtTime(sT) : ""}`;
+    const end = eD ? `${fmtDateTH(eD)}${eT ? " " + fmtTime(eT) : ""}` : "ปัจจุบัน";
     return `${start} → ${end}`;
   }
 
@@ -48,26 +66,29 @@
         ระบบจะประเมินจากข้อมูลที่กดบันทึกครบหน้า 1–3 แล้วสรุปว่า<strong>เข้ากับชนิดย่อยใด</strong>โดยอัตโนมัติ
       </p>`;
     }
-    return `<div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(", ")}</div>
+    return `<div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(
+      ", "
+    )}</div>
             <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า</p>`;
   }
 
   // --------- NARANJO ---------
   const NARANJO_QUEST = [
-    { idx:0, yes:+1, no:0,  dk:0 },
-    { idx:1, yes:+2, no:-1, dk:0 },
-    { idx:2, yes:+1, no:0,  dk:0 },
-    { idx:3, yes:+2, no:-1, dk:0 },
-    { idx:4, yes:-1, no:+2, dk:0 },
-    { idx:5, yes:-1, no:+1, dk:0 },
-    { idx:6, yes:+1, no:0,  dk:0 },
-    { idx:7, yes:+1, no:0,  dk:0 },
-    { idx:8, yes:+1, no:0,  dk:0 },
-    { idx:9, yes:+1, no:0,  dk:0 },
+    { idx: 0, yes: +1, no: 0, dk: 0 },
+    { idx: 1, yes: +2, no: -1, dk: 0 },
+    { idx: 2, yes: +1, no: 0, dk: 0 },
+    { idx: 3, yes: +2, no: -1, dk: 0 },
+    { idx: 4, yes: -1, no: +2, dk: 0 },
+    { idx: 5, yes: -1, no: +1, dk: 0 },
+    { idx: 6, yes: +1, no: 0, dk: 0 },
+    { idx: 7, yes: +1, no: 0, dk: 0 },
+    { idx: 8, yes: +1, no: 0, dk: 0 },
+    { idx: 9, yes: +1, no: 0, dk: 0 },
   ];
+
   function narScore(drug) {
     if (!drug || !drug.answers) return 0;
-    let t=0;
+    let t = 0;
     for (const q of NARANJO_QUEST) {
       const picked = drug.answers[q.idx];
       if (!picked) continue;
@@ -75,7 +96,8 @@
     }
     return t;
   }
-  function narInterp(score){
+
+  function narInterp(score) {
     if (score >= 9) return "แน่นอน (Definite)";
     if (score >= 5) return "น่าจะเป็น (Probable)";
     if (score >= 1) return "อาจเป็นไปได้ (Possible)";
@@ -85,10 +107,10 @@
   function getNaranjoList() {
     const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
     const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
-    return drugs.map((d,i)=>({
-      name: (d.name && d.name.trim()) ? d.name.trim() : `ยา ${i+1}`,
+    return drugs.map((d, i) => ({
+      name: d.name && d.name.trim() ? d.name.trim() : `ยา ${i + 1}`,
       total: narScore(d),
-      interpretation: narInterp(narScore(d))
+      interpretation: narInterp(narScore(d)),
     }));
   }
 
@@ -96,13 +118,13 @@
     const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
     return {
       drugs: Array.isArray(p5.drugLines) ? p5.drugLines : [],
-      adrs:  Array.isArray(p5.adrLines)  ? p5.adrLines  : []
+      adrs: Array.isArray(p5.adrLines) ? p5.adrLines : [],
     };
   }
 
-  // --------- LOCAL BRAIN (ผลประเมินเบื้องต้น) ---------
+  // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
   function toNumber(v) {
-    const n = Number(String(v??"").replace(/[, ]+/g,""));
+    const n = Number(String(v ?? "").replace(/[, ]+/g, ""));
     return Number.isFinite(n) ? n : NaN;
   }
 
@@ -112,37 +134,44 @@
 
     const ready = corePagesReady();
     if (!ready.ok) {
-      outEl.innerHTML = `<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>`;
+      outEl.innerHTML =
+        '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
       return;
     }
 
-    // ถ้ามีสมองใหม่ ให้หลีกทางไปใช้ brain.js (สูตร C)
-    if (typeof window.brainComputeAndRender === "function") {
-      window.brainComputeAndRender();
-      return;
-    }
-
-    const d  = window.drugAllergyData || {};
+    const d = window.drugAllergyData || {};
     const p1 = d.page1 || {};
     const p2 = d.page2 || {};
     const p3 = d.page3 || {};
 
     const scores = Object.create(null);
-    const add = (k,w)=>{ scores[k]=(scores[k]||0)+(w||1); };
+    const add = (k, w) => {
+      scores[k] = (scores[k] || 0) + (w || 1);
+    };
 
     // Urticaria
     if (p1.itch?.has) add("Urticaria", 3);
-    if ((p1.rashShapes||[]).includes("ปื้นนูน")) add("Urticaria", 2);
+    if ((p1.rashShapes || []).includes("ปื้นนูน")) add("Urticaria", 2);
 
     // Anaphylaxis (หยาบ ๆ)
-    if ((p2.resp?.dyspnea || p2.resp?.wheeze || p2.resp?.tachypnea) ||
-        (p2.cv?.hypotension || p2.cv?.shock)) add("Anaphylaxis", 4);
+    if (
+      p2.resp?.dyspnea ||
+      p2.resp?.wheeze ||
+      p2.resp?.tachypnea ||
+      p2.cv?.hypotension ||
+      p2.cv?.shock
+    )
+      add("Anaphylaxis", 4);
 
     // Angioedema
     if (p1.swelling?.has) add("Angioedema", 3);
 
     // Maculopapular rash
-    if ((p1.rashShapes||[]).length && (p1.rashColors||[]).includes("แดง")) add("Maculopapular rash", 2);
+    if (
+      (p1.rashShapes || []).length &&
+      (p1.rashColors || []).includes("แดง")
+    )
+      add("Maculopapular rash", 2);
 
     // AGEP
     if (p1.pustule?.has) add("AGEP", 3);
@@ -152,20 +181,32 @@
     if (p1.skinDetach?.lt10 || p1.skinDetach?.center) add("SJS", 3);
 
     // Photosensitivity
-    if ((p1.rashColors||[]).includes("แดงไหม้") && (p1.locations||[]).includes("หน้า"))
+    if (
+      (p1.rashColors || []).includes("แดงไหม้") &&
+      (p1.locations || []).includes("หน้า")
+    )
       add("Photosensitivity drug eruption", 2);
 
     // DRESS (หยาบ ๆ)
-    const aec    = toNumber(p3?.cbc?.aec?.value ?? p3?.cbc?.eos?.value);
+    const aec = toNumber(p3?.cbc?.aec?.value ?? p3?.cbc?.eos?.value);
     const eosPct = toNumber(p3?.cbc?.eos?.value);
-    const alt    = toNumber(p3?.lft?.alt?.value);
-    const ast    = toNumber(p3?.lft?.ast?.value);
-    if ((Number.isFinite(aec) && aec >= 1500) || (Number.isFinite(eosPct) && eosPct >= 10)) add("DRESS", 2);
-    if ((Number.isFinite(alt) && alt > 100) || (Number.isFinite(ast) && ast > 100)) add("DRESS", 1);
+    const alt = toNumber(p3?.lft?.alt?.value);
+    const ast = toNumber(p3?.lft?.ast?.value);
+    if (
+      (Number.isFinite(aec) && aec >= 1500) ||
+      (Number.isFinite(eosPct) && eosPct >= 10)
+    )
+      add("DRESS", 2);
+    if (
+      (Number.isFinite(alt) && alt > 100) ||
+      (Number.isFinite(ast) && ast > 100)
+    )
+      add("DRESS", 1);
 
-    const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     if (!ranked.length) {
-      outEl.innerHTML = `<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>`;
+      outEl.innerHTML =
+        '<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>';
       return;
     }
 
@@ -174,7 +215,9 @@
       <div>
         <div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <strong>${leader}</strong></div>
         <ol class="p6-list" style="margin-top:.35rem;">
-          ${ranked.map(([k],i)=>`<li>${i+1}) ${k}</li>`).join("")}
+          ${ranked.map(
+            ([k], i) => `<li>${i + 1}) ${k}</li>`
+          ).join("")}
         </ol>
       </div>
     `;
@@ -184,97 +227,151 @@
   function drawTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
-    const adrLane  = document.getElementById("p6AdrLane");
-    const sc       = document.getElementById("p6TimelineScroll");
+    const adrLane = document.getElementById("p6AdrLane");
+    const sc = document.getElementById("p6TimelineScroll");
     if (!dateRow || !drugLane || !adrLane) return;
 
     const { drugs, adrs } = getPage5();
-    dateRow.innerHTML=""; drugLane.innerHTML=""; adrLane.innerHTML="";
+    dateRow.innerHTML = "";
+    drugLane.innerHTML = "";
+    adrLane.innerHTML = "";
 
     if (!drugs.length && !adrs.length) return;
 
-    const MS_DAY=86400000, DAY_W=120;
+    const MS_DAY = 86400000;
+    const DAY_W = 120;
 
-    function parseDate(str){
-      if(!str) return null;
+    function parseDate(str) {
+      if (!str) return null;
       const pure = String(str).trim().split(" ")[0];
-      if(pure.includes("-")){ const [y,m,d]=pure.split("-").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
-      if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+      if (pure.includes("-")) {
+        const [y, m, d] = pure.split("-").map(Number);
+        if (y && m && d) return new Date(y, m - 1, d);
+      }
+      if (pure.includes("/")) {
+        const [d, m, y] = pure.split("/").map(Number);
+        if (y && m && d) return new Date(y, m - 1, d);
+      }
       return null;
     }
-    const today = new Date(), today0 = new Date(today.getFullYear(),today.getMonth(),today.getDate());
 
-    let minDate=null;
-    drugs.forEach(d=>{ const s=parseDate(d.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
-    adrs.forEach(a=>{ const s=parseDate(a.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
-    if(!minDate) minDate=today0;
+    const today = new Date();
+    const today0 = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
 
-    const maxDate=today0;
-    const totalDays=Math.floor((maxDate-minDate)/MS_DAY)+1;
+    let minDate = null;
+    drugs.forEach((d) => {
+      const s = parseDate(d.startDate);
+      if (s && (!minDate || s < minDate)) minDate = s;
+    });
+    adrs.forEach((a) => {
+      const s = parseDate(a.startDate);
+      if (s && (!minDate || s < minDate)) minDate = s;
+    });
+    if (!minDate) minDate = today0;
 
-    dateRow.style.display="grid";
-    dateRow.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
-    for(let i=0;i<totalDays;i++){
-      const d=new Date(minDate.getFullYear(),minDate.getMonth(),minDate.getDate()+i);
-      const cell=document.createElement("div");
-      cell.className="p6-date-cell";
-      cell.textContent=d.toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const maxDate = today0;
+    const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
+
+    dateRow.style.display = "grid";
+    dateRow.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(
+        minDate.getFullYear(),
+        minDate.getMonth(),
+        minDate.getDate() + i
+      );
+      const cell = document.createElement("div");
+      cell.className = "p6-date-cell";
+      cell.textContent = d.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+      });
       dateRow.appendChild(cell);
     }
 
-    const ROW_H=46;
-    function prepLane(el,rows){
-      el.style.display="grid";
-      el.style.gridTemplateColumns=`repeat(${totalDays}, ${DAY_W}px)`;
-      el.style.gridAutoRows=ROW_H+"px";
-      el.style.rowGap="6px";
-      el.style.height=(Math.max(rows,1)*(ROW_H+6))+"px";
-      el.innerHTML="";
+    const ROW_H = 46;
+
+    function prepLane(el, rows) {
+      el.style.display = "grid";
+      el.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
+      el.style.gridAutoRows = ROW_H + "px";
+      el.style.rowGap = "6px";
+      el.style.height = Math.max(rows, 1) * (ROW_H + 6) + "px";
+      el.innerHTML = "";
     }
+
     prepLane(drugLane, drugs.length);
     prepLane(adrLane, adrs.length);
 
-    const dayIndex = (d)=>Math.floor((d-minDate)/MS_DAY);
+    const dayIndex = (d) => Math.floor((d - minDate) / MS_DAY);
 
     function addBar(obj, idx, lane, kind) {
-      const sD=parseDate(obj.startDate); if(!sD) return;
+      const sD = parseDate(obj.startDate);
+      if (!sD) return;
       let eD;
-      if (kind==="drug" ? obj.stopDate : obj.endDate) {
-        const raw = parseDate(kind==="drug" ? obj.stopDate : obj.endDate);
-        eD = raw ? new Date(raw.getFullYear(),raw.getMonth(),raw.getDate()-1) : maxDate;
-      } else eD=maxDate;
-      if (eD<sD) eD=sD; if (eD>maxDate) eD=maxDate;
+      if (kind === "drug" ? obj.stopDate : obj.endDate) {
+        const raw = parseDate(kind === "drug" ? obj.stopDate : obj.endDate);
+        eD = raw
+          ? new Date(raw.getFullYear(), raw.getMonth(), raw.getDate() - 1)
+          : maxDate;
+      } else eD = maxDate;
+
+      if (eD < sD) eD = sD;
+      if (eD > maxDate) eD = maxDate;
 
       const same =
-        (kind==="drug" ? obj.stopDate : obj.endDate) &&
-        dayIndex(parseDate(obj.startDate)) === dayIndex(parseDate(kind==="drug"?obj.stopDate:obj.endDate));
+        (kind === "drug" ? obj.stopDate : obj.endDate) &&
+        dayIndex(parseDate(obj.startDate)) ===
+          dayIndex(
+            parseDate(kind === "drug" ? obj.stopDate : obj.endDate)
+          );
 
       if (same) {
-        const cell=document.createElement("div");
-        cell.style.gridColumn=`${dayIndex(sD)+1} / ${dayIndex(sD)+2}`;
-        cell.style.gridRow=`${idx+1}`;
-        cell.style.display="flex"; cell.style.alignItems="center";
-        const dot=document.createElement("div");
-        dot.title=(kind==="drug"?(obj.name||"").trim():(obj.symptom||"").trim())||`${kind==="drug"?"ยา":"ADR"} ${idx+1}`;
-        dot.style.width="16px"; dot.style.height="16px"; dot.style.borderRadius="9999px";
-        dot.style.background= kind==="drug" ? "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)"
-                                            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
-        dot.style.boxShadow="0 8px 22px rgba(15,23,42,.12)"; dot.style.marginLeft="4px";
-        cell.appendChild(dot); lane.appendChild(cell); return;
+        const cell = document.createElement("div");
+        cell.style.gridColumn = `${dayIndex(sD) + 1} / ${dayIndex(sD) + 2}`;
+        cell.style.gridRow = `${idx + 1}`;
+        cell.style.display = "flex";
+        cell.style.alignItems = "center";
+
+        const dot = document.createElement("div");
+        dot.title =
+          (kind === "drug"
+            ? (obj.name || "").trim()
+            : (obj.symptom || "").trim()) ||
+          `${kind === "drug" ? "ยา" : "ADR"} ${idx + 1}`;
+        dot.style.width = "16px";
+        dot.style.height = "16px";
+        dot.style.borderRadius = "9999px";
+        dot.style.background =
+          kind === "drug"
+            ? "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)"
+            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
+        dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
+        dot.style.marginLeft = "4px";
+        cell.appendChild(dot);
+        lane.appendChild(cell);
+        return;
       }
 
-      const bar=document.createElement("div");
-      bar.className=`p6-bar ${kind==="drug"?"p6-bar-drug":"p6-bar-adr"}`;
-      bar.textContent=(kind==="drug"
-        ? ((obj.name&&obj.name.trim())||`ยา ${idx+1}`)
-        : ((obj.symptom&&obj.symptom.trim())||`ADR ${idx+1}`));
-      bar.style.gridColumn=`${dayIndex(sD)+1} / ${dayIndex(eD)+2}`;
-      bar.style.gridRow=`${idx+1}`;
+      const bar = document.createElement("div");
+      bar.className = `p6-bar ${
+        kind === "drug" ? "p6-bar-drug" : "p6-bar-adr"
+      }`;
+      bar.textContent =
+        kind === "drug"
+          ? (obj.name && obj.name.trim()) || `ยา ${idx + 1}`
+          : (obj.symptom && obj.symptom.trim()) || `ADR ${idx + 1}`;
+      bar.style.gridColumn = `${dayIndex(sD) + 1} / ${dayIndex(eD) + 2}`;
+      bar.style.gridRow = `${idx + 1}`;
       lane.appendChild(bar);
     }
 
-    drugs.forEach((d,i)=>addBar(d,i,drugLane,"drug"));
-    adrs.forEach((a,i)=>addBar(a,i,adrLane,"adr"));
+    drugs.forEach((d, i) => addBar(d, i, drugLane, "drug"));
+    adrs.forEach((a, i) => addBar(a, i, adrLane, "adr"));
 
     if (sc) sc.scrollLeft = sc.scrollWidth;
   }
@@ -284,77 +381,14 @@
     const root = document.getElementById("p6Root");
     if (!root) return;
 
-    // ==== [ADD - ONLY FOR SECTION 1] helpers อยู่ “ภายใน” renderPage6 ====
-    function __p6DrawBarChart(scoresObj) {
-      const host = document.getElementById("p6ChartBox");
-      if (!host) return;
-
-      host.innerHTML = "";
-      const entries = Object.entries(scoresObj || {})
-        .map(([k, v]) => ({ name: String(k), value: Number(v) || 0 }))
-        .filter(d => d.value > 0)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 12);
-
-      if (!entries.length) {
-        const p = document.createElement("p");
-        p.style.cssText = "color:#6b7280;margin:0;";
-        p.textContent = "ยังไม่มีคะแนนให้แสดงกราฟ";
-        host.appendChild(p);
-        return;
-      }
-
-      const max = Math.max(1, ...entries.map(d => d.value));
-      entries.forEach(d => {
-        const row = document.createElement("div");
-        row.style.cssText = "display:flex;align-items:center;gap:.5rem;margin:.3rem 0;";
-
-        const label = document.createElement("div");
-        label.textContent = d.name;
-        label.style.cssText = "flex:0 0 210px;text-align:right;color:#111827;font-size:12px;font-weight:600;";
-        row.appendChild(label);
-
-        const barWrap = document.createElement("div");
-        barWrap.style.cssText = "flex:1 1 auto;background:rgba(249,168,212,.20);border-radius:9999px;height:22px;position:relative;overflow:hidden;";
-        const bar = document.createElement("div");
-        bar.style.cssText = `
-          width:${Math.max(4, (d.value / max) * 100)}%;
-          height:100%;
-          background:linear-gradient(90deg,#f9a8d4 0%, #f472b6 100%);
-          border-radius:9999px;
-          box-shadow:0 8px 18px rgba(236,72,153,.20);
-        `;
-        barWrap.appendChild(bar);
-
-        const val = document.createElement("div");
-        val.textContent = d.value;
-        val.style.cssText = "min-width:38px;text-align:left;color:#be185d;font-weight:700;font-size:12px;";
-        row.appendChild(barWrap);
-        row.appendChild(val);
-
-        host.appendChild(row);
-      });
-    }
-    function __p6RefreshChartFromBrain() {
-      // รองรับหลายชื่อที่สมองอาจเปิดเผยออกมา
-      const r =
-        (window.brainResult && (window.brainResult.scores || window.brainResult)) ||
-        (window.brainLast && (window.brainLast.scores || window.brainLast)) ||
-        (window.__p6Scores) ||
-        null;
-      if (r) __p6DrawBarChart(r);
-      else {
-        // ถ้าไม่มีอะไรเลย ให้ขึ้น placeholder
-        __p6DrawBarChart({});
-      }
-    }
-    // ==== [END helpers] ====
-
     if (!window.__p6RenderedOnce) {
       window.__p6RenderedOnce = true;
 
-      const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
-      const drugNames = (Array.isArray(p4.drugs)?p4.drugs:[]).map(d=>d.name).filter(Boolean);
+      const p4 =
+        (window.drugAllergyData && window.drugAllergyData.page4) || {};
+      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
+        .map((d) => d.name)
+        .filter(Boolean);
 
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
@@ -370,28 +404,55 @@
         </ul>
       `;
 
-      function naranjoBlock(){
-        const list=getNaranjoList();
-        if (!list.length) return `<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>`;
+      function naranjoBlock() {
+        const list = getNaranjoList();
+        if (!list.length)
+          return `<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>`;
         return `
           <div class="p6-naranjo-list">
-            ${list.map(item=>`
+            ${list
+              .map(
+                (item) => `
               <div class="p6-naranjo-item">
                 <div class="p6-naranjo-name">${item.name}</div>
                 <div class="p6-naranjo-score">${item.total}</div>
               </div>
               <p class="p6-muted" style="margin-top:2px;margin-bottom:10px;">สรุป: ${item.interpretation}</p>
-            `).join("")}
+            `
+              )
+              .join("")}
           </div>
         `;
       }
 
       const p5 = getPage5();
       const drugList = p5.drugs.length
-        ? `<ol class="p6-list">${p5.drugs.map((d,i)=>`<li><strong>${(d.name||'').trim()||('ยาตัวที่ '+(i+1))}</strong> — ${rangeStr(d.startDate,d.startTime,d.stopDate,d.stopTime)}</li>`).join("")}</ol>`
+        ? `<ol class="p6-list">${p5.drugs
+            .map(
+              (d, i) => `<li><strong>${
+                (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
+              }</strong> — ${rangeStr(
+                d.startDate,
+                d.startTime,
+                d.stopDate,
+                d.stopTime
+              )}</li>`
+            )
+            .join("")}</ol>`
         : `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
       const adrList = p5.adrs.length
-        ? `<ol class="p6-list">${p5.adrs.map((a,i)=>`<li><strong>${(a.symptom||'').trim()||('ADR '+(i+1))}</strong> — ${rangeStr(a.startDate,a.startTime,a.endDate,a.endTime)}</li>`).join("")}</ol>`
+        ? `<ol class="p6-list">${p5.adrs
+            .map(
+              (a, i) => `<li><strong>${
+                (a.symptom || "").trim() || "ADR " + (i + 1)
+              }</strong> — ${rangeStr(
+                a.startDate,
+                a.startTime,
+                a.endDate,
+                a.endTime
+              )}</li>`
+            )
+            .join("")}</ol>`
         : `<p class="p6-muted">— ไม่มี ADR —</p>`;
 
       root.innerHTML = `
@@ -409,16 +470,12 @@
 
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
-              <div id="p6BrainBox" class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>
+              <div id="p6BrainHost">
+                <!-- p6BrainBox จาก index.html จะถูกย้ายมาอยู่ตรงนี้ -->
+              </div>
               <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
                 <button id="p6BrainRefreshBtn" class="p6-btn p6-btn-outline">🔄 รีเฟรชผลประเมิน</button>
               </div>
-            </div>
-
-            <!-- [NEW – ONLY IN SECTION 1] กราฟผลคะแนนแบบแท่ง โทนชมพูนม -->
-            <div class="p6-subcard">
-              <div class="p6-sub-title">กราฟผลคะแนนย่อย (Top signals)</div>
-              <div id="p6ChartBox" style="padding:.25rem .1rem;"></div>
             </div>
           </div>
 
@@ -426,14 +483,22 @@
             <div class="p6-head"><div class="p6-emoji">💊</div><div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">ยาที่ผู้ป่วยได้รับ:</div>
-              <p class="p6-muted">${drugNames && drugNames.length ? drugNames.join(", ") : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"}</p>
+              <p class="p6-muted">${
+                drugNames && drugNames.length
+                  ? drugNames.join(", ")
+                  : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
+              }</p>
             </div>
-            <div class="p6-subcard"><div class="p6-sub-title">รายงานการแพ้:</div><p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p></div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">รายงานการแพ้:</div>
+              <p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p>
+            </div>
           </div>
 
           <div class="p6-block sec3">
             <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
-            <div class="p6-subcard"><div class="p6-sub-title">การรักษาเฉพาะ:</div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">การรักษาเฉพาะ:</div>
               <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
             </div>
           </div>
@@ -478,25 +543,35 @@
             <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
           </div>
         </div>
-      `; // ← ปิด template string ให้ถูกต้อง
+      `;
 
-      // ปุ่มรีเฟรช = คำนวณใหม่ (ไม่ re-render ทั้งหน้า)
+      // ย้าย p6BrainBox จาก index.html มาไว้ใน host (ไม่สร้าง id ซ้ำ)
+      const externalBox = document.getElementById("p6BrainBox");
+      const host = document.getElementById("p6BrainHost");
+      if (externalBox && host) {
+        host.appendChild(externalBox);
+        if (!externalBox.innerHTML.trim()) {
+          externalBox.classList.add("p6-muted");
+          externalBox.textContent =
+            "ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ";
+        }
+      }
+
+      // ปุ่มรีเฟรช = คำนวณใหม่
       const btn = document.getElementById("p6BrainRefreshBtn");
-      if (btn) btn.addEventListener("click", () => {
-        let ret = null;
-        if (typeof window.brainComputeAndRender === "function") {
-          try { ret = window.brainComputeAndRender(); } catch {}
-        } else {
-          try { computeLocalBrain(); } catch {}
-        }
-        // อัปเดตกราฟหลังคำนวณ
-        if (ret && (ret.scores || ret.result)) {
-          window.__p6Scores = ret.scores || ret.result;
-        }
-        setTimeout(() => {
-          __p6RefreshChartFromBrain();
-        }, 0);
-      });
+      if (btn) {
+        btn.addEventListener("click", () => {
+          if (typeof window.brainComputeAndRender === "function") {
+            try {
+              window.brainComputeAndRender();
+            } catch (e) {}
+          } else {
+            try {
+              computeLocalBrain();
+            } catch (e) {}
+          }
+        });
+      }
 
       // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
@@ -506,17 +581,13 @@
     }
 
     // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
-    let ret2 = null;
     if (typeof window.brainComputeAndRender === "function") {
-      try { ret2 = window.brainComputeAndRender(); } catch {}
+      try {
+        window.brainComputeAndRender();
+      } catch (e) {}
     } else {
       computeLocalBrain();
     }
-    if (ret2 && (ret2.scores || ret2.result)) {
-      window.__p6Scores = ret2.scores || ret2.result;
-    }
-    // วาดกราฟรอบนี้ด้วย
-    __p6RefreshChartFromBrain();
 
     drawTimeline();
 
@@ -526,7 +597,7 @@
   }
 
   // --------- STYLES ---------
-  function injectP6Styles(){
+  function injectP6Styles() {
     if (document.getElementById("p6-visual-style")) return;
     const css = `
       .p6-visual-box{background:#fff;border:1px solid #edf2f7;border-radius:16px;padding:14px;margin-top:10px;}
@@ -543,8 +614,9 @@
       .p6-naranjo-name{font-weight:800;color:#064E3B;}
       .p6-naranjo-score{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;border-radius:10px;padding:.15rem .6rem;font-weight:800;min-width:2.2rem;text-align:center;}
     `;
-    const tag=document.createElement("style");
-    tag.id="p6-visual-style"; tag.textContent=css;
+    const tag = document.createElement("style");
+    tag.id = "p6-visual-style";
+    tag.textContent = css;
     document.head.appendChild(tag);
   }
 
@@ -570,19 +642,39 @@ function p6PrintTimeline() {
   const root = document.getElementById("p6Root");
   const pageSnapshot = root ? root.outerHTML : "";
 
-  const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
+  const p5 =
+    (window.drugAllergyData && window.drugAllergyData.page5) || {
+      drugLines: [],
+      adrLines: [],
+    };
   const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
-  const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+  const adrs = Array.isArray(p5.adrLines) ? p5.adrLines : [];
 
   function fmtDateTHLocal(str) {
     if (!str) return "—";
     const pure = String(str).trim().split(" ")[0];
     let d;
-    if (pure.includes("-")) { const [y,m,dd] = pure.split("-").map(Number); if (y && m && dd) d = new Date(y, m-1, dd); }
-    else if (pure.includes("/")) { const [dd,m,y] = pure.split("/").map(Number); if (y && m && dd) d = new Date(y, m-1, dd); }
-    return d ? d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" }) : str;
+    if (pure.includes("-")) {
+      const [y, m, dd] = pure.split("-").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    } else if (pure.includes("/")) {
+      const [dd, m, y] = pure.split("/").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    }
+    return d
+      ? d.toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : str;
   }
-  function fmtTimeLocal(str) { if (!str) return ""; const t = String(str).slice(0,5); return t + " น."; }
+
+  function fmtTimeLocal(str) {
+    if (!str) return "";
+    const t = String(str).slice(0, 5);
+    return t + " น.";
+  }
 
   const summaryHTML = `
     <section class="p6-print-summary">
@@ -592,14 +684,18 @@ function p6PrintTimeline() {
         ${
           drugs.length
             ? `<ol>
-                ${drugs.map(d=>{
-                  const name=(d.name||"").trim() || "(ไม่ระบุชื่อยา)";
-                  const sD=fmtDateTHLocal(d.startDate);
-                  const sT=fmtTimeLocal(d.startTime);
-                  const eD=fmtDateTHLocal(d.stopDate);
-                  const eT=fmtTimeLocal(d.stopTime);
-                  return `<li><strong>${name}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หยุด ${eD}${eT?" "+eT:""}</li>`;
-                }).join("")}
+                ${drugs
+                  .map((d) => {
+                    const name = (d.name || "").trim() || "(ไม่ระบุชื่อยา)";
+                    const sD = fmtDateTHLocal(d.startDate);
+                    const sT = fmtTimeLocal(d.startTime);
+                    const eD = fmtDateTHLocal(d.stopDate);
+                    const eT = fmtTimeLocal(d.stopTime);
+                    return `<li><strong>${name}</strong> — เริ่ม ${sD}${
+                      sT ? " " + sT : ""
+                    } · หยุด ${eD}${eT ? " " + eT : ""}</li>`;
+                  })
+                  .join("")}
                </ol>`
             : `<p class="muted">— ไม่มีรายการยา —</p>`
         }
@@ -609,14 +705,19 @@ function p6PrintTimeline() {
         ${
           adrs.length
             ? `<ol>
-                ${adrs.map(a=>{
-                  const sym=(a.symptom||"").trim() || "(ไม่ระบุอาการ)";
-                  const sD=fmtDateTHLocal(a.startDate);
-                  const sT=fmtTimeLocal(a.startTime);
-                  const eD=fmtDateTHLocal(a.endDate);
-                  const eT=fmtTimeLocal(a.endTime);
-                  return `<li><strong>${sym}</strong> — เริ่ม ${sD}${sT?" "+sT:""} · หาย ${eD}${eT?" "+eT:""}</li>`;
-                }).join("")}
+                ${adrs
+                  .map((a) => {
+                    const sym =
+                      (a.symptom || "").trim() || "(ไม่ระบุอาการ)";
+                    const sD = fmtDateTHLocal(a.startDate);
+                    const sT = fmtTimeLocal(a.startTime);
+                    const eD = fmtDateTHLocal(a.endDate);
+                    const eT = fmtTimeLocal(a.endTime);
+                    return `<li><strong>${sym}</strong> — เริ่ม ${sD}${
+                      sT ? " " + sT : ""
+                    } · หาย ${eD}${eT ? " " + eT : ""}</li>`;
+                  })
+                  .join("")}
                </ol>`
             : `<p class="muted">— ไม่มี ADR —</p>`
         }
@@ -767,5 +868,7 @@ function p6PrintTimeline() {
 
 // ===== public API =====
 if (typeof window.renderPage6 === "function") {
-  try { window.renderPage6(); } catch (_) {}
+  try {
+    window.renderPage6();
+  } catch (_) {}
 }
