@@ -215,9 +215,9 @@
       <div>
         <div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <strong>${leader}</strong></div>
         <ol class="p6-list" style="margin-top:.35rem;">
-          ${ranked.map(
-            ([k], i) => `<li>${i + 1}) ${k}</li>`
-          ).join("")}
+          ${ranked
+            .map(([k], i) => `<li>${i + 1}) ${k}</li>`)
+            .join("")}
         </ol>
       </div>
     `;
@@ -376,6 +376,52 @@
     if (sc) sc.scrollLeft = sc.scrollWidth;
   }
 
+  // --------- ADR CHART (กราฟแนวนอน 21 ADR จาก brainResult) ---------
+  function updateAdrChartFromBrain() {
+    const body = document.getElementById("p6AdrChartBody");
+    if (!body) return;
+
+    const brain = window.brainResult;
+    if (!brain || !brain.results || !Object.keys(brain.results).length) {
+      body.innerHTML =
+        '<p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</p>';
+      return;
+    }
+
+    const arr = Object.values(brain.results);
+    if (!arr.length) {
+      body.innerHTML =
+        '<p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</p>';
+      return;
+    }
+
+    // เรียงตาม % จากมากไปน้อย แต่แสดงครบทุก ADR
+    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const maxPct = Math.max(
+      1,
+      ...sorted.map((r) => (Number.isFinite(r.percent) ? r.percent : 0))
+    );
+
+    const rowsHtml = sorted
+      .map((r) => {
+        const pct = Number.isFinite(r.percent) ? Math.max(0, r.percent) : 0;
+        const pctStr = pct.toFixed(1).replace(/\.0$/, "");
+        const width = (pct / maxPct) * 100;
+        return `
+          <div class="p6-adr-chart-row">
+            <div class="p6-adr-chart-label">${r.label}</div>
+            <div class="p6-adr-chart-bar-track">
+              <div class="p6-adr-chart-bar-fill" style="width:${width}%;"></div>
+            </div>
+            <div class="p6-adr-chart-pct">${pctStr}%</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    body.innerHTML = rowsHtml;
+  }
+
   // --------- RENDER (ครั้งเดียว) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
@@ -473,6 +519,15 @@
               <div id="p6BrainHost">
                 <!-- p6BrainBox จาก index.html จะถูกย้ายมาอยู่ตรงนี้ -->
               </div>
+
+              <!-- กล่องกราฟ ADR 21 ชนิด (แนวนอน สีชมพู) -->
+              <div class="p6-adr-chart">
+                <div class="p6-adr-chart-title">กราฟเปอร์เซ็นต์การเข้าได้กับ ADR ทั้ง 21 ชนิด</div>
+                <div id="p6AdrChartBody" class="p6-adr-chart-body">
+                  <p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3</p>
+                </div>
+              </div>
+
               <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
                 <button id="p6BrainRefreshBtn" class="p6-btn p6-btn-outline">🔄 รีเฟรชผลประเมิน</button>
               </div>
@@ -570,6 +625,7 @@
               computeLocalBrain();
             } catch (e) {}
           }
+          updateAdrChartFromBrain();
         });
       }
 
@@ -589,6 +645,7 @@
       computeLocalBrain();
     }
 
+    updateAdrChartFromBrain();
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -613,6 +670,64 @@
       .p6-naranjo-item{display:flex;justify-content:space-between;align-items:center;background:#E8FFF0;border:1px solid #A7F3D0;border-radius:12px;padding:.6rem .8rem;margin:.35rem 0;}
       .p6-naranjo-name{font-weight:800;color:#064E3B;}
       .p6-naranjo-score{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;border-radius:10px;padding:.15rem .6rem;font-weight:800;min-width:2.2rem;text-align:center;}
+
+      /* กราฟ ADR 21 ชนิด (แนวนอน สีชมพู) */
+      .p6-adr-chart{
+        margin-top:.6rem;
+        border-radius:18px;
+        border:1px solid rgba(236,72,153,.65);
+        background:linear-gradient(135deg,rgba(255,241,246,0.98),rgba(251,207,232,0.95));
+        padding:10px 12px;
+        box-shadow:0 10px 30px rgba(236,72,153,0.18);
+      }
+      .p6-adr-chart-title{
+        margin:0 0 6px;
+        font-size:13px;
+        font-weight:700;
+        color:#9d174d;
+      }
+      .p6-adr-chart-body{
+        max-height:260px;
+        overflow:auto;
+        padding-right:4px;
+      }
+      .p6-adr-chart-row{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin:3px 0;
+      }
+      .p6-adr-chart-label{
+        flex:0 0 160px;
+        font-size:11px;
+        font-weight:600;
+        color:#6b21a8;
+      }
+      .p6-adr-chart-bar-track{
+        flex:1 1 auto;
+        height:18px;
+        border-radius:999px;
+        background:rgba(255,255,255,0.92);
+        border:1px solid rgba(248,113,113,0.45);
+        overflow:hidden;
+        position:relative;
+      }
+      .p6-adr-chart-bar-fill{
+        position:absolute;
+        left:0;
+        top:0;
+        bottom:0;
+        border-radius:999px;
+        background:linear-gradient(90deg,#ec4899 0%,#f97316 100%);
+        box-shadow:0 4px 10px rgba(244,114,182,0.55);
+      }
+      .p6-adr-chart-pct{
+        flex:0 0 50px;
+        text-align:right;
+        font-size:11px;
+        font-weight:800;
+        color:#be185d;
+      }
     `;
     const tag = document.createElement("style");
     tag.id = "p6-visual-style";
@@ -627,6 +742,7 @@
     } else {
       computeLocalBrain();
     }
+    updateAdrChartFromBrain();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
