@@ -169,7 +169,7 @@
 
           <div style="display:flex;flex-direction:column;gap:1rem;">
             ${FEATURE_GROUPS.map(group => {
-              const saved = d[group.key] || {};
+              const saved = d[group.key + "_raw"] || d[group.key] || {};
               return `
                 <div>
                   <div style="background:${group.bg};border:1px solid ${group.border};border-radius:.9rem;padding:.75rem .75rem .5rem;">
@@ -292,6 +292,7 @@
     const store = (window.drugAllergyData.page2 = window.drugAllergyData.page2 || {});
 
     // 1) เก็บโครงสร้างเดิม (ตาม UI) — เฉพาะช่องที่ติ้กหรือมีรายละเอียด
+    const rawGroups = {};
     FEATURE_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach((txt, idx) => {
@@ -302,7 +303,8 @@
           groupObj[txt] = { checked: cb.checked, detail: input.value.trim() };
         }
       });
-      store[group.key] = groupObj;
+      rawGroups[group.key] = groupObj;
+      store[group.key + "_raw"] = groupObj;
     });
 
     const organObj = {};
@@ -319,7 +321,7 @@
     // 2) สร้างรายการรวมแบบ "flat tokens" — เอาเฉพาะที่ติ้กจริง ๆ เท่านั้น
     const tokens = [];
     FEATURE_GROUPS.forEach(group => {
-      const saved = store[group.key] || {};
+      const saved = rawGroups[group.key] || {};
       Object.keys(saved).forEach(txt => {
         if (saved[txt]?.checked) {
           const t = normToken(group.key, txt);
@@ -328,8 +330,8 @@
       });
     });
     // อวัยวะผิดปกติเป็น tokens เช่นกัน (ยกเว้น "ไม่พบ")
-    Object.keys(store.organs || {}).forEach(org => {
-      if (store.organs[org]?.checked && !/ไม่พบ/.test(org)) {
+    Object.keys(organObj).forEach(org => {
+      if (organObj[org]?.checked && !/ไม่พบ/.test(org)) {
         tokens.push(`org:${org}`);
       }
     });
@@ -337,65 +339,76 @@
     store.__selected = tokens.map(t => ({ token: t })); // เผื่อหน้า 6 ใช้อ่านรายการ
 
     // 3) คีย์สากล/ธงที่สมองใช้อยู่ (ถ้ามี) — ตั้งค่าเฉพาะที่ติ้กจริง ๆ
-    // เคลียร์ของเก่ากันทับซ้อน
-    store.resp = {}; store.cv = {}; store.gi = {}; store.misc = {};
-    delete store.HR; delete store.RR; delete store.SpO2;
-    delete store.examHRHigh;
+    const has = (g, t) =>
+      !!(rawGroups[g] && rawGroups[g][t] && rawGroups[g][t].checked);
 
-    // Helper
-    const has = (g, t) => !!(store[g] && store[g][t] && store[g][t].checked);
+    const resp = {};
+    const cv = {};
+    const gi = {};
+    const msk = {};
+    const urine = {};
+    const eye = {};
+    const other = {};
 
     // Respiratory
-    store.resp.wheeze   = has("resp","หายใจมีเสียงวี๊ด") || undefined;
+    if (has("resp","หายใจมีเสียงวี๊ด")) resp.wheeze = true;
     if (has("resp","หอบเหนื่อย/หายใจลำบาก (RR>21 หรือ HR>100 หรือ SpO2<94%)")) {
-      store.resp.dyspnea = true;
-      // วาง vital เพื่อให้สมองรับรู้ว่าผ่านเกณฑ์ (อย่างน้อยหนึ่งข้อ)
-      store.RR   = 22;                 // RR>21
-      store.HR   = Math.max(101, store.HR || 0); // HR>100
-      store.SpO2 = 93;                 // SpO2<94%
+      resp.dyspnea = true;
+      resp.tachypnea = true;
     }
+    if (has("resp","ไอเป็นเลือด")) resp.hemoptysis = true;
 
     // Cardiovascular
-    store.cv.hypotension = has("cv","BP ต่ำ (<90/60)") || undefined;
-    store.cv.shock       = has("cv","BP ลดลง ≥30% ของ baseline systolic เดิม") || undefined; // ให้สมอง map ต่อ
+    if (has("cv","BP ต่ำ (<90/60)")) cv.bpLow = true;
+    if (has("cv","BP ลดลง ≥30% ของ baseline systolic เดิม")) cv.bpDrop40pct = true;
     if (has("cv","HR สูง (>100)")) {
-      store.examHRHigh = true; // สำหรับกฎที่ใช้ exam:HR>100
-      store.HR = Math.max(101, store.HR || 0);
+      cv.hrValue = { use: true, value: 110 }; // ให้ nField มองว่า HR>100
     }
 
     // GI
-    store.gi.nausea    = has("gi","คลื่นไส้/อาเจียน") || undefined;
-    store.gi.dysphagia = has("gi","กลืนลำบาก") || undefined;
-    store.gi.diarrhea  = has("gi","ท้องเสีย") || undefined;
-    store.gi.cramp     = has("gi","ปวดบิดท้อง") || undefined;
-    store.misc.bleedingGI = has("gi","เลือดออกในทางเดินอาหาร") || undefined;
+    if (has("gi","คลื่นไส้/อาเจียน")) gi.nauseaVomiting = true;
+    if (has("gi","กลืนลำบาก")) gi.dysphagia = true;
+    if (has("gi","ท้องเสีย")) gi.diarrhea = true;
+    if (has("gi","ปวดบิดท้อง")) gi.colickyPain = true;
+    if (has("gi","เบื่ออาหาร")) gi.anorexia = true;
+
+    // Mucosal / ENT → sore throat
+    if (has("ent","เจ็บคอ")) gi.soreThroat = true;
+
+    // Musculoskeletal
+    if (has("msk","ปวดข้อ")) msk.arthralgia = true;
+    if (has("msk","ข้ออักเสบ")) msk.arthritis = true;
+    if (has("msk","ปวดเมื่อยกล้ามเนื้อ")) msk.myalgia = true;
 
     // Eye
-    store.misc.conjunctivitis = has("eye","เยื่อบุตาอักเสบ (ตาแดง)") || undefined;
-    store.misc.corneal        = has("eye","แผลที่กระจกตา") || undefined;
+    if (has("eye","เยื่อบุตาอักเสบ (ตาแดง)")) eye.conjunctivitis = true;
+    if (has("eye","แผลที่กระจกตา")) eye.cornealUlcer = true;
 
-    // ENT / อื่นๆ
-    store.misc.soreThroat = has("ent","เจ็บคอ") || undefined;
-    store.misc.fever      = has("other","ไข้ Temp > 37.5 °C") || undefined;
-    store.misc.fatigue    = has("other","อ่อนเพลีย") || undefined;
-    store.misc.chill      = has("other","หนาวสั่น") || undefined;
+    // GU → urine object
+    if (has("gu","ปัสสาวะสีชา/สีดำ")) urine.darkUrine = true;
+    if (has("gu","ปัสสาวะออกน้อย")) urine.oliguria = true;
+    if (has("gu","ปัสสาวะสีขุ่น")) urine.turbid = true;
 
-    // ผิวหนังเลือดออก
-    store.misc.hemorrhageSkin = has("skin_extra","ปื้น/จ้ำเลือด") || undefined;
-    store.misc.petechiae      = has("skin_extra","จุดเลือดออก") || undefined;
+    // Other system
+    if (has("other","ไข้ Temp > 37.5 °C")) {
+      other.fever = { use: true, value: 38 }; // ให้ nField เห็นว่าไข้สูง
+    }
+    if (has("other","อ่อนเพลีย")) other.fatigue = true;
 
-    // GU (คงข้อความไทยไว้ให้สมองแปลงเองได้)
-    store.misc["ปัสสาวะสีชา/สีดำ"] = has("gu","ปัสสาวะสีชา/สีดำ") || undefined;
-    store.misc["ปัสสาวะออกน้อย"]   = has("gu","ปัสสาวะออกน้อย") || undefined;
-    store.misc["ปัสสาวะขุ่น"]      = has("gu","ปัสสาวะสีขุ่น") || undefined;
+    store.resp = resp;
+    store.cv = cv;
+    store.gi = gi;
+    store.msk = msk;
+    store.urine = urine;
+    store.eye = eye;
+    store.other = other;
 
-    // Organs flags
-    const orgHas = name => !!(store.organs && store.organs[name] && store.organs[name].checked);
-    const org = store.organsFlags = {};
-    org.kidneyFail  = orgHas("ไตวาย") || undefined;
-    org.hepatitis   = orgHas("ตับอักเสบ") || undefined;
-    org.pneumonia   = orgHas("ปอดอักเสบ") || undefined;
-    org.myocarditis = orgHas("กล้ามเนื้อหัวใจอักเสบ") || undefined;
+    // optional: เก็บ misc ซ้ำ เผื่อหน้าอื่นใช้อยู่
+    const misc = store.misc || {};
+    misc.soreThroat = !!gi.soreThroat;
+    misc.fever = !!other.fever;
+    misc.fatigue = !!other.fatigue;
+    store.misc = misc;
 
     store.__touched = true;
 
