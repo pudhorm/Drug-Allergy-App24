@@ -1,4 +1,4 @@
-// page3.js (DROP-IN REPLACEMENT — safer & debounced)
+// ===================== page3.js (REPLACE WHOLE FILE) =====================
 (function () {
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
@@ -132,7 +132,6 @@
 
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:.55rem 1.1rem;">
                 ${group.items.map((item) => {
-                  // 🔧 FIX (เทียบเท่าเดิม): เลี่ยง backtick ซ้อนที่บางครั้งก่อ syntax error
                   const fieldId = group.key + "_" + item.key;
                   const checked = groupData[item.key]?.checked ? "checked" : "";
                   const value = groupData[item.key]?.value || "";
@@ -187,18 +186,24 @@
         window.drugAllergyData.page3 = {};
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         document.dispatchEvent(new Event("da:update"));
+        if (typeof window.evaluateDrugAllergy === "function") {
+          try { window.evaluateDrugAllergy(); } catch {}
+        }
         renderPage3();
         alert("ล้างข้อมูลหน้า 3 แล้ว");
       });
     }
 
-    // บันทึกและไปหน้า 4 (เรียกครั้งเดียว, ตัด setInterval/RAF ที่ซ้ำซ้อน)
+    // บันทึกและไปหน้า 4
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
         flushSave(); // เซฟทันทีหนึ่งครั้ง (ไม่รอ debounce)
         window.drugAllergyData.page3.__saved = true;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
+        if (typeof window.evaluateDrugAllergy === "function") {
+          try { window.evaluateDrugAllergy(); } catch {}
+        }
         alert("บันทึกหน้า 3 แล้ว");
 
         // สลับแท็บไปหน้า 4
@@ -227,7 +232,6 @@
     const t = ev.target;
     if (!(t instanceof HTMLElement)) return;
     if (!t.hasAttribute("data-group") || !t.hasAttribute("data-item")) return;
-    // debounce บันทึก ลดการทำงานถี่ ๆ ขณะพิมพ์
     clearTimeout(saveTimer);
     saveTimer = setTimeout(savePage3, 120);
   }
@@ -243,32 +247,69 @@
 
     const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
 
+    // เก็บค่าตามกลุ่ม (โครงเดิม)
     LAB_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach(item => {
-        const cb = root.querySelector(`input[type="checkbox"][data-group="${group.key}"][data-item="${item.key}"]`);
-        const valInput = root.querySelector(`input[data-type="value"][data-group="${group.key}"][data-item="${item.key}"]`);
-        const detailInput = root.querySelector(`input[data-type="detail"][data-group="${group.key}"][data-item="${item.key}"]`);
+        const cb = root.querySelector(
+          'input[type="checkbox"][data-group="' + group.key + '"][data-item="' + item.key + '"]'
+        );
+        const valInput = root.querySelector(
+          'input[data-type="value"][data-group="' + group.key + '"][data-item="' + item.key + '"]'
+        );
+        const detailInput = root.querySelector(
+          'input[data-type="detail"][data-group="' + group.key + '"][data-item="' + item.key + '"]'
+        );
         if (!cb || !valInput || !detailInput) return;
-        if (cb.checked || valInput.value.trim() !== "" || detailInput.value.trim() !== "") {
+
+        const checked = cb.checked;
+        const value = valInput.value.trim();
+        const detail = detailInput.value.trim();
+
+        // เก็บเฉพาะช่องที่มีการติ้ก หรือกรอกค่า/รายละเอียด (เหมือนเดิม)
+        if (checked || value !== "" || detail !== "") {
           groupObj[item.key] = {
-            checked: cb.checked,
-            value: valInput.value.trim(),
-            detail: detailInput.value.trim()
+            checked,
+            value,
+            detail
           };
         }
       });
       store[group.key] = groupObj;
     });
 
-    // finalize & save (PAGE 3)
+    // ===== สร้าง tokens สำหรับ "ใช้คิดคะแนนเฉพาะที่ติ้ก" =====
+    const tokens = [];
+    const labsFlat = {};
+
+    LAB_GROUPS.forEach(group => {
+      const groupObj = store[group.key] || {};
+      Object.keys(groupObj).forEach(itemKey => {
+        const rec = groupObj[itemKey];
+        if (!rec || !rec.checked) return;  // ✅ ถ้าไม่ติ้ก = ไม่คิดคะแนน
+        const token = group.key + ":" + itemKey;  // เช่น "cbc:wbc", "lft:ast"
+        tokens.push(token);
+        labsFlat[token] = {
+          group: group.key,
+          item: itemKey,
+          value: rec.value || "",
+          detail: rec.detail || ""
+        };
+      });
+    });
+
+    store.__tokens = tokens;   // สมองใช้ match แบบโหมด C ได้
+    store.__labs = labsFlat;   // เก็บรายละเอียดแบน ๆ ไว้ใช้ต่อ
+
+    // flag สำหรับบอกว่ามีการใส่ lab แล้ว
     store.__saved = true;
     store.__ts = Date.now();
 
     if (window.saveDrugAllergyData) window.saveDrugAllergyData();
-
-    // แจ้งส่วนอื่น ๆ (หน้า 6 เป็นต้น)
     document.dispatchEvent(new Event("da:update"));
+    if (typeof window.evaluateDrugAllergy === "function") {
+      try { window.evaluateDrugAllergy(); } catch {}
+    }
   }
 
   // export
