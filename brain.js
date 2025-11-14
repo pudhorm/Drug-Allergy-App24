@@ -1,8 +1,8 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
 // สมองหน้า 6: แสดงผลคะแนน ADR ทั้ง 21 ตัวแบบเปอร์เซ็นต์ + รายละเอียดตัวแปรที่ถูกนับ
-// - ใช้คะแนนจาก window.brainRules_vEval (computeAll) + รายชื่อ ADR จาก window.brainRules
-// - คิดคะแนนแบบ "ต่อ-ADR" (mode C) ไม่เอา token ของ ADR อื่นมาปน
-// - ซ่อนการ์ด "กราฟผลคะแนนย่อย (Top signals)" เดิม
+// - ใช้ผลคำนวณจาก window.brainComputeAndRender() / window.brainResult (brain.rules.js โหมด C)
+// - คิดคะแนนแบบ "ต่อ-ADR" (mode C) ไม่เอาเกณฑ์ของ ADR อื่นมาปน
+// - ซ่อนการ์ด "กราฟผลคะแนนย่อย (Top signals)" เดิม แล้วใช้การ์ดนี้แทน
 
 (function () {
   "use strict";
@@ -65,59 +65,66 @@
   }
 
   // ---------------------------------------------------------------------------
-  // ดึงผลคะแนนจาก brain.rules.js
+  // ดึงผลคะแนนจาก brain.rules.js (โหมด C ตัวใหม่)
   // ---------------------------------------------------------------------------
+  function getBrainResultFromRules() {
+    var all = null;
+
+    // ถ้ามีฟังก์ชันสมองโดยตรง ให้เรียกก่อน (ถึงแม้มันจะเรนเดอร์ของตัวเอง เราจะเขียนทับทีหลัง)
+    if (typeof window.brainComputeAndRender === "function") {
+      try {
+        all = window.brainComputeAndRender();
+      } catch (e) {
+        console.error("brain.js: brainComputeAndRender error", e);
+      }
+    }
+
+    // fallback: ใช้ค่าแคช global ถ้ามี
+    if (!all && window.brainResult) {
+      all = window.brainResult;
+    }
+
+    if (!all || typeof all !== "object") {
+      all = { results: {}, scoresForChart: {} };
+    }
+    if (!all.results) all.results = {};
+    if (!all.scoresForChart) all.scoresForChart = {};
+    return all;
+  }
+
   function buildResults() {
-    var rulesEval =
-      window.brainRules_vEval &&
-      typeof window.brainRules_vEval.computeAll === "function"
-        ? window.brainRules_vEval.computeAll()
-        : [];
-
-    var rulesToken = window.brainRules || [];
-
-    var evalMap = Object.create(null);
-    if (Array.isArray(rulesEval)) {
-      for (var i = 0; i < rulesEval.length; i++) {
-        var r = rulesEval[i];
-        if (!r || !r.key) continue;
-        evalMap[r.key] = r; // {key,label,total,tokens}
-      }
-    }
-
+    var all = getBrainResultFromRules(); // {results: {id: {...}}, scoresForChart:{}}
+    var resMap = all.results || {};
     var results = [];
-    if (!Array.isArray(rulesToken) || !rulesToken.length) {
-      return results;
-    }
 
-    for (var j = 0; j < rulesToken.length; j++) {
-      var rt = rulesToken[j];
-      if (!rt || !rt.id) continue;
-
-      var ev = evalMap[rt.id] || { total: 0, tokens: [] };
-      var tokens = Array.isArray(rt.tokens) ? rt.tokens : [];
-
-      // maxScore ของ ADR นี้ = ผลรวม |w| ของ token ในกลุ่มตัวเอง (mode C แยกต่อ ADR)
-      var maxScore = 0;
-      for (var k = 0; k < tokens.length; k++) {
-        var t = tokens[k];
-        var w = t && typeof t.w === "number" ? t.w : 1;
-        maxScore += Math.abs(w);
+    // แปลงผลจาก brain.rules.js → โครงสร้างที่ brain.js ใช้
+    Object.keys(resMap).forEach(function (key) {
+      var r = resMap[key] || {};
+      var name = r.label || r.id || key;
+      var raw = Number(r.raw) || 0;
+      var max = Number(r.max) || 0;
+      if (!isFinite(max) || max <= 0) max = 1;
+      var pct = r.percent;
+      if (!isFinite(pct)) {
+        pct = (raw / max) * 100;
       }
-      if (!isFinite(maxScore) || maxScore <= 0) maxScore = 1;
+      pct = clampPercent(pct);
 
-      var score = Number(ev.total) || 0;
-      var percent = clampPercent((score / maxScore) * 100);
+      // matchedMajors: รายชื่อ "ข้อใหญ่" ที่เข้าเกณฑ์ → แปลงเป็น token สำหรับโชว์ใน details
+      var majors = Array.isArray(r.matchedMajors) ? r.matchedMajors : [];
+      var detailTokens = majors.map(function (label) {
+        return { label: label, w: 1 };
+      });
 
       results.push({
-        id: rt.id,
-        name: rt.name || (ev && ev.label) || rt.id,
-        score: score,
-        maxScore: maxScore,
-        percent: percent,
-        detailTokens: Array.isArray(ev.tokens) ? ev.tokens : []
+        id: r.id || key,
+        name: name,
+        score: raw,
+        maxScore: max,
+        percent: pct,
+        detailTokens: detailTokens
       });
-    }
+    });
 
     // เรียง % จากมากไปน้อย แล้วตามชื่อ
     results.sort(function (a, b) {
@@ -136,14 +143,16 @@
   function buildSummaryHTML() {
     var d = getData();
 
-    // ต้องกดบันทึกหน้า 1–3 ให้ครบก่อน (ตรรกะเดิม)
-    var ready = !!(
-      d.page1 && d.page1.__saved &&
-      d.page2 && d.page2.__saved &&
-      d.page3 && d.page3.__saved
-    );
-    if (!ready) {
-      return '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
+    // ต้องมีข้อมูลหน้า 1 และ 2 (อนุโลมว่า lab หน้า 3 ยังไม่กรอก/ยังไม่บันทึกก็ให้คิดได้)
+    var hasP1 =
+      d.page1 &&
+      (d.page1.__saved || Object.keys(d.page1).length > 0);
+    var hasP2 =
+      d.page2 &&
+      (d.page2.__saved || Object.keys(d.page2).length > 0);
+
+    if (!hasP1 || !hasP2) {
+      return '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–2 หรือยังไม่คำนวณ</div>';
     }
 
     var rows = buildResults();
@@ -199,7 +208,8 @@
       html += '      <div class="p6-detail-grid">';
       for (var j = 0; j < rows.length; j++) {
         var row2 = rows[j];
-        if (!row2.detailTokens || !row2.detailTokens.length || row2.score <= 0) continue;
+        if (!row2.detailTokens || !row2.detailTokens.length || row2.score <= 0)
+          continue;
 
         html += '        <section class="p6-detail-card">';
         html += '          <h4>' + escapeHtml(row2.name) + '</h4>';
@@ -233,7 +243,8 @@
       html = buildSummaryHTML();
     } catch (e) {
       console.error("brain.js: buildSummaryHTML error", e);
-      html = '<div class="p6-error">เกิดข้อผิดพลาดในการคำนวณผลการประเมิน</div>';
+      html =
+        '<div class="p6-error">เกิดข้อผิดพลาดในการคำนวณผลการประเมิน</div>';
     }
     renderIntoPage6(html);
   }
