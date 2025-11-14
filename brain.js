@@ -1,15 +1,16 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
-// หน้า 6 : สรุปผลการประเมิน ADR
-// ใช้ผลคำนวณจาก brain.rules.js โหมด C  (window.brainRules_vEval.computeAll())
-// - แสดงเฉพาะ ADR ที่ได้คะแนน > 0 เท่านั้น
-// - แปลงคะแนนเป็น % เทียบกับ ADR ที่ได้คะแนนสูงสุดในเคสนั้น
-// - เรียงจากคะแนนมาก → น้อย
-// - ซ่อนบล็อก "กราฟผลคะแนนย่อย (Top signals)" ออกจากหน้า
-// - ไม่ไปยุ่งโค้ดส่วนอื่นของเว็บ
+// หน้า 6 : สรุปผลการประเมิน ADR (โหมด C)
+// ใช้ผลคำนวณจาก brain.rules.js : window.brainRules_vEval.computeAll()
+// - นับคะแนนเฉพาะตัวที่ผู้ใช้ติ๊กแล้วกฎใน brain.rules.js ให้คะแนน
+// - แสดงเฉพาะ ADR ที่มีคะแนน > 0
+// - เปลี่ยนคะแนนเป็นเปอร์เซ็นต์โดยอิงจากตัวที่ได้คะแนนสูงสุดในเคสนั้น (ตัวที่มากสุด = 100%)
+// - เรียงจากเปอร์เซ็นต์มาก → น้อย
+// - แสดงกล่องรายละเอียด "ตัวแปรที่ถูกนับ" ตาม tokens ของแต่ละ ADR
+// - ซ่อนบล็อก "กราฟผลคะแนนย่อย (Top signals)" เดิมออกจากหน้า
 
 (function () {
   // -------------------------------------------------------------------
-  // helpers
+  // Helpers
   // -------------------------------------------------------------------
   function renderIntoPage6(html) {
     var box = document.getElementById("p6BrainBox");
@@ -26,55 +27,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  // ซ่อนบล็อก "กราฟผลคะแนนย่อย (Top signals)" อย่างเดียว
-  function hideTopSignalsSection() {
-    try {
-      if (!document || !document.body) return;
-      var nodes = document.body.querySelectorAll("*");
-      for (var i = 0; i < nodes.length; i++) {
-        var el = nodes[i];
-        if (!el || !el.textContent) continue;
-        if (el.textContent.indexOf("กราฟผลคะแนนย่อย") !== -1) {
-          // พยายามหากรอบ section / div ที่ครอบข้อความนี้แล้วซ่อน
-          var sec = el.closest ? el.closest("section,div") : el.parentElement;
-          if (sec) {
-            sec.style.display = "none";
-          } else {
-            el.style.display = "none";
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("hideTopSignalsSection error:", e);
-    }
-  }
-
-  // ดึงผลจากสมอง (brain.rules.js)
-  function getResultsFromEngine() {
-    var engine = null;
-
-    // ใช้เครื่องยนต์แบบ eval ที่เราสร้างไว้ใน brain.rules.js
-    if (window.brainRules_vEval && typeof window.brainRules_vEval.computeAll === "function") {
-      engine = window.brainRules_vEval;
-    } else if (window.brainRules && typeof window.brainRules.computeAll === "function") {
-      // เผื่อกรณีเก่าที่ยังมี computeAll อยู่ใน window.brainRules
-      engine = window.brainRules;
-    }
-
-    if (!engine) return [];
-
-    try {
-      var list = engine.computeAll();
-      if (Object.prototype.toString.call(list) === "[object Array]") {
-        return list;
-      }
-      return [];
-    } catch (e) {
-      console.error("brain.js: computeAll() error:", e);
-      return [];
-    }
-  }
-
   function toPercent(score, maxScore) {
     if (!maxScore || maxScore <= 0) return 0;
     var p = Math.round((score / maxScore) * 100);
@@ -83,8 +35,60 @@
     return p;
   }
 
+  // ซ่อนบล็อก "กราฟผลคะแนนย่อย (Top signals)" เดิมออกไป
+  function hideTopSignalsSection() {
+    try {
+      var root = document.body;
+      if (!root) return;
+      var nodes = root.querySelectorAll("*");
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (el.textContent.indexOf("กราฟผลคะแนนย่อย") !== -1 ||
+            el.textContent.indexOf("Top signals") !== -1) {
+          var sec = el.closest ? el.closest("section,div") : el.parentElement;
+          if (sec) sec.style.display = "none";
+          else el.style.display = "none";
+        }
+      }
+    } catch (e) {
+      console.warn("hideTopSignalsSection error:", e);
+    }
+  }
+
+  // ดึงผลจาก engine ใน brain.rules.js
+  function getResultsFromEngine() {
+    // โหมดหลัก: brainRules_vEval.computeAll()
+    if (
+      window.brainRules_vEval &&
+      typeof window.brainRules_vEval.computeAll === "function"
+    ) {
+      try {
+        var r = window.brainRules_vEval.computeAll();
+        if (Array.isArray(r)) return r;
+      } catch (e) {
+        console.error("brainRules_vEval.computeAll error:", e);
+      }
+    }
+
+    // fallback เผื่อกรณีเก่า (ถ้าเคยมี)
+    if (
+      window.brainRules &&
+      typeof window.brainRules.computeAll === "function"
+    ) {
+      try {
+        var r2 = window.brainRules.computeAll();
+        if (Array.isArray(r2)) return r2;
+      } catch (e2) {
+        console.error("brainRules.computeAll error:", e2);
+      }
+    }
+
+    return [];
+  }
+
   // -------------------------------------------------------------------
-  // view helpers (กราฟแนวนอน + รายละเอียดตัวแปร)
+  // View helpers
   // -------------------------------------------------------------------
   function renderBarRow(idx, name, percent) {
     var rank = idx + 1;
@@ -92,14 +96,22 @@
 
     return (
       '<div class="p6-bar-row">' +
-      '  <div class="p6-bar-rank">' + esc(rankStr) + "</div>" +
+      '  <div class="p6-bar-rank">' +
+      esc(rankStr) +
+      "</div>" +
       '  <div class="p6-bar-main">' +
-      '    <div class="p6-bar-label">' + esc(name) + "</div>" +
+      '    <div class="p6-bar-label">' +
+      esc(name) +
+      "</div>" +
       '    <div class="p6-bar-track">' +
-      '      <div class="p6-bar-fill" style="width:' + percent + '%;"></div>' +
+      '      <div class="p6-bar-fill" style="width:' +
+      percent +
+      '%;"></div>' +
       "    </div>" +
       "  </div>" +
-      '  <div class="p6-bar-score">' + esc(percent + "%") + "</div>" +
+      '  <div class="p6-bar-score">' +
+      esc(percent + "%") +
+      "</div>" +
       "</div>"
     );
   }
@@ -107,11 +119,15 @@
   function renderTokenCard(result) {
     var html = "";
     html += '<div class="p6-token-card">';
-    html += '  <div class="p6-token-title">' + esc(result.label || result.key) + "</div>";
+    html +=
+      '  <div class="p6-token-title">' +
+      esc(result.label || result.key) +
+      "</div>";
 
     var tokens = result.tokens || [];
     if (!tokens.length) {
-      html += '  <p class="p6-token-empty">ไม่มีตัวแปรที่ถูกนับ</p>';
+      html +=
+        '  <p class="p6-token-empty">ไม่มีตัวแปรที่ถูกนับ</p>';
     } else {
       html += '  <ul class="p6-token-list">';
       for (var i = 0; i < tokens.length; i++) {
@@ -133,11 +149,12 @@
   }
 
   // -------------------------------------------------------------------
-  // build summary HTML
+  // Build HTML summary (ใช้ทุกครั้งที่กดรีเฟรชผลประเมิน)
   // -------------------------------------------------------------------
   function buildSummaryHTML() {
     var results = getResultsFromEngine(); // [{key,label,total,tokens}, ...]
-    if (!results.length) {
+
+    if (!results || !results.length) {
       return (
         '<section class="p6-panel p6-panel-main">' +
         '  <h3 class="p6-title">ผลการประเมินเบื้องต้น</h3>' +
@@ -146,7 +163,7 @@
       );
     }
 
-    // เอาเฉพาะตัวที่มีคะแนน > 0 เท่านั้น (โหมด C: แสดงเฉพาะ ADR ที่เข้าเกณฑ์)
+    // เอาเฉพาะ ADR ที่ได้คะแนน > 0 (ตามหลัก: นับเฉพาะสิ่งที่ผู้ใช้ติ้กจนเข้าเกณฑ์ ADR นั้น ๆ)
     var positives = [];
     for (var i = 0; i < results.length; i++) {
       var r = results[i];
@@ -158,7 +175,7 @@
       return (
         '<section class="p6-panel p6-panel-main">' +
         '  <h3 class="p6-title">ผลการประเมินเบื้องต้น</h3>' +
-        '  <p class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</p>' +
+        '  <p class="p6-muted">ยังไม่มี ADR ใดเข้าเกณฑ์จากข้อมูลที่กรอก</p>' +
         "</section>"
       );
     }
@@ -168,13 +185,16 @@
       return b.total - a.total;
     });
 
-    // ใช้คะแนนสูงสุดในเคสนี้เป็นฐานในการแปลงเป็น %
+    // ใช้คะแนนสูงสุดในเคสนี้เป็นฐาน 100%
     var maxScore = positives[0].total || 1;
     for (var j = 0; j < positives.length; j++) {
-      positives[j].percent = toPercent(positives[j].total, maxScore);
+      positives[j].percent = toPercent(
+        positives[j].total,
+        maxScore
+      );
     }
 
-    // เอา Top 5 สำหรับรายละเอียดตัวแปร
+    // เตรียม Top 5 สำหรับรายละเอียดตัวแปร (เหมือนรูปเดิม)
     var top5 = positives.slice(0, 5);
 
     var html = "";
@@ -184,7 +204,8 @@
     html += '  <h3 class="p6-title">ผลการประเมินเบื้องต้น</h3>';
 
     html += '  <div class="p6-card p6-card-top5">';
-    html += '    <div class="p6-card-header">📊 สรุปคะแนนความสอดคล้อง (Top 5)</div>';
+    html +=
+      '    <div class="p6-card-header">📊 สรุปคะแนนความสอดคล้อง (Top 5)</div>';
     html += '    <div class="p6-card-body">';
     for (var k = 0; k < top5.length; k++) {
       var t = top5[k];
@@ -194,7 +215,8 @@
     html += "  </div>";
 
     html +=
-      '  <details class="p6-details-variables"><summary class="p6-details-summary">▼ ดูรายละเอียดตัวแปรที่ถูกนับ</summary>';
+      '  <details class="p6-details-variables" open>' +
+      '    <summary class="p6-details-summary">▼ ดูรายละเอียดตัวแปรที่ถูกนับ</summary>';
     html += '    <div class="p6-token-grid">';
     for (var m = 0; m < top5.length; m++) {
       html += renderTokenCard(top5[m]);
@@ -204,10 +226,12 @@
 
     html += "</section>";
 
-    // ===== Block 2: กราฟ % ของทุก ADR ที่ได้คะแนน =====
+    // ===== Block 2: กราฟ % ครบทุก ADR ที่ได้คะแนน =====
     html += '<section class="p6-panel p6-panel-all">';
     html +=
-      '  <h3 class="p6-title">📈 สรุปคะแนนเป็นเปอร์เซ็นต์ (เฉพาะ ADR ที่ได้คะแนน)</h3>';
+      '  <h3 class="p6-title">📈 สรุปคะแนนเป็นเปอร์เซ็นต์ (ครบ ' +
+      esc(String(positives.length)) +
+      " ADR)</h3>";
     html += '  <div class="p6-card p6-card-all">';
     html += '    <div class="p6-card-body">';
     for (var n = 0; n < positives.length; n++) {
@@ -222,23 +246,21 @@
   }
 
   // -------------------------------------------------------------------
-  // public refresh: เรียกจากปุ่ม "รีเฟรชผลประเมิน"
+  // Refresh function (เรียกจากปุ่มหน้า 6)
   // -------------------------------------------------------------------
   function refresh() {
     try {
-      // ซ่อนกราฟผลคะแนนย่อยเก่าออกไป
       hideTopSignalsSection();
 
-      // ใส่ข้อความ loading ชั่วคราว
       renderIntoPage6(
         '<div class="p6-loading">กำลังคำนวณผลการประเมิน...</div>'
       );
 
-      // หน่วงนิดหน่อยกันหน้าแข็ง
+      // ใช้ setTimeout เล็กน้อยกันหน้าแข็ง
       setTimeout(function () {
         var html = buildSummaryHTML();
         renderIntoPage6(html);
-      }, 10);
+      }, 20);
     } catch (e) {
       console.error("drugAllergyBrain.refresh error:", e);
       renderIntoPage6(
@@ -250,7 +272,16 @@
     }
   }
 
-  // export ให้ปุ่มหน้า 6 เรียกใช้ (ห้ามเปลี่ยนชื่ออันนี้)
+  // -------------------------------------------------------------------
+  // Export ให้ปุ่มหน้า 6 ใช้งาน
+  // -------------------------------------------------------------------
   window.drugAllergyBrain = { refresh: refresh };
   window.drugAllergyBrain_refresh = refresh;
+
+  // ซ่อน Top signals ตั้งแต่โหลดหน้า (กันมันแสดงทับ)
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", hideTopSignalsSection);
+  } else {
+    hideTopSignalsSection();
+  }
 })();
