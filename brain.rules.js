@@ -114,7 +114,10 @@
     const gas = p3.gas || {};
 
     const wbc = num(cbc.wbc && cbc.wbc.value);
-    const neutroPct = num((cbc.neutrophil && cbc.neutrophil.value) || (cbc.neut && cbc.neut.value));
+    const neutroPct = num(
+      (cbc.neutrophil && cbc.neutrophil.value) ||
+        (cbc.neut && cbc.neut.value)
+    );
     const lymphoPct = num(cbc.lymphocyte && cbc.lymphocyte.value);
     const eosPct = num(cbc.eosinophil && cbc.eosinophil.value);
     const hb = num(cbc.hb && cbc.hb.value);
@@ -139,7 +142,10 @@
     const igE = num(immuno.ige && immuno.ige.value);
     const tryptase = num(immuno.tryptase && immuno.tryptase.value);
 
-    const protU = (urineLab.protein && String(urineLab.protein.value || urineLab.protein).trim()) || "";
+    const protU =
+      (urineLab.protein &&
+        String(urineLab.protein.value || urineLab.protein).trim()) ||
+      "";
     const rbcU = num(urineLab.rbc && urineLab.rbc.value);
     const c3 = num(immuno.c3 && immuno.c3.value);
     const c4 = num(immuno.c4 && immuno.c4.value);
@@ -220,8 +226,32 @@
       c4,
       spo2,
       ekgAbnormal,
-      troponin
+      troponin,
+      urine
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helper สำหรับกลุ่ม lab-based ADR (ใช้เป็น "ฐาน" ว่ามีปัญหาจริง ๆ ก่อน)
+  // ---------------------------------------------------------------------------
+  function hasRenalBase(c) {
+    return (
+      (Number.isFinite(c.cr) && c.cr >= 1.3) ||
+      (Number.isFinite(c.egfr) && c.egfr < 60) ||
+      /(^\+|protein)/i.test(c.protU || "")
+    );
+  }
+
+  function hasCytopeniaBase(c) {
+    const lowHb = Number.isFinite(c.hb) && c.hb < 10;
+    const lowHct = Number.isFinite(c.hct) && c.hct < 30;
+    const lowWbc = Number.isFinite(c.wbc) && c.wbc < 4000;
+    const lowPlt = Number.isFinite(c.plt) && c.plt < 100000;
+    return lowHb || lowHct || lowWbc || lowPlt;
+  }
+
+  function hasANCBase(c) {
+    return Number.isFinite(c.anc) && c.anc < 1500;
   }
 
   // ---------------------------------------------------------------------------
@@ -240,7 +270,13 @@
           label: "รูปร่าง: ขอบหยัก/วงกลม/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
           check: (c) =>
-            hasAny(c.shapes, ["ขอบหยัก", "วงกลม", "ขอบวงนูนแดงด้านในเรียบ"])
+            hasAny(c.shapes, [
+              "ขอบหยัก",
+              "วงกลม",
+              "วงกลมชั้นเดียว",
+              "วงกลม 1 ชั้น",
+              "ขอบวงนูนแดงด้านในเรียบ"
+            ])
         },
         {
           id: "color",
@@ -253,8 +289,7 @@
           id: "typical",
           label: "ลักษณะสำคัญ: ตุ่มนูน/ปื้นนูน (x2)",
           weight: 2,
-          check: (c) =>
-            hasAny(c.shapes, ["ตุ่มนูน", "ปื้นนูน"])
+          check: (c) => hasAny(c.shapes, ["ตุ่มนูน", "ปื้นนูน"])
         },
         {
           id: "itch",
@@ -270,7 +305,8 @@
         },
         {
           id: "location",
-          label: "ตำแหน่ง: ทั่วร่างกาย/มือ/เท้า/แขน/ขา/หน้า/รอบดวงตา/ลำคอ/ลำตัว/หลัง",
+          label:
+            "ตำแหน่ง: ทั่วร่างกาย/มือ/เท้า/แขน/ขา/หน้า/รอบดวงตา/ลำคอ/ลำตัว/หลัง",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -319,8 +355,7 @@
           label: "อาการผิวหนัง: คัน/แดง/สีผิวปกติ",
           weight: 1,
           check: (c) =>
-            c.itch ||
-            hasAny(c.colors, ["แดง", "สีผิวปกติ"])
+            c.itch || hasAny(c.colors, ["แดง", "สีผิวปกติ"])
         },
         {
           id: "gi",
@@ -363,8 +398,7 @@
           id: "shape_thick",
           label: "รูปร่าง: นูนหนา/ขอบไม่ชัดเจน",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["นูนหนา", "ขอบไม่ชัดเจน"])
+          check: (c) => hasAny(c.shapes, ["นูนหนา", "ขอบไม่ชัดเจน"])
         },
         {
           id: "color",
@@ -458,8 +492,8 @@
           label: "ระยะเวลา: ภายใน 1 ชม.–2 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 1-6 ชั่วโมง", "ภายใน 6-24 ชั่วโมง", "ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์"].some((t) =>
-              String(c.onset).includes(t)
+            ["ภายใน 1-6 ชั่วโมง", "ภายใน 6-24 ชั่วโมง", "ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์"].some(
+              (t) => String(c.onset).includes(t)
             )
         }
       ]
@@ -506,7 +540,8 @@
         },
         {
           id: "location",
-          label: "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิม",
+          label:
+            "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิม",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -557,7 +592,7 @@
           label: "ปื้น/จ้ำเลือด/แห้ง/ลอก/ขุย",
           weight: 1,
           check: (c) =>
-            hasAny(c.colors, ["ปื้น/จ้ำเลือด"]) ||
+            hasAny(c.shapes, ["ปื้น/จ้ำเลือด", "จ้ำเลือด"]) ||
             c.scaleDry ||
             c.scalePeel ||
             c.scaleCrust
@@ -574,9 +609,12 @@
           label: "ระยะเวลา: 6–24 ชม. ถึง 3 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 6-24 ชั่วโมง", "ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์", "ภายใน 3 สัปดาห์"].some((t) =>
-              String(c.onset).includes(t)
-            )
+            [
+              "ภายใน 6-24 ชั่วโมง",
+              "ภายใน 1 สัปดาห์",
+              "ภายใน 2 สัปดาห์",
+              "ภายใน 3 สัปดาห์"
+            ].some((t) => String(c.onset).includes(t))
         },
         {
           id: "fever",
@@ -644,13 +682,18 @@
           label: "ระยะเวลา: 1 ชม.–3 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 1-6 ชั่วโมง", "ภายใน 6-24 ชั่วโมง", "ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์", "ภายใน 3 สัปดาห์"].some(
-              (t) => String(c.onset).includes(t)
-            )
+            [
+              "ภายใน 1-6 ชั่วโมง",
+              "ภายใน 6-24 ชั่วโมง",
+              "ภายใน 1 สัปดาห์",
+              "ภายใน 2 สัปดาห์",
+              "ภายใน 3 สัปดาห์"
+            ].some((t) => String(c.onset).includes(t))
         },
         {
           id: "systemic",
-          label: "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เลือดออกในทางเดินอาหาร",
+          label:
+            "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เลือดออกในทางเดินอาหาร",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -695,8 +738,7 @@
           id: "bullae_major",
           label: "ตุ่มน้ำขนาดใหญ่/น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) =>
-            c.bullaeLarge || c.scaleCrust || c.pustule
+          check: (c) => c.bullaeLarge || c.scaleCrust || c.pustule
         },
         {
           id: "anemia_bp",
@@ -709,7 +751,8 @@
         },
         {
           id: "location",
-          label: "ตำแหน่ง: ลำตัว/แขน/ขา/หน้า/มือ/เท้า/ศีรษะ/ทั่วร่างกาย/ริมฝีปาก",
+          label:
+            "ตำแหน่ง: ลำตัว/แขน/ขา/หน้า/มือ/เท้า/ศีรษะ/ทั่วร่างกาย/ริมฝีปาก",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -729,13 +772,16 @@
           label: "ระยะเวลา: 1–3 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์", "ภายใน 3 สัปดาห์"].some(
-              (t) => String(c.onset).includes(t)
-            )
+            [
+              "ภายใน 1 สัปดาห์",
+              "ภายใน 2 สัปดาห์",
+              "ภายใน 3 สัปดาห์"
+            ].some((t) => String(c.onset).includes(t))
         },
         {
           id: "systemic",
-          label: "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เจ็บคอ/ปวดข้อ/ท้องเสีย/เยื่อบุตาอักเสบ",
+          label:
+            "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เจ็บคอ/ปวดข้อ/ท้องเสีย/เยื่อบุตาอักเสบ",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -768,8 +814,7 @@
           id: "rash",
           label: "ผื่นแดง/ปื้นแดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
+          check: (c) => hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
         },
         {
           id: "color",
@@ -810,13 +855,19 @@
           label: "ระยะเวลา: 1–6 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์", "ภายใน 3 สัปดาห์", "ภายใน 4 สัปดาห์", "ภายใน 5 สัปดาห์", "ภายใน 6 สัปดาห์"].some(
-              (t) => String(c.onset).includes(t)
-            )
+            [
+              "ภายใน 1 สัปดาห์",
+              "ภายใน 2 สัปดาห์",
+              "ภายใน 3 สัปดาห์",
+              "ภายใน 4 สัปดาห์",
+              "ภายใน 5 สัปดาห์",
+              "ภายใน 6 สัปดาห์"
+            ].some((t) => String(c.onset).includes(t))
         },
         {
           id: "organ_lab",
-          label: "ALT/AST ≥2x ULN หรือ Cr เพิ่มขึ้น หรือ protein+ / SpO2 < 94% / EKG หรือตัวชี้วัดหัวใจ",
+          label:
+            "ALT/AST ≥2x ULN หรือ Cr เพิ่มขึ้น หรือ protein+ / SpO2 < 94% / EKG หรือตัวชี้วัดหัวใจ",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.alt) && c.alt >= 40) ||
@@ -846,8 +897,7 @@
           id: "color",
           label: "สีแดง/แดงซีด",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["แดง", "แดงซีด"])
+          check: (c) => hasAny(c.colors, ["แดง", "แดงซีด"])
         },
         {
           id: "typical",
@@ -860,8 +910,7 @@
           id: "blister",
           label: "พอง/ตุ่มน้ำ",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+          check: (c) => c.bullaeSmall || c.bullaeMed || c.bullaeLarge
         },
         {
           id: "crust",
@@ -892,7 +941,16 @@
           label: "มือ/เท้า/แขน/ขา/หน้า/ลำตัว/หลัง/ลำคอ",
           weight: 1,
           check: (c) =>
-            hasAny(c.locs, ["มือ", "เท้า", "แขน", "ขา", "หน้า", "ลำตัว", "หลัง", "ลำคอ"])
+            hasAny(c.locs, [
+              "มือ",
+              "เท้า",
+              "แขน",
+              "ขา",
+              "หน้า",
+              "ลำตัว",
+              "หลัง",
+              "ลำคอ"
+            ])
         }
       ]
     },
@@ -907,7 +965,12 @@
           label: "ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
           weight: 1,
           check: (c) =>
-            hasAny(c.shapes, ["ขอบเขตชัด", "ปื้นแดง", "จุดแดงเล็ก", "จุดเล็กแดง"])
+            hasAny(c.shapes, [
+              "ขอบเขตชัด",
+              "ปื้นแดง",
+              "จุดแดงเล็ก",
+              "จุดเล็กแดง"
+            ])
         },
         {
           id: "color",
@@ -928,7 +991,13 @@
           label: "น้ำเหลือง/สะเก็ด/ตุ่มน้ำ/ลอก/ขุย/คัน",
           weight: 1,
           check: (c) =>
-            c.scaleCrust || c.scaleDry || c.scalePeel || c.itch || c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+            c.scaleCrust ||
+            c.scaleDry ||
+            c.scalePeel ||
+            c.itch ||
+            c.bullaeSmall ||
+            c.bullaeMed ||
+            c.bullaeLarge
         },
         {
           id: "location",
@@ -1055,7 +1124,10 @@
           label: "ตุ่มน้ำขนาดเล็ก/พอง/ตึง",
           weight: 1,
           check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge || hasAny(c.shapes, ["พอง", "ตึง"])
+            c.bullaeSmall ||
+            c.bullaeMed ||
+            c.bullaeLarge ||
+            hasAny(c.shapes, ["พอง", "ตึง"])
         },
         {
           id: "color",
@@ -1170,12 +1242,11 @@
           id: "bleed",
           label: "ไอเป็นเลือด/เลือดออกในปอด/เลือดออกในทางเดินอาหาร",
           weight: 1,
-          check: (c) =>
-            c.p2 && flag(c.p2.resp && c.p2.resp.hemoptysis)
+          check: (c) => c.p2 && flag(c.p2.resp && c.p2.resp.hemoptysis)
         },
         {
           id: "lab_major",
-          label: "protein+ / C3, C4 ต่ำ / Cr เพิ่ม",
+          label: "protein+ / C3, C4 ต่ำ / Cr เพิ่ม (x2)",
           weight: 2,
           check: (c) =>
             /(^\+|protein)/i.test(c.protU || "") ||
@@ -1232,8 +1303,7 @@
           id: "ldh",
           label: "LDH สูง (2–10x ULN)",
           weight: 1,
-          check: (c) =>
-            c.p3 && num(c.p3.ldh && c.p3.ldh.value) > 2
+          check: (c) => c.p3 && num(c.p3.ldh && c.p3.ldh.value) > 2
         }
       ]
     },
@@ -1245,31 +1315,32 @@
       majors: [
         {
           id: "sym",
-          label: "ซีด/อ่อนเพลีย",
+          label: "ซีด/อ่อนเพลีย (ต้องมี cytopenia ด้วย)",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.hb) && c.hb < 10) || c.fatigue
+            hasCytopeniaBase(c) &&
+            ((Number.isFinite(c.hb) && c.hb < 10) || c.fatigue)
         },
         {
           id: "bleed_major",
           label: "จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก (x3)",
           weight: 3,
           check: (c) =>
-            c.p3 && flag(c.p3.bleedingSigns)
+            hasCytopeniaBase(c) &&
+            c.p3 &&
+            flag(c.p3.bleedingSigns)
         },
         {
           id: "lab_wbc",
           label: "WBC < 4000 (x2)",
           weight: 2,
-          check: (c) =>
-            Number.isFinite(c.wbc) && c.wbc < 4000
+          check: (c) => Number.isFinite(c.wbc) && c.wbc < 4000
         },
         {
           id: "lab_plt",
           label: "Plt < 100,000 (x2)",
           weight: 2,
-          check: (c) =>
-            Number.isFinite(c.plt) && c.plt < 100000
+          check: (c) => Number.isFinite(c.plt) && c.plt < 100000
         },
         {
           id: "lab_hb_hct",
@@ -1289,30 +1360,34 @@
       majors: [
         {
           id: "sym",
-          label: "หนาวสั่น/เจ็บคอ/แผลในปาก",
+          label: "หนาวสั่น/เจ็บคอ/แผลในปาก (ต้องมี ANC < 1500)",
           weight: 1,
           check: (c) =>
-            c.soreThroat || (c.p2 && flag(c.p2.other && c.p2.other.chills))
+            hasANCBase(c) &&
+            (c.soreThroat ||
+              (c.p2 && flag(c.p2.other && c.p2.other.chills)))
         },
         {
           id: "fever",
-          label: "ไข้ > 37.5 °C",
+          label: "ไข้ > 37.5 °C (ต้องมี ANC < 1500)",
           weight: 1,
-          check: (c) => Number.isFinite(c.fever) && c.fever > 37.5
+          check: (c) =>
+            hasANCBase(c) &&
+            Number.isFinite(c.fever) &&
+            c.fever > 37.5
         },
         {
           id: "organ",
-          label: "ปอดอักเสบ",
+          label: "ปอดอักเสบ (ต้องมี ANC < 1500)",
           weight: 1,
           check: (c) =>
-            c.p3 && flag(c.p3.lungInvolve)
+            hasANCBase(c) && c.p3 && flag(c.p3.lungInvolve)
         },
         {
           id: "anc_major",
           label: "ANC < 1500 (x4)",
           weight: 4,
-          check: (c) =>
-            Number.isFinite(c.anc) && c.anc < 1500
+          check: (c) => hasANCBase(c)
         }
       ]
     },
@@ -1333,15 +1408,13 @@
           id: "bleed_sys",
           label: "เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
           weight: 1,
-          check: (c) =>
-            c.p3 && flag(c.p3.bleedingGI)
+          check: (c) => c.p3 && flag(c.p3.bleedingGI)
         },
         {
           id: "plt_major",
           label: "Plt < 150,000",
           weight: 1,
-          check: (c) =>
-            Number.isFinite(c.plt) && c.plt < 150000
+          check: (c) => Number.isFinite(c.plt) && c.plt < 150000
         }
       ]
     },
@@ -1353,33 +1426,35 @@
       majors: [
         {
           id: "sym",
-          label: "ไข้/ปวดข้อ/อ่อนเพลีย",
+          label: "ไข้/ปวดข้อ/อ่อนเพลีย (ต้องมี renal lab ผิดปกติ)",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.arthralgia ||
-            c.fatigue
+            hasRenalBase(c) &&
+            ((Number.isFinite(c.fever) && c.fever > 37.5) ||
+              c.arthralgia ||
+              c.fatigue)
         },
         {
           id: "urine_sym",
-          label: "ปัสสาวะออกน้อย/ปัสสาวะขุ่น",
+          label: "ปัสสาวะออกน้อย/ปัสสาวะขุ่น (ต้องมี renal lab ผิดปกติ)",
           weight: 1,
-          check: (c) => c.oliguria || (c.urine && flag(c.urine.turbid))
+          check: (c) =>
+            hasRenalBase(c) &&
+            (c.oliguria || (c.urine && flag(c.urine.turbid)))
         },
         {
           id: "edema",
-          label: "ขาบวม/บวม",
+          label: "ขาบวม/บวม (ต้องมี renal lab ผิดปกติ)",
           weight: 1,
           check: (c) =>
-            hasAny(c.locs, ["ขา"]) || c.swell
+            hasRenalBase(c) &&
+            (hasAny(c.locs, ["ขา"]) || c.swell)
         },
         {
           id: "renal_major",
           label: "Cr เพิ่ม ≥0.3 mg/dL หรือ eGFR < 60 (x3)",
           weight: 3,
-          check: (c) =>
-            (Number.isFinite(c.cr) && c.cr >= 1.3) ||
-            (Number.isFinite(c.egfr) && c.egfr < 60)
+          check: (c) => hasRenalBase(c)
         }
       ]
     }
