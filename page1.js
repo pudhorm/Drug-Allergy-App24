@@ -1,3 +1,4 @@
+// ===================== page1.js (REPLACE WHOLE FILE) =====================
 (function () {
   // ---------- 1.1 รูปร่างผื่น (15 รายการ) ----------
   const SHAPES = [
@@ -89,6 +90,24 @@
     return `${prefix}${idtxt}`;
   };
 
+  // helper แปลงค่า onset เดิมเป็น code สำหรับ select
+  function deriveOnsetCodeFromData(d){
+    if (!d) return "";
+    if (d.onsetCode) return d.onsetCode; // เคยเก็บแบบใหม่แล้ว
+
+    const raw = d.onset || "";
+    const s = String(raw).replace(/[–—−]/g,"-").replace(/\s+/g,"");
+    if (!s) return "";
+    if (s.indexOf("ภายใน1ชั่วโมง") !== -1 || s.indexOf("ภายใน1ชม") !== -1) return "1h";
+    if (s.indexOf("1-6ชั่วโมง") !== -1 || s.indexOf("1–6ชั่วโมง") !== -1 || s.indexOf("1-6ชม") !== -1) return "1to6h";
+    if (s.indexOf("6-24ชั่วโมง") !== -1 || s.indexOf("6–24ชั่วโมง") !== -1 || s.indexOf("6-24ชม") !== -1) return "6to24h";
+    if (s.indexOf("1สัปดาห์") !== -1) return "1w";
+    if (s.indexOf("2สัปดาห์") !== -1) return "2w";
+    if (s.indexOf("3สัปดาห์") !== -1) return "3w";
+    if (s.indexOf("4สัปดาห์") !== -1) return "4w";
+    return "";
+  }
+
   // ---------- select visibility fix ----------
   function injectSelectFixOnce(){
     if(document.getElementById("p1-select-visibility-fix"))return;
@@ -109,6 +128,9 @@
     const d = window.drugAllergyData.page1;
     const root = document.getElementById("page1");
     if(!root) return;
+
+    // ค่าปัจจุบันของ onset สำหรับ select (code)
+    const onsetCodeCurrent = deriveOnsetCodeFromData(d);
 
     root.innerHTML = `
 <div class="p1-wrapper">
@@ -281,17 +303,17 @@
     <label>เลือกช่วงเวลา
       <select id="p1_onset">
         <option value="">เลือก...</option>
-        <option value="1h" ${d.onset==="1h"?"selected":""}>ภายใน 1 ชั่วโมง</option>
-        <option value="1to6h" ${d.onset==="1to6h"?"selected":""}>ภายใน 1–6 ชั่วโมง</option>
-        <option value="6to24h" ${d.onset==="6to24h"?"selected":""}>ภายใน 6–24 ชั่วโมง</option>
-        <option value="1w" ${d.onset==="1w"?"selected":""}>ภายใน 1 สัปดาห์</option>
-        <option value="2w" ${d.onset==="2w"?"selected":""}>ภายใน 2 สัปดาห์</option>
-        <option value="3w" ${d.onset==="3w"?"selected":""}>ภายใน 3 สัปดาห์</option>
-        <option value="4w" ${d.onset==="4w"?"selected":""}>ภายใน 4 สัปดาห์</option>
-        <option value="other" ${d.onset==="other"?"selected":""}>อื่นๆ ระบุ…</option>
+        <option value="1h" ${onsetCodeCurrent==="1h"?"selected":""}>ภายใน 1 ชั่วโมง</option>
+        <option value="1to6h" ${onsetCodeCurrent==="1to6h"?"selected":""}>ภายใน 1–6 ชั่วโมง</option>
+        <option value="6to24h" ${onsetCodeCurrent==="6to24h"?"selected":""}>ภายใน 6–24 ชั่วโมง</option>
+        <option value="1w" ${onsetCodeCurrent==="1w"?"selected":""}>ภายใน 1 สัปดาห์</option>
+        <option value="2w" ${onsetCodeCurrent==="2w"?"selected":""}>ภายใน 2 สัปดาห์</option>
+        <option value="3w" ${onsetCodeCurrent==="3w"?"selected":""}>ภายใน 3 สัปดาห์</option>
+        <option value="4w" ${onsetCodeCurrent==="4w"?"selected":""}>ภายใน 4 สัปดาห์</option>
+        <option value="other" ${onsetCodeCurrent==="other"?"selected":""}>อื่นๆ ระบุ…</option>
       </select>
     </label>
-    <input id="p1_onset_other" class="p1-other" style="${d.onset==="other"?"":"display:none"}" placeholder="ระบุระยะเวลา" value="${d.onsetOther||""}">
+    <input id="p1_onset_other" class="p1-other" style="${onsetCodeCurrent==="other"?"":"display:none"}" placeholder="ระบุระยะเวลา" value="${d.onsetOther||""}">
   </section>
 
   <!-- ส่วนที่ 4: แนบรูป -->
@@ -453,8 +475,42 @@
       store.distribution = document.getElementById("p1_distribution").value;
       store.distributionOther = document.getElementById("p1_distribution_other").value;
 
-      store.onset = document.getElementById("p1_onset").value;
+      // ---------- บันทึก onset สำหรับ UI + สมอง ----------
+      const onsetCodeSel = document.getElementById("p1_onset").value;
+      store.onsetCode = onsetCodeSel;
       store.onsetOther = document.getElementById("p1_onset_other").value;
+
+      let onsetLabel = "";
+      switch (onsetCodeSel) {
+        case "1h":
+          onsetLabel = "ภายใน 1 ชั่วโมง";
+          break;
+        case "1to6h":
+          onsetLabel = "ภายใน 1-6 ชั่วโมง";
+          break;
+        case "6to24h":
+          onsetLabel = "ภายใน 6-24 ชั่วโมง";
+          break;
+        case "1w":
+          onsetLabel = "ภายใน 1 สัปดาห์";
+          break;
+        case "2w":
+          onsetLabel = "ภายใน 2 สัปดาห์";
+          break;
+        case "3w":
+          onsetLabel = "ภายใน 3 สัปดาห์";
+          break;
+        case "4w":
+          onsetLabel = "ภายใน 4 สัปดาห์";
+          break;
+        case "other":
+          onsetLabel = store.onsetOther || "";
+          break;
+        default:
+          onsetLabel = "";
+      }
+      // ให้ brain.rules.js ตัวเดิมใช้ field นี้ไป map category ต่อ
+      store.onset = onsetLabel;
 
       store.__saved = true;
       store.__ts = Date.now();
