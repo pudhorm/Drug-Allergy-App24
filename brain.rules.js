@@ -30,52 +30,41 @@
     return src.some((x) => targets.includes(x));
   }
 
-  // แก้ใหม่: ไม่ให้อ็อบเจ็กต์เปล่าๆ กลายเป็น true
+  // flag(): ใช้กับช่องติ้ก (หน้า 2, หน้า 3, บางช่องของหน้า 1)
+  // - ถ้าเป็น object {checked/use/tick/on/selected: bool} → ใช้ค่าของ gate นั้น
+  // - ถ้าไม่มี gate เลย ค่อย fallback ดูว่ามี field ไหนใน object เป็น truthy ไหม
   function flag(v) {
-    // boolean ตรงๆ
+    if (!v) return false;
     if (v === true) return true;
-    if (v === false || v == null) return false;
+    if (v === false) return false;
 
-    // string
     if (typeof v === "string") {
       const s = v.trim();
       if (!s) return false;
       return !/^(false|null|undefined|0|no|ไม่|ไม่มี)$/i.test(s);
     }
 
-    // number
-    if (typeof v === "number") {
-      return Number.isFinite(v) && v !== 0;
-    }
-
-    // object: ดูเฉพาะ field gate (use / checked / tick / on / selected / has)
     if (typeof v === "object") {
-      const hasGate =
-        "use" in v ||
-        "checked" in v ||
-        "tick" in v ||
-        "on" in v ||
-        "selected" in v ||
-        "has" in v;
-      if (hasGate) {
-        return !!(
-          v.use ||
-          v.checked ||
-          v.tick ||
-          v.on ||
-          v.selected ||
-          v.has
-        );
+      const gateKeys = ["checked", "use", "tick", "on", "selected"];
+      for (let i = 0; i < gateKeys.length; i++) {
+        const k = gateKeys[i];
+        if (Object.prototype.hasOwnProperty.call(v, k)) {
+          return !!v[k];
+        }
       }
-      // ถ้าเป็น object ที่ไม่มี gate เลย (เช่น {} หรือ {label:".."})
-      // ให้ถือว่า "ยังไม่ได้ติ้ก"
+      // ไม่มี gate ก็ลองดูค่าใน object ว่ามีอะไรจริงบ้างไหม
+      for (const k in v) {
+        if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
+        if (v[k]) return true;
+      }
       return false;
     }
 
-    return false;
+    return !!v;
   }
 
-  // ใช้กับ value ที่มาจากหน้า 3 (หรือ object {use,value} ของหน้า 2/3)
+  // ใช้กับ value ที่มาจากหน้า 3 (หรือ object {use/value} ของหน้า 2/3)
+  // นับเฉพาะตอนที่ gate (use/checked/tick/on/selected) = true เท่านั้น
   function nField(x) {
     if (x == null) return NaN;
     if (typeof x === "object") {
@@ -130,19 +119,64 @@
   function onsetCategory(str) {
     const s = normOnset(str);
     if (!s) return "";
-    if (s.indexOf("ภายใน1ชั่วโมง") !== -1 || s.indexOf("ภายใน1ชม") !== -1)
-      return "within1h";
-    if (s.indexOf("1-6ชั่วโมง") !== -1 || s.indexOf("1–6ชั่วโมง") !== -1 || s.indexOf("1-6ชม") !== -1)
+    if (s.includes("ภายใน1ชั่วโมง") || s.includes("ภายใน1ชม")) return "within1h";
+    if (s.includes("ภายใน1-6ชั่วโมง") || s.includes("1-6ชั่วโมง") || s.includes("1–6ชั่วโมง") || s.includes("1-6ชม"))
       return "h1to6";
-    if (s.indexOf("6-24ชั่วโมง") !== -1 || s.indexOf("6–24ชั่วโมง") !== -1 || s.indexOf("6-24ชม") !== -1)
+    if (s.includes("ภายใน6-24ชั่วโมง") || s.includes("6-24ชั่วโมง") || s.includes("6–24ชั่วโมง") || s.includes("6-24ชม"))
       return "h6to24";
-    if (s.indexOf("1สัปดาห์") !== -1) return "w1";
-    if (s.indexOf("2สัปดาห์") !== -1) return "w2";
-    if (s.indexOf("3สัปดาห์") !== -1) return "w3";
-    if (s.indexOf("4สัปดาห์") !== -1) return "w4";
-    if (s.indexOf("5สัปดาห์") !== -1) return "w5";
-    if (s.indexOf("6สัปดาห์") !== -1) return "w6";
+    if (s.includes("1สัปดาห์")) return "w1";
+    if (s.includes("2สัปดาห์")) return "w2";
+    if (s.includes("3สัปดาห์")) return "w3";
+    if (s.includes("4สัปดาห์")) return "w4";
+    if (s.includes("5สัปดาห์")) return "w5";
+    if (s.includes("6สัปดาห์")) return "w6";
     return "other";
+  }
+
+  // ดึงค่า onset จาก field หลายแบบในหน้า 1
+  function autoDetectOnset(p1) {
+    if (!p1) return { raw: "", cat: "" };
+
+    // ถ้ามีโค้ดช่วงเวลาเก็บไว้ชัดเจนอยู่แล้ว (เช่น within1h/h1to6/...) ใช้อันนั้นก่อน
+    if (typeof p1.onsetCategory === "string" && p1.onsetCategory.trim()) {
+      return { raw: p1.onsetCategory.trim(), cat: p1.onsetCategory.trim() };
+    }
+
+    const candidateKeys = [
+      "onset",
+      "onsetSelect",
+      "onsetChoice",
+      "onsetLabel",
+      "onsetText",
+      "onsetRaw"
+    ];
+
+    let raw = "";
+    for (let i = 0; i < candidateKeys.length; i++) {
+      const key = candidateKeys[i];
+      const v = p1[key];
+      if (!v) continue;
+      if (typeof v === "string" && v.trim()) {
+        raw = v.trim();
+        break;
+      } else if (typeof v === "object") {
+        const vv =
+          v.value != null
+            ? v.value
+            : v.label != null
+            ? v.label
+            : v.text != null
+            ? v.text
+            : "";
+        if (String(vv).trim()) {
+          raw = String(vv).trim();
+          break;
+        }
+      }
+    }
+
+    const cat = onsetCategory(raw);
+    return { raw, cat };
   }
 
   function onsetIsAny(c, cats) {
@@ -166,38 +200,27 @@
     const colors = arr(p1.rashColors || p1.rashColor);
     const locs = arr(p1.locations || p1.location);
 
-    // แก้ใหม่: พยายามหา field ระยะเวลาทุกชื่อที่น่าจะเป็นไปได้
-    let onsetRaw = p1.onset;
-    if (!onsetRaw) {
-      const keys = Object.keys(p1);
-      for (let i = 0; i < keys.length; i++) {
-        const k = keys[i];
-        if (/onset|timeRange|timeline|timeSlot|ช่วงเวลา/i.test(k)) {
-          onsetRaw = tField(p1[k]);
-          if (onsetRaw) break;
-        }
-      }
-    }
-    if (!onsetRaw) onsetRaw = "";
-    const onsetCat = onsetCategory(onsetRaw);
+    const onsetInfo = autoDetectOnset(p1);
+    const onsetRaw = onsetInfo.raw;
+    const onsetCat = onsetInfo.cat;
 
-    const itch = !!(p1.itch && p1.itch.has);
-    const swell = !!(p1.swelling && p1.swelling.has);
-    const pain = !!(p1.pain && p1.pain.has);
-    const burn = !!(p1.burn && p1.burn.has);
+    const itch = !!(p1.itch && flag(p1.itch.has));
+    const swell = !!(p1.swelling && flag(p1.swelling.has));
+    const pain = !!(p1.pain && flag(p1.pain.has));
+    const burn = !!(p1.burn && flag(p1.burn.has));
 
-    const bullaeSmall = !!(p1.blister && p1.blister.small);
-    const bullaeMed = !!(p1.blister && p1.blister.medium);
-    const bullaeLarge = !!(p1.blister && p1.blister.large);
+    const bullaeSmall = !!(p1.blister && flag(p1.blister.small));
+    const bullaeMed = !!(p1.blister && flag(p1.blister.medium));
+    const bullaeLarge = !!(p1.blister && flag(p1.blister.large));
 
-    const pustule = !!(p1.pustule && p1.pustule.has);
-    const peelCenter = !!(p1.skinDetach && p1.skinDetach.center);
-    const peelLt10 = !!(p1.skinDetach && p1.skinDetach.lt10);
-    const peelGt30 = !!(p1.skinDetach && p1.skinDetach.gt30);
+    const pustule = !!(p1.pustule && flag(p1.pustule.has));
+    const peelCenter = !!(p1.skinDetach && flag(p1.skinDetach.center));
+    const peelLt10 = !!(p1.skinDetach && flag(p1.skinDetach.lt10));
+    const peelGt30 = !!(p1.skinDetach && flag(p1.skinDetach.gt30));
 
-    const scaleDry = !!(p1.scale && p1.scale.dry);
-    const scalePeel = !!(p1.scale && p1.scale.peel);
-    const scaleCrust = !!(p1.scale && p1.scale.crust);
+    const scaleDry = !!(p1.scale && flag(p1.scale.dry));
+    const scalePeel = !!(p1.scale && flag(p1.scale.peel));
+    const scaleCrust = !!(p1.scale && flag(p1.scale.crust));
 
     const mucosalCountGt1 = !!p1.mucosalCountGt1 || !!p1.sjs_mucosal_gt1;
 
