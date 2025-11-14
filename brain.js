@@ -1,9 +1,8 @@
 // ===================== brain.js (REPLACE WHOLE FILE) =====================
-// หน้าที่: แปลงผลจาก brain.rules.js → HTML ที่หน้า 6
-// - แสดงกราฟแนวนอนครบทั้ง 21 ADR (เรียงตาม % จากมากไปน้อย)
-// - แสดงรายละเอียดตัวแปรที่ถูกนับเฉพาะ ADR ที่มีคะแนน
+// สมองหน้า 6: แสดงผลคะแนน ADR ทั้ง 21 ตัวแบบเปอร์เซ็นต์ + รายละเอียดตัวแปรที่ถูกนับ
+// - ใช้คะแนนจาก window.brainRules_vEval (computeAll) + รายชื่อ ADR จาก window.brainRules
+// - คิดคะแนนแบบ "ต่อ-ADR" (mode C) ไม่เอา token ของ ADR อื่นมาปน
 // - ซ่อนการ์ด "กราฟผลคะแนนย่อย (Top signals)" เดิม
-// *** ห้ามแก้โค้ดหน้าอื่น ๆ ***
 
 (function () {
   "use strict";
@@ -36,24 +35,21 @@
     return Math.round(x);
   }
 
-  // ที่วางผลสรุปในหน้า 6
+  // จุดที่ใช้เรนเดอร์ในหน้า 6 (มีอยู่แล้วตั้งแต่เวอร์ชันก่อน)
   function renderIntoPage6(html) {
     var box = document.getElementById("p6BrainBox");
     if (!box) return;
     box.innerHTML = html;
   }
 
-  // ซ่อนการ์ด "กราฟผลคะแนนย่อย (Top signals)" โดยไม่ไปยุ่งกับไฟล์หน้าอื่น
+  // ซ่อนการ์ด "กราฟผลคะแนนย่อย (Top signals)"
   function hideTopSignalsCard() {
     try {
-      // ถ้ามี id/class เฉพาะ ใช้ได้เลย (กันไว้ก่อน)
       var byId = document.getElementById("p6TopSignals");
       if (byId) {
         byId.style.display = "none";
         return;
       }
-
-      // ถ้าไม่มีก็ลองหา element ที่มีข้อความหัวข้อดังกล่าว
       var nodes = document.querySelectorAll("section,div");
       for (var i = 0; i < nodes.length; i++) {
         var el = nodes[i];
@@ -64,35 +60,33 @@
         }
       }
     } catch (e) {
-      // เงียบไว้ ไม่ให้หน้าอื่นพัง
       console.warn("hideTopSignalsCard error:", e);
     }
   }
 
   // ---------------------------------------------------------------------------
-  // แปลงกฎ + คะแนน → โครงสร้างที่ใช้วาดกราฟ
+  // ดึงผลคะแนนจาก brain.rules.js
   // ---------------------------------------------------------------------------
   function buildResults() {
-    var rulesEval = (window.brainRules_vEval && window.brainRules_vEval.computeAll)
-      ? window.brainRules_vEval.computeAll()
-      : [];
+    var rulesEval =
+      window.brainRules_vEval &&
+      typeof window.brainRules_vEval.computeAll === "function"
+        ? window.brainRules_vEval.computeAll()
+        : [];
 
     var rulesToken = window.brainRules || [];
 
-    // map จาก key → {total,tokens}
     var evalMap = Object.create(null);
     if (Array.isArray(rulesEval)) {
       for (var i = 0; i < rulesEval.length; i++) {
         var r = rulesEval[i];
         if (!r || !r.key) continue;
-        evalMap[r.key] = r;
+        evalMap[r.key] = r; // {key,label,total,tokens}
       }
     }
 
     var results = [];
-
     if (!Array.isArray(rulesToken) || !rulesToken.length) {
-      // ไม่มีข้อมูลกฎ token เลย
       return results;
     }
 
@@ -103,16 +97,14 @@
       var ev = evalMap[rt.id] || { total: 0, tokens: [] };
       var tokens = Array.isArray(rt.tokens) ? rt.tokens : [];
 
-      // คำนวณ maxScore ของ ADR นี้จาก token (mode C: ต่อ-ADR)
+      // maxScore ของ ADR นี้ = ผลรวม |w| ของ token ในกลุ่มตัวเอง (mode C แยกต่อ ADR)
       var maxScore = 0;
       for (var k = 0; k < tokens.length; k++) {
         var t = tokens[k];
         var w = t && typeof t.w === "number" ? t.w : 1;
         maxScore += Math.abs(w);
       }
-      if (!isFinite(maxScore) || maxScore <= 0) {
-        maxScore = 1; // กันศูนย์
-      }
+      if (!isFinite(maxScore) || maxScore <= 0) maxScore = 1;
 
       var score = Number(ev.total) || 0;
       var percent = clampPercent((score / maxScore) * 100);
@@ -139,18 +131,17 @@
   }
 
   // ---------------------------------------------------------------------------
-  // สร้าง HTML สำหรับหน้า 6
+  // สร้าง HTML สรุป (หน้า 6)
   // ---------------------------------------------------------------------------
   function buildSummaryHTML() {
     var d = getData();
 
-    // ต้องกดบันทึกหน้า 1–3 ก่อนเท่านั้น (ตรรกะเดิม)
+    // ต้องกดบันทึกหน้า 1–3 ให้ครบก่อน (ตรรกะเดิม)
     var ready = !!(
       d.page1 && d.page1.__saved &&
       d.page2 && d.page2.__saved &&
       d.page3 && d.page3.__saved
     );
-
     if (!ready) {
       return '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
     }
@@ -162,20 +153,23 @@
 
     var anyPositive = false;
     for (var i = 0; i < rows.length; i++) {
-      if (rows[i].score > 0) { anyPositive = true; break; }
+      if (rows[i].score > 0) {
+        anyPositive = true;
+        break;
+      }
     }
 
     var html = "";
 
-    // หัวการ์ด
+    // การ์ดหลัก: สรุปเปอร์เซ็นต์ทั้ง 21 ADR
     html += '<div class="p6-card p6-main-summary">';
     html += '  <div class="p6-card-header">';
     html += '    <span class="p6-card-title">📊 สรุปคะแนนเป็นเปอร์เซ็นต์ (ครบ 21 ADR)</span>';
-    html += '    <span class="p6-card-subtitle">คิดคะแนนเฉพาะตัวแปรที่ถูกติ้กแยกตามแต่ละชนิดการแพ้ยา</span>';
+    html += '    <span class="p6-card-subtitle">คิดคะแนนเฉพาะตัวแปรที่ถูกติ้ก แยกตามชนิดการแพ้ยาแต่ละข้อ</span>';
     html += '  </div>';
     html += '  <div class="p6-card-body">';
 
-    // กราฟแนวนอนครบ 21 ADR
+    // กราฟแท่งแนวนอน
     html += '    <div class="p6-bar-list">';
     for (var r = 0; r < rows.length; r++) {
       var row = rows[r];
@@ -197,10 +191,10 @@
 
     // รายละเอียดตัวแปรที่ถูกนับ
     html += '    <details class="p6-detail-wrapper" open>';
-    html += '      <summary>ดูรายละเอียดตัวแปรที่ถูกนับ</summary>';
+    html += '      <summary>ดูรายละเอียดตัวแปรที่ถูกนับ (เฉพาะ ADR ที่มีคะแนน)</summary>';
 
     if (!anyPositive) {
-      html += '      <div class="p6-muted">ยังไม่มีตัวแปรใดเข้าเกณฑ์คะแนนในข้อมูลที่กรอก</div>';
+      html += '      <div class="p6-muted">ยังไม่มีตัวแปรเข้าเกณฑ์คะแนนในข้อมูลที่กรอก</div>';
     } else {
       html += '      <div class="p6-detail-grid">';
       for (var j = 0; j < rows.length; j++) {
@@ -210,14 +204,12 @@
         html += '        <section class="p6-detail-card">';
         html += '          <h4>' + escapeHtml(row2.name) + '</h4>';
         html += '          <ul>';
-
         for (var tIndex = 0; tIndex < row2.detailTokens.length; tIndex++) {
           var tk = row2.detailTokens[tIndex];
           if (!tk || !tk.label) continue;
-          var wtxt = (tk.w && tk.w !== 1) ? " (x" + tk.w + ")" : "";
+          var wtxt = tk.w && tk.w !== 1 ? " (x" + tk.w + ")" : "";
           html += '            <li>' + escapeHtml(tk.label) + wtxt + '</li>';
         }
-
         html += '          </ul>';
         html += '        </section>';
       }
@@ -232,7 +224,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Trigger คำนวณ + render
+  // คำนวณ + render
   // ---------------------------------------------------------------------------
   function recomputeAndRender() {
     hideTopSignalsCard();
@@ -246,21 +238,42 @@
     renderIntoPage6(html);
   }
 
-  // เผย API เล็ก ๆ เผื่อหน้าอื่นเรียก
+  // ผูกปุ่ม "รีเฟรชผลประเมิน" (ค้นหาจากข้อความบนปุ่ม เพื่อไม่ต้องเดา id)
+  function hookRefreshButton() {
+    try {
+      var btns = document.querySelectorAll("button");
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        if (!b || !b.textContent) continue;
+        if (b.textContent.indexOf("รีเฟรชผลประเมิน") !== -1) {
+          b.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            recomputeAndRender();
+          });
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("hookRefreshButton error:", e);
+    }
+  }
+
+  // เผย API ไว้เผื่อหน้าอื่นเรียก
   window.drugAllergyBrain = {
-    recompute: recomputeAndRender,
-    _buildResults: buildResults
+    recompute: recomputeAndRender
   };
 
-  // ฟัง event จากหน้าอื่น ๆ
+  // ฟัง event จากหน้าอื่น (เมื่อกดบันทึกหน้า 1–3)
   window.addEventListener("da:update", recomputeAndRender);
   window.addEventListener("da:recompute", recomputeAndRender);
 
-  // เผื่อโหลดหน้า 6 หลังจาก DOM พร้อม
+  // พยายาม hook ปุ่ม + แสดงผลทันทีที่โหลดสคริปต์
+  hookRefreshButton();
+  recomputeAndRender();
+
+  // กันกรณี element ยังไม่อยู่ตอนโหลดสคริปต์
   document.addEventListener("DOMContentLoaded", function () {
-    // จะ render แค่ถ้ามี p6BrainBox จริง
-    if (document.getElementById("p6BrainBox")) {
-      recomputeAndRender();
-    }
+    hookRefreshButton();
+    recomputeAndRender();
   });
 })();
