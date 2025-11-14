@@ -104,6 +104,12 @@
     }
   ];
 
+  // helper แปลง string → number แบบทน ๆ
+  function toNum(v) {
+    const n = Number(String(v ?? "").toString().replace(/[, ]+/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+
   // ---------- RENDER ----------
   function renderPage3() {
     const root = document.getElementById("page3");
@@ -175,11 +181,11 @@
       </div>
     `;
 
-    // ===== Event Delegation: input/change ทั้งหน้าผูกไว้ที่ root เดียว =====
+    // event delegation input/change
     root.addEventListener("input", onAnyInputOrChange, { passive: true });
     root.addEventListener("change", onAnyInputOrChange, { passive: true });
 
-    // ล้างข้อมูล + popup
+    // ล้างข้อมูล
     const clearBtn = root.querySelector("#p3-clear");
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
@@ -198,7 +204,7 @@
     const saveNextBtn = root.querySelector("#p3-save-next");
     if (saveNextBtn) {
       saveNextBtn.addEventListener("click", () => {
-        flushSave(); // เซฟทันทีหนึ่งครั้ง (ไม่รอ debounce)
+        flushSave(); // เซฟทันที
         window.drugAllergyData.page3.__saved = true;
         if (window.saveDrugAllergyData) window.saveDrugAllergyData();
         if (typeof window.evaluateDrugAllergy === "function") {
@@ -206,7 +212,6 @@
         }
         alert("บันทึกหน้า 3 แล้ว");
 
-        // สลับแท็บไปหน้า 4
         const btn4 = document.querySelector('.tabs button[data-target="page4"]');
         const page4 = document.getElementById("page4");
         if (btn4 && page4) {
@@ -218,7 +223,6 @@
           btn4.click();
         }
 
-        // ให้หน้า 4 เรนเดอร์ "ครั้งเดียว" หลัง DOM พร้อม
         setTimeout(() => {
           if (typeof window.renderPage4 === "function") window.renderPage4();
         }, 0);
@@ -247,7 +251,9 @@
 
     const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
 
-    // เก็บค่าตามกลุ่ม (โครงเดิม)
+    const tokens = [];
+    const labsFlat = {};
+
     LAB_GROUPS.forEach(group => {
       const groupObj = {};
       group.items.forEach(item => {
@@ -266,7 +272,7 @@
         const value = valInput.value.trim();
         const detail = detailInput.value.trim();
 
-        // เก็บเฉพาะช่องที่มีการติ้ก หรือกรอกค่า/รายละเอียด (เหมือนเดิม)
+        // เก็บโครงสร้างเดิมไว้ (สำหรับแสดงผล)
         if (checked || value !== "" || detail !== "") {
           groupObj[item.key] = {
             checked,
@@ -274,34 +280,43 @@
             detail
           };
         }
+
+        // ✅ ใช้ "ติ้ก" เป็นเงื่อนไขเดียวในการเอาไปคิดคะแนน
+        if (checked) {
+          const numVal = toNum(value);
+          const baseToken = group.key + ":" + item.key;     // เช่น "cbc:wbc"
+          const underToken = group.key + "_" + item.key;    // เช่น "cbc_wbc"
+          const simpleToken = item.key;                     // เช่น "wbc"
+
+          [baseToken, underToken, simpleToken].forEach(tok => {
+            if (!tok) return;
+            tokens.push(tok);
+            labsFlat[tok] = {
+              group: group.key,
+              item: item.key,
+              label: item.label,
+              value,
+              num: numVal,
+              detail
+            };
+          });
+
+          // สร้าง field ยอดนิยมแบบสั้น ๆ เผื่อสมองใช้
+          if (group.key === "cbc" && item.key === "wbc") store.wbc = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "cbc" && item.key === "eos") store.eos = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "lft" && item.key === "ast") store.ast = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "lft" && item.key === "alt") store.alt = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "rft" && item.key === "cre") store.cre = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "rft" && item.key === "egfr") store.egfr = Number.isFinite(numVal) ? numVal : undefined;
+          if (group.key === "lung" && item.key === "spo2") store.spO2 = Number.isFinite(numVal) ? numVal : undefined;
+        }
       });
       store[group.key] = groupObj;
     });
 
-    // ===== สร้าง tokens สำหรับ "ใช้คิดคะแนนเฉพาะที่ติ้ก" =====
-    const tokens = [];
-    const labsFlat = {};
-
-    LAB_GROUPS.forEach(group => {
-      const groupObj = store[group.key] || {};
-      Object.keys(groupObj).forEach(itemKey => {
-        const rec = groupObj[itemKey];
-        if (!rec || !rec.checked) return;  // ✅ ถ้าไม่ติ้ก = ไม่คิดคะแนน
-        const token = group.key + ":" + itemKey;  // เช่น "cbc:wbc", "lft:ast"
-        tokens.push(token);
-        labsFlat[token] = {
-          group: group.key,
-          item: itemKey,
-          value: rec.value || "",
-          detail: rec.detail || ""
-        };
-      });
-    });
-
-    store.__tokens = tokens;   // สมองใช้ match แบบโหมด C ได้
-    store.__labs = labsFlat;   // เก็บรายละเอียดแบน ๆ ไว้ใช้ต่อ
-
-    // flag สำหรับบอกว่ามีการใส่ lab แล้ว
+    // เก็บ tokens เฉพาะรายการที่ "ติ้กจริง ๆ"
+    store.__tokens = tokens;
+    store.__labs = labsFlat;
     store.__saved = true;
     store.__ts = Date.now();
 
