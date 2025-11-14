@@ -10,8 +10,14 @@
   // Helpers
   // ---------------------------------------------------------------------------
   function num(v) {
-    const n = Number(String(v ?? "").toString().replace(/[, ]+/g, ""));
-    return Number.isFinite(n) ? n : NaN;
+    if (v === null || v === undefined) return NaN;
+    const s = String(v).replace(/[, ]+/g, "").trim();
+    if (!s) return NaN;
+    const n = Number(s);
+    if (!Number.isFinite(n)) return NaN;
+    // ค่าที่เป็น 0 หรือติดลบ ถือว่า "ไม่ได้กรอก/ไม่ใช้" (ค่าจริงของแลป/สัญญาณชีพจะ > 0 เสมอ)
+    if (n <= 0) return NaN;
+    return n;
   }
 
   function arr(v) {
@@ -34,6 +40,86 @@
     return !!v;
   }
 
+  // ใช้กับ value ที่มาจากหน้า 3 (หรือ object {use,value} ของหน้า 2/3)
+  function nField(x) {
+    if (x == null) return NaN;
+    if (typeof x === "object") {
+      const hasGate =
+        "use" in x || "checked" in x || "tick" in x || "on" in x || "selected" in x;
+      const used =
+        flag(x.use) ||
+        flag(x.checked) ||
+        flag(x.tick) ||
+        flag(x.on) ||
+        flag(x.selected);
+      // ถ้ามี checkbox gate แต่ไม่ได้ติ้ก → ไม่ใช้ค่านี้
+      if (hasGate && !used) return NaN;
+      if ("value" in x) return num(x.value);
+      return NaN;
+    }
+    return num(x);
+  }
+
+  function tField(x) {
+    if (x == null) return "";
+    if (typeof x === "object") {
+      const hasGate =
+        "use" in x || "checked" in x || "tick" in x || "on" in x || "selected" in x;
+      const used =
+        flag(x.use) ||
+        flag(x.checked) ||
+        flag(x.tick) ||
+        flag(x.on) ||
+        flag(x.selected);
+      if (hasGate && !used) return "";
+      const v =
+        x.value != null
+          ? x.value
+          : x.label != null
+          ? x.label
+          : x.text != null
+          ? x.text
+          : "";
+      return String(v).trim();
+    }
+    return String(x).trim();
+  }
+
+  function normOnset(str) {
+    return String(str || "")
+      .replace(/[–—−]/g, "-")
+      .replace(/\s+/g, "");
+  }
+
+  // แบ่งช่วงเวลาเป็นหมวด: within1h, h1to6, h6to24, w1..w6, other
+  function onsetCategory(str) {
+    const s = normOnset(str);
+    if (!s) return "";
+    if (s.indexOf("ภายใน1ชั่วโมง") !== -1 || s.indexOf("ภายใน1ชม") !== -1)
+      return "within1h";
+    if (s.indexOf("1-6ชั่วโมง") !== -1 || s.indexOf("1–6ชั่วโมง") !== -1 || s.indexOf("1-6ชม") !== -1)
+      return "h1to6";
+    if (s.indexOf("6-24ชั่วโมง") !== -1 || s.indexOf("6–24ชั่วโมง") !== -1 || s.indexOf("6-24ชม") !== -1)
+      return "h6to24";
+    if (s.indexOf("1สัปดาห์") !== -1) return "w1";
+    if (s.indexOf("2สัปดาห์") !== -1) return "w2";
+    if (s.indexOf("3สัปดาห์") !== -1) return "w3";
+    if (s.indexOf("4สัปดาห์") !== -1) return "w4";
+    if (s.indexOf("5สัปดาห์") !== -1) return "w5";
+    if (s.indexOf("6สัปดาห์") !== -1) return "w6";
+    return "other";
+  }
+
+  function onsetIsAny(c, cats) {
+    const cat = c.onsetCat || "";
+    if (!cats) return false;
+    if (!Array.isArray(cats)) cats = [cats];
+    return cats.includes(cat);
+  }
+
+  // ---------------------------------------------------------------------------
+  // ดึง context จากหน้า 1–3
+  // ---------------------------------------------------------------------------
   function getCtx() {
     const d = window.drugAllergyData || {};
     const p1 = d.page1 || {};
@@ -44,7 +130,8 @@
     const shapes = arr(p1.rashShapes || p1.rashShape);
     const colors = arr(p1.rashColors || p1.rashColor);
     const locs = arr(p1.locations || p1.location);
-    const onset = p1.onset || "";
+    const onsetRaw = p1.onset || "";
+    const onsetCat = onsetCategory(onsetRaw);
 
     const itch = !!(p1.itch && p1.itch.has);
     const swell = !!(p1.swelling && p1.swelling.has);
@@ -80,10 +167,19 @@
     const tachypnea = flag(resp.tachypnea);
 
     const hypotension = flag(cv.bpLow || cv.hypotension);
-    const bpDrop40 = flag(cv.bpDrop40 || cv.bpDrop40pct || cv.bpDrop40mmhg);
+    const bpDrop40 =
+      flag(cv.bpDrop40) || flag(cv.bpDrop40pct) || flag(cv.bpDrop40mmhg);
     const shockLike = flag(cv.shock);
 
-    const nauseaVomiting = flag(gi.nauseaVomiting || gi.nausea || gi.vomiting);
+    // ไข้
+    let fever = nField(other.fever);
+    if (!Number.isFinite(fever)) fever = nField(p2.fever);
+
+    const fatigue = flag(other.fatigue);
+
+    const nauseaVomiting = flag(
+      gi.nauseaVomiting || gi.nausea || gi.vomiting
+    );
     const diarrhea = flag(gi.diarrhea);
     const colickyPain = flag(gi.colickyPain || gi.abdPain);
     const dysphagia = flag(gi.dysphagia || gi.swallowingPain);
@@ -100,9 +196,6 @@
     const conjunctivitis = flag(eye.conjunctivitis);
     const cornealUlcer = flag(eye.cornealUlcer);
 
-    const fever = num(other.fever) || num(p2.fever);
-    const fatigue = flag(other.fatigue);
-
     // หน้า 3
     const cbc = p3.cbc || {};
     const lft = p3.lft || {};
@@ -113,47 +206,44 @@
     const cardioLab = p3.cardio || {};
     const gas = p3.gas || {};
 
-    const wbc = num(cbc.wbc && cbc.wbc.value);
-    const neutroPct = num(
-      (cbc.neutrophil && cbc.neutrophil.value) ||
-        (cbc.neut && cbc.neut.value)
-    );
-    const lymphoPct = num(cbc.lymphocyte && cbc.lymphocyte.value);
-    const eosPct = num(cbc.eosinophil && cbc.eosinophil.value);
-    const hb = num(cbc.hb && cbc.hb.value);
-    const hct = num(cbc.hct && cbc.hct.value);
-    const plt = num(cbc.plt && cbc.plt.value);
-    const anc = num(cbc.anc && cbc.anc.value);
+    const wbc = nField(cbc.wbc);
+    const neutroPct = nField(cbc.neutrophil || cbc.neut);
+    const lymphoPct = nField(cbc.lymphocyte);
+    const eosPct = nField(cbc.eosinophil || cbc.eos);
+    const hb = nField(cbc.hb);
+    const hct = nField(cbc.hct);
+    const plt = nField(cbc.plt);
+    const anc = nField(cbc.anc);
 
-    const ast = num(lft.ast && lft.ast.value);
-    const alt = num(lft.alt && lft.alt.value);
-    const alp = num(lft.alp && lft.alp.value);
-    const tbil = num(lft.tbil && lft.tbil.value);
-    const dbil = num(lft.dbil && lft.dbil.value);
+    const ast = nField(lft.ast);
+    const alt = nField(lft.alt);
+    const alp = nField(lft.alp);
+    const tbil = nField(lft.tbil || lft.tBil);
+    const dbil = nField(lft.dbil || lft.dBil);
 
-    const bun = num(rft.bun && rft.bun.value);
-    const cr = num(rft.cr && rft.cr.value);
-    const egfr = num(rft.egfr && rft.egfr.value);
-    const uo = num(rft.uo && rft.uo.value);
+    const bun = nField(rft.bun);
+    const cr = nField(rft.cr || rft.creatinine);
+    const egfr = nField(rft.egfr);
+    const uo = nField(rft.uo);
 
-    const crp = num(inflam.crp && inflam.crp.value);
-    const esr = num(inflam.esr && inflam.esr.value);
+    const crp = nField(inflam.crp);
+    const esr = nField(inflam.esr);
 
-    const igE = num(immuno.ige && immuno.ige.value);
-    const tryptase = num(immuno.tryptase && immuno.tryptase.value);
+    const igE = nField(immuno.ige || immuno.IgE);
+    const tryptase = nField(immuno.tryptase);
 
-    const protU =
-      (urineLab.protein &&
-        String(urineLab.protein.value || urineLab.protein).trim()) ||
-      "";
-    const rbcU = num(urineLab.rbc && urineLab.rbc.value);
-    const c3 = num(immuno.c3 && immuno.c3.value);
-    const c4 = num(immuno.c4 && immuno.c4.value);
+    const protU = tField(urineLab.protein);
+    const rbcU = nField(urineLab.rbc);
 
-    const spo2 = num((gas.spo2 && gas.spo2.value) || p2.spo2 || p3.spo2);
+    const c3 = nField(immuno.c3);
+    const c4 = nField(immuno.c4);
+
+    let spo2 = nField(gas.spo2);
+    if (!Number.isFinite(spo2)) spo2 = nField(p2.spo2);
+    if (!Number.isFinite(spo2)) spo2 = nField(p3.spo2);
 
     const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
-    const troponin = num(cardioLab.troponin && cardioLab.troponin.value);
+    const troponin = nField(cardioLab.troponin);
 
     return {
       p1,
@@ -162,7 +252,8 @@
       shapes,
       colors,
       locs,
-      onset,
+      onset: onsetRaw,
+      onsetCat,
       itch,
       swell,
       pain,
@@ -232,29 +323,6 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Helper สำหรับกลุ่ม lab-based ADR (ใช้เป็น "ฐาน" ว่ามีปัญหาจริง ๆ ก่อน)
-  // ---------------------------------------------------------------------------
-  function hasRenalBase(c) {
-    return (
-      (Number.isFinite(c.cr) && c.cr >= 1.3) ||
-      (Number.isFinite(c.egfr) && c.egfr < 60) ||
-      /(^\+|protein)/i.test(c.protU || "")
-    );
-  }
-
-  function hasCytopeniaBase(c) {
-    const lowHb = Number.isFinite(c.hb) && c.hb < 10;
-    const lowHct = Number.isFinite(c.hct) && c.hct < 30;
-    const lowWbc = Number.isFinite(c.wbc) && c.wbc < 4000;
-    const lowPlt = Number.isFinite(c.plt) && c.plt < 100000;
-    return lowHb || lowHct || lowWbc || lowPlt;
-  }
-
-  function hasANCBase(c) {
-    return Number.isFinite(c.anc) && c.anc < 1500;
-  }
-
-  // ---------------------------------------------------------------------------
   // ADR Definitions — 21 ชนิด (แยกเกณฑ์คนละก้อน)
   // แต่ละ ADR มี majors[]: { id, label, weight, check(ctx) }
   // ---------------------------------------------------------------------------
@@ -270,13 +338,7 @@
           label: "รูปร่าง: ขอบหยัก/วงกลม/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
           check: (c) =>
-            hasAny(c.shapes, [
-              "ขอบหยัก",
-              "วงกลม",
-              "วงกลมชั้นเดียว",
-              "วงกลม 1 ชั้น",
-              "ขอบวงนูนแดงด้านในเรียบ"
-            ])
+            hasAny(c.shapes, ["ขอบหยัก", "วงกลม", "ขอบวงนูนแดงด้านในเรียบ"])
         },
         {
           id: "color",
@@ -326,7 +388,7 @@
           id: "onset",
           label: "ระยะเวลา: ภายใน 1 ชั่วโมง",
           weight: 1,
-          check: (c) => String(c.onset).includes("ภายใน 1 ชั่วโมง")
+          check: (c) => onsetIsAny(c, "within1h")
         }
       ]
     },
@@ -354,8 +416,7 @@
           id: "skin_extra",
           label: "อาการผิวหนัง: คัน/แดง/สีผิวปกติ",
           weight: 1,
-          check: (c) =>
-            c.itch || hasAny(c.colors, ["แดง", "สีผิวปกติ"])
+          check: (c) => c.itch || hasAny(c.colors, ["แดง", "สีผิวปกติ"])
         },
         {
           id: "gi",
@@ -375,16 +436,14 @@
           label: "Lab: HR สูง หรือ SpO2 < 94%",
           weight: 1,
           check: (c) =>
-            num(c.p2 && c.p2.cv && c.p2.cv.hrValue) > 100 ||
-            (Number.isFinite(c.spo2) && c.spo2 < 94)
+            (Number.isFinite(c.spo2) && c.spo2 < 94) ||
+            nField(c.p2 && c.p2.cv && c.p2.cv.hrValue) > 100
         },
         {
           id: "onset",
           label: "ระยะเวลา: ภายใน 1–6 ชั่วโมง (รวม ≤1ชม.)",
           weight: 1,
-          check: (c) =>
-            String(c.onset).includes("ภายใน 1 ชั่วโมง") ||
-            String(c.onset).includes("1–6 ชั่วโมง")
+          check: (c) => onsetIsAny(c, ["within1h", "h1to6"])
         }
       ]
     },
@@ -404,8 +463,7 @@
           id: "color",
           label: "สี: สีผิวปกติ/แดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["สีผิวปกติ", "แดง"])
+          check: (c) => hasAny(c.colors, ["สีผิวปกติ", "แดง"])
         },
         {
           id: "swelling_major",
@@ -436,7 +494,7 @@
           id: "onset",
           label: "ระยะเวลา: ภายใน 1 ชั่วโมง",
           weight: 1,
-          check: (c) => String(c.onset).includes("ภายใน 1 ชั่วโมง")
+          check: (c) => onsetIsAny(c, "within1h")
         }
       ]
     },
@@ -463,8 +521,7 @@
           id: "typical",
           label: "ลักษณะสำคัญ: จุดเล็กแดง (x2)",
           weight: 2,
-          check: (c) =>
-            hasAny(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"])
+          check: (c) => hasAny(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"])
         },
         {
           id: "itch",
@@ -492,9 +549,13 @@
           label: "ระยะเวลา: ภายใน 1 ชม.–2 สัปดาห์",
           weight: 1,
           check: (c) =>
-            ["ภายใน 1-6 ชั่วโมง", "ภายใน 6-24 ชั่วโมง", "ภายใน 1 สัปดาห์", "ภายใน 2 สัปดาห์"].some(
-              (t) => String(c.onset).includes(t)
-            )
+            onsetIsAny(c, [
+              "within1h",
+              "h1to6",
+              "h6to24",
+              "w1",
+              "w2"
+            ])
         }
       ]
     },
@@ -592,7 +653,7 @@
           label: "ปื้น/จ้ำเลือด/แห้ง/ลอก/ขุย",
           weight: 1,
           check: (c) =>
-            hasAny(c.shapes, ["ปื้น/จ้ำเลือด", "จ้ำเลือด"]) ||
+            hasAny(c.shapes, ["จ้ำเลือด"]) ||
             c.scaleDry ||
             c.scalePeel ||
             c.scaleCrust
@@ -608,13 +669,7 @@
           id: "onset",
           label: "ระยะเวลา: 6–24 ชม. ถึง 3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            [
-              "ภายใน 6-24 ชั่วโมง",
-              "ภายใน 1 สัปดาห์",
-              "ภายใน 2 สัปดาห์",
-              "ภายใน 3 สัปดาห์"
-            ].some((t) => String(c.onset).includes(t))
+          check: (c) => onsetIsAny(c, ["h6to24", "w1", "w2", "w3"])
         },
         {
           id: "fever",
@@ -682,18 +737,18 @@
           label: "ระยะเวลา: 1 ชม.–3 สัปดาห์",
           weight: 1,
           check: (c) =>
-            [
-              "ภายใน 1-6 ชั่วโมง",
-              "ภายใน 6-24 ชั่วโมง",
-              "ภายใน 1 สัปดาห์",
-              "ภายใน 2 สัปดาห์",
-              "ภายใน 3 สัปดาห์"
-            ].some((t) => String(c.onset).includes(t))
+            onsetIsAny(c, [
+              "within1h",
+              "h1to6",
+              "h6to24",
+              "w1",
+              "w2",
+              "w3"
+            ])
         },
         {
           id: "systemic",
-          label:
-            "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เลือดออกในทางเดินอาหาร",
+          label: "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เลือดออกในทางเดินอาหาร",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -738,7 +793,8 @@
           id: "bullae_major",
           label: "ตุ่มน้ำขนาดใหญ่/น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) => c.bullaeLarge || c.scaleCrust || c.pustule
+          check: (c) =>
+            c.bullaeLarge || c.scaleCrust || c.pustule
         },
         {
           id: "anemia_bp",
@@ -771,12 +827,7 @@
           id: "onset",
           label: "ระยะเวลา: 1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            [
-              "ภายใน 1 สัปดาห์",
-              "ภายใน 2 สัปดาห์",
-              "ภายใน 3 สัปดาห์"
-            ].some((t) => String(c.onset).includes(t))
+          check: (c) => onsetIsAny(c, ["w1", "w2", "w3"])
         },
         {
           id: "systemic",
@@ -855,14 +906,7 @@
           label: "ระยะเวลา: 1–6 สัปดาห์",
           weight: 1,
           check: (c) =>
-            [
-              "ภายใน 1 สัปดาห์",
-              "ภายใน 2 สัปดาห์",
-              "ภายใน 3 สัปดาห์",
-              "ภายใน 4 สัปดาห์",
-              "ภายใน 5 สัปดาห์",
-              "ภายใน 6 สัปดาห์"
-            ].some((t) => String(c.onset).includes(t))
+            onsetIsAny(c, ["w1", "w2", "w3", "w4", "w5", "w6"])
         },
         {
           id: "organ_lab",
@@ -873,7 +917,8 @@
             (Number.isFinite(c.alt) && c.alt >= 40) ||
             (Number.isFinite(c.ast) && c.ast >= 40) ||
             (Number.isFinite(c.cr) && c.cr >= 1.5) ||
-            /(^\+|protein)/i.test(c.protU || "") ||
+            (/^\+/.test(c.protU || "") ||
+              /protein/i.test(c.protU || "")) ||
             (Number.isFinite(c.spo2) && c.spo2 < 94) ||
             c.ekgAbnormal ||
             (Number.isFinite(c.troponin) && c.troponin > 0.04)
@@ -910,7 +955,8 @@
           id: "blister",
           label: "พอง/ตุ่มน้ำ",
           weight: 1,
-          check: (c) => c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+          check: (c) =>
+            c.bullaeSmall || c.bullaeMed || c.bullaeLarge
         },
         {
           id: "crust",
@@ -965,12 +1011,7 @@
           label: "ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
           weight: 1,
           check: (c) =>
-            hasAny(c.shapes, [
-              "ขอบเขตชัด",
-              "ปื้นแดง",
-              "จุดแดงเล็ก",
-              "จุดเล็กแดง"
-            ])
+            hasAny(c.shapes, ["ขอบเขตชัด", "ปื้นแดง", "จุดแดงเล็ก", "จุดเล็กแดง"])
         },
         {
           id: "color",
@@ -983,8 +1024,7 @@
           id: "burn_major",
           label: "แดงไหม้ (x2)",
           weight: 2,
-          check: (c) =>
-            hasAny(c.colors, ["แดงไหม้"]) || c.burn
+          check: (c) => hasAny(c.colors, ["แดงไหม้"]) || c.burn
         },
         {
           id: "exudate",
@@ -1193,7 +1233,8 @@
           label: "protein+ / C3, C4 ต่ำ",
           weight: 1,
           check: (c) =>
-            /(^\+|protein)/i.test(c.protU || "") ||
+            (/^\+/.test(c.protU || "") ||
+              /protein/i.test(c.protU || "")) ||
             (Number.isFinite(c.c3) && c.c3 < 90) ||
             (Number.isFinite(c.c4) && c.c4 < 10)
         },
@@ -1221,7 +1262,8 @@
         },
         {
           id: "systemic",
-          label: "ไข้/ปวดข้อ/ข้ออักเสบ/ปวดกล้ามเนื้อ/ต่อมน้ำเหลืองโต",
+          label:
+            "ไข้/ปวดข้อ/ข้ออักเสบ/ปวดกล้ามเนื้อ/ต่อมน้ำเหลืองโต",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -1232,7 +1274,7 @@
         },
         {
           id: "organ",
-          label: "ไตอักเสบ/ไตวาย/ต่อมน้ำเหลืองโต",
+          label: "ไตอักเสบ/ไตวาย",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.cr) && c.cr >= 1.5) ||
@@ -1242,14 +1284,16 @@
           id: "bleed",
           label: "ไอเป็นเลือด/เลือดออกในปอด/เลือดออกในทางเดินอาหาร",
           weight: 1,
-          check: (c) => c.p2 && flag(c.p2.resp && c.p2.resp.hemoptysis)
+          check: (c) =>
+            c.p2 && c.p2.resp && flag(c.p2.resp.hemoptysis)
         },
         {
           id: "lab_major",
           label: "protein+ / C3, C4 ต่ำ / Cr เพิ่ม (x2)",
           weight: 2,
           check: (c) =>
-            /(^\+|protein)/i.test(c.protU || "") ||
+            (/^\+/.test(c.protU || "") ||
+              /protein/i.test(c.protU || "")) ||
             (Number.isFinite(c.c3) && c.c3 < 90) ||
             (Number.isFinite(c.c4) && c.c4 < 10) ||
             (Number.isFinite(c.cr) && c.cr >= 1.5)
@@ -1297,13 +1341,14 @@
           label: "Hb ลด ≥ 2–3 g/dL ใน 24–48 ชม.",
           weight: 3,
           check: (c) =>
-            c.p3 && flag(c.p3.cbc && c.p3.cbc.hbDrop)
+            c.p3 && c.p3.cbc && flag(c.p3.cbc.hbDrop)
         },
         {
           id: "ldh",
           label: "LDH สูง (2–10x ULN)",
           weight: 1,
-          check: (c) => c.p3 && num(c.p3.ldh && c.p3.ldh.value) > 2
+          check: (c) =>
+            c.p3 && nField(c.p3.ldh && c.p3.ldh.value) > 2
         }
       ]
     },
@@ -1315,32 +1360,30 @@
       majors: [
         {
           id: "sym",
-          label: "ซีด/อ่อนเพลีย (ต้องมี cytopenia ด้วย)",
+          label: "ซีด/อ่อนเพลีย",
           weight: 1,
           check: (c) =>
-            hasCytopeniaBase(c) &&
-            ((Number.isFinite(c.hb) && c.hb < 10) || c.fatigue)
+            (Number.isFinite(c.hb) && c.hb < 10) || c.fatigue
         },
         {
           id: "bleed_major",
           label: "จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก (x3)",
           weight: 3,
-          check: (c) =>
-            hasCytopeniaBase(c) &&
-            c.p3 &&
-            flag(c.p3.bleedingSigns)
+          check: (c) => c.p3 && flag(c.p3.bleedingSigns)
         },
         {
           id: "lab_wbc",
           label: "WBC < 4000 (x2)",
           weight: 2,
-          check: (c) => Number.isFinite(c.wbc) && c.wbc < 4000
+          check: (c) =>
+            Number.isFinite(c.wbc) && c.wbc < 4000
         },
         {
           id: "lab_plt",
           label: "Plt < 100,000 (x2)",
           weight: 2,
-          check: (c) => Number.isFinite(c.plt) && c.plt < 100000
+          check: (c) =>
+            Number.isFinite(c.plt) && c.plt < 100000
         },
         {
           id: "lab_hb_hct",
@@ -1360,34 +1403,33 @@
       majors: [
         {
           id: "sym",
-          label: "หนาวสั่น/เจ็บคอ/แผลในปาก (ต้องมี ANC < 1500)",
+          label: "หนาวสั่น/เจ็บคอ/แผลในปาก",
           weight: 1,
           check: (c) =>
-            hasANCBase(c) &&
-            (c.soreThroat ||
-              (c.p2 && flag(c.p2.other && c.p2.other.chills)))
+            c.soreThroat ||
+            (c.p2 &&
+              c.p2.other &&
+              flag(c.p2.other.chills))
         },
         {
           id: "fever",
-          label: "ไข้ > 37.5 °C (ต้องมี ANC < 1500)",
+          label: "ไข้ > 37.5 °C",
           weight: 1,
           check: (c) =>
-            hasANCBase(c) &&
-            Number.isFinite(c.fever) &&
-            c.fever > 37.5
+            Number.isFinite(c.fever) && c.fever > 37.5
         },
         {
           id: "organ",
-          label: "ปอดอักเสบ (ต้องมี ANC < 1500)",
+          label: "ปอดอักเสบ",
           weight: 1,
-          check: (c) =>
-            hasANCBase(c) && c.p3 && flag(c.p3.lungInvolve)
+          check: (c) => c.p3 && flag(c.p3.lungInvolve)
         },
         {
           id: "anc_major",
           label: "ANC < 1500 (x4)",
           weight: 4,
-          check: (c) => hasANCBase(c)
+          check: (c) =>
+            Number.isFinite(c.anc) && c.anc < 1500
         }
       ]
     },
@@ -1406,7 +1448,8 @@
         },
         {
           id: "bleed_sys",
-          label: "เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
+          label:
+            "เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
           weight: 1,
           check: (c) => c.p3 && flag(c.p3.bleedingGI)
         },
@@ -1414,7 +1457,8 @@
           id: "plt_major",
           label: "Plt < 150,000",
           weight: 1,
-          check: (c) => Number.isFinite(c.plt) && c.plt < 150000
+          check: (c) =>
+            Number.isFinite(c.plt) && c.plt < 150000
         }
       ]
     },
@@ -1426,35 +1470,33 @@
       majors: [
         {
           id: "sym",
-          label: "ไข้/ปวดข้อ/อ่อนเพลีย (ต้องมี renal lab ผิดปกติ)",
+          label: "ไข้/ปวดข้อ/อ่อนเพลีย",
           weight: 1,
           check: (c) =>
-            hasRenalBase(c) &&
-            ((Number.isFinite(c.fever) && c.fever > 37.5) ||
-              c.arthralgia ||
-              c.fatigue)
+            (Number.isFinite(c.fever) && c.fever > 37.5) ||
+            c.arthralgia ||
+            c.fatigue
         },
         {
           id: "urine_sym",
-          label: "ปัสสาวะออกน้อย/ปัสสาวะขุ่น (ต้องมี renal lab ผิดปกติ)",
+          label: "ปัสสาวะออกน้อย/ปัสสาวะขุ่น",
           weight: 1,
-          check: (c) =>
-            hasRenalBase(c) &&
-            (c.oliguria || (c.urine && flag(c.urine.turbid)))
+          check: (c) => c.oliguria || (c.urine && flag(c.urine.turbid))
         },
         {
           id: "edema",
-          label: "ขาบวม/บวม (ต้องมี renal lab ผิดปกติ)",
+          label: "ขาบวม/บวม",
           weight: 1,
           check: (c) =>
-            hasRenalBase(c) &&
-            (hasAny(c.locs, ["ขา"]) || c.swell)
+            hasAny(c.locs, ["ขา"]) || c.swell
         },
         {
           id: "renal_major",
           label: "Cr เพิ่ม ≥0.3 mg/dL หรือ eGFR < 60 (x3)",
           weight: 3,
-          check: (c) => hasRenalBase(c)
+          check: (c) =>
+            (Number.isFinite(c.cr) && c.cr >= 1.3) ||
+            (Number.isFinite(c.egfr) && c.egfr < 60)
         }
       ]
     }
@@ -1463,7 +1505,6 @@
   // ---------------------------------------------------------------------------
   // Core scoring: คิดทีละ ADR, แยกเกณฑ์ไม่ปนกัน
   // ---------------------------------------------------------------------------
-
   function computeAllADR() {
     const ctx = getCtx();
     const results = {};
@@ -1509,9 +1550,9 @@
     if (!box) return;
 
     const { results } = all;
-
-    // เรียงตาม % จากมากไปน้อย (แต่โชว์ครบทั้ง 21 ADR)
-    const sorted = Object.values(results).sort((a, b) => b.percent - a.percent);
+    const sorted = Object.values(results).sort(
+      (a, b) => b.percent - a.percent
+    );
 
     const html = `
       <div class="p6-brain-summary">
@@ -1571,21 +1612,20 @@
   // ---------------------------------------------------------------------------
   // Public API: brainComputeAndRender()
   // ---------------------------------------------------------------------------
-
   function brainComputeAndRender() {
     injectStylesOnce();
 
-    // ตรวจ readiness แบบเดียวกับ page6.js
     const d = window.drugAllergyData || {};
     const p1 = d.page1 || {};
     const p2 = d.page2 || {};
     const p3 = d.page3 || {};
-    const ready =
-      (p1 && (p1.__saved || Object.keys(p1).length > 0)) &&
-      (p2 && (p2.__saved || Object.keys(p2).length > 0)) &&
-      (p3 && (p3.__saved || Object.keys(p3).length > 0));
 
+    const hasData = (p) =>
+      p && (p.__saved || Object.keys(p).some((k) => !k.startsWith("__")));
+
+    const ready = hasData(p1) && hasData(p2) && hasData(p3);
     const box = document.getElementById("p6BrainBox");
+
     if (!ready) {
       if (box) {
         box.innerHTML =
@@ -1602,7 +1642,6 @@
     return all;
   }
 
-  // ติดตั้ง global
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
