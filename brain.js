@@ -9,17 +9,13 @@
     if (box) box.innerHTML = html;
   }
 
-  // ===== Helper: ซ่อนกล่อง "กราฟผลคะแนนย่อย (Top signals)" ถ้ามี =====
-  function hideMinorSignals() {
-    var ids = ["p6MiniSignals", "p6MinorSignalsBox", "p6TopSignals", "p6SignalsChart"];
-    ids.forEach(function (id) {
+  // ===== ซ่อนกราฟคะแนนย่อย (เฉพาะ id ที่รู้จักเท่านั้น) =====
+  function hideMinorSignalsSafely() {
+    ["p6MiniSignals", "p6MinorSignalsBox", "p6TopSignals", "p6SignalsChart"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.style.display = "none";
     });
-    // fallback: ถ้าข้อความหัวข้อพบคำว่า "กราฟผลคะแนนย่อย" ให้ซ่อนบล็อกนั้น
-    document.querySelectorAll("section,div,article").forEach(function (el) {
-      if (/กราฟผลคะแนนย่อย/i.test(el.textContent || "")) el.style.display = "none";
-    });
+    // ไม่ทำ text-scan ทั้งหน้า เพื่อป้องกันข้อมูลส่วนอื่นหาย
   }
 
   // ===== Helper: อ่านสัญญาณจากหน้า 1–3 (นับเฉพาะที่ติ๊ก/เลือก) =====
@@ -105,7 +101,7 @@
     if (org.pneumonia) set.add("organ:pneumonia");
     if (org.myocarditis) set.add("organ:myocarditis");
 
-    // ---- หน้า 3 (เฉพาะช่องที่ติ๊ก/มีค่า) ----
+    // ---- หน้า 3 ----
     function labChecked(group, item) {
       var g = p3[group];
       var row = g && g[item];
@@ -145,18 +141,18 @@
   function computeScores(signals) {
     var tokenRules = Array.isArray(window.brainRules) ? window.brainRules : [];
 
-    // Fallback: ถ้าไม่มี tokenRules ให้ใช้เครื่องยนต์ eval (ถ้ามี) เพื่อให้หน้า 6 แสดงได้เสมอ
+    // Fallback: ถ้าไม่มี tokenRules ให้ใช้เครื่องยนต์ eval (ถ้ามี)
     if (!tokenRules.length && window.brainRules_vEval && typeof window.brainRules_vEval.computeAll === "function") {
       var evalResults = window.brainRules_vEval.computeAll() || [];
-      // แปลงผลเป็นกฎแบบ tokens เสมือน (ใช้ weight = total เดิม เพื่อให้แสดง 21 รายการได้)
       tokenRules = evalResults.map(function (r) {
         return { id: r.key || r.id, name: r.label || r.name || r.key, tokens: [{ key: "__eval__:" + (r.key || r.id), w: Math.max(0, r.total || 0) }] };
       });
-      // เติมสัญญาณให้ match ทุกตัวหนึ่งครั้งเพื่อให้ได้คะแนนตาม w
       evalResults.forEach(function (r) { signals.add("__eval__:" + (r.key || r.id)); });
     }
 
-    // คำนวณคะแนนด้วย tokenRules (รองรับ 21 ADR เต็ม)
+    // ถ้ายังไม่มี rule เลย ให้คืนอาร์เรย์ว่าง (จะไม่ไปแตะกล่องหน้า 6)
+    if (!tokenRules.length) return [];
+
     var results = tokenRules.map(function (adr) {
       var score = 0;
       (adr.tokens || []).forEach(function (tok) {
@@ -167,22 +163,19 @@
       return { id: adr.id, name: adr.name || adr.label || adr.id, score: score };
     });
 
-    // ถ้าไม่มีรายการเลย ให้แสดงจาก tokenRules ว่าง ๆ เป็น 0
-    if (!results.length && Array.isArray(window.brainRules)) {
-      results = window.brainRules.map(function (adr) {
-        return { id: adr.id, name: adr.name || adr.id, score: 0 };
-      });
-    }
-
-    // เรียงมาก→น้อย (แสดงครบทั้งหมด)
+    // เรียงมาก→น้อย (แสดงครบทั้งหมด 21 ADR หากตั้งไว้ใน tokenRules)
     results.sort(function (a, b) { return b.score - a.score; });
     return results;
   }
 
   // ===== เรนเดอร์ผลเป็นเปอร์เซ็นต์ (เทียบอันดับ 1) =====
   function renderResults(results) {
-    var max = results.length && results[0].score > 0 ? results[0].score : 1;
+    if (!Array.isArray(results) || !results.length) {
+      // ไม่มีผลลัพธ์: ไม่แตะกล่อง เพื่อป้องกันข้อมูลเดิมหาย
+      return;
+    }
 
+    var max = results[0].score > 0 ? results[0].score : 1;
     var rows = results.map(function (r, idx) {
       var pct = Math.round((r.score / max) * 100);
       return `
@@ -218,7 +211,10 @@
 
   // ===== ฟังก์ชันหลัก =====
   function evaluate() {
-    hideMinorSignals(); // ซ่อนกราฟย่อย
+    hideMinorSignalsSafely(); // ซ่อนกราฟย่อยเฉพาะบล็อกที่ระบุ
+    var box = getBox();
+    if (!box) return; // ยังไม่เข้าหน้า 6 — รอให้มีกล่องก่อน
+
     var signals = collectSignals();
     var results = computeScores(signals);
     renderResults(results);
@@ -235,7 +231,6 @@
       try { evaluate(); } catch {}
       return;
     }
-    // ติดตาม DOM จนกว่าจะพบ p6BrainBox
     if (!mo) {
       mo = new MutationObserver(function () {
         if (getBox()) {
@@ -251,6 +246,5 @@
     try { evaluate(); } catch (e) {}
   });
   document.addEventListener("DOMContentLoaded", ensureRenderWhenBoxAvailable);
-  // เผื่อบางธีมไม่ได้ยิง DOMContentLoaded (เช่นโหลดแบบ module)
   setTimeout(ensureRenderWhenBoxAvailable, 0);
 })();
