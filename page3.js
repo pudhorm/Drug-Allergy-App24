@@ -3,33 +3,35 @@
   if (!window.drugAllergyData) window.drugAllergyData = {};
   if (!window.drugAllergyData.page3) window.drugAllergyData.page3 = {};
 
-  // โครง Lab เป็นกลุ่มๆ (เหมือนเดิม)
+  // โครง Lab เป็นกลุ่มๆ — ปรับตามสเปคใหม่
   const LAB_GROUPS = [
+    {
+      key: "lung",
+      title: "ปอด",
+      emoji: "🫁",
+      items: [
+        { key: "spo2_lt94", label: "SpO2 < 94%", unit: "%" },
+        { key: "lung_abnormal", label: "Lung function (Abnormal Sound/CXR)", unit: "" }
+      ]
+    },
     {
       key: "cbc",
       title: "CBC",
       emoji: "🩸",
       items: [
-        { key: "wbc", label: "White Blood Cell (WBC)", unit: "cells/cu.mm" },
-        { key: "aec", label: "Absolute eosinophil count (AEC)", unit: "cells/cu.mm" },
-        { key: "neut", label: "Neutrophil (%)", unit: "%" },
-        { key: "lymph", label: "Lymphocyte (%)", unit: "%" },
-        { key: "atypical", label: "Atypical lymphocytes (%)", unit: "%" },
-        { key: "eos", label: "Eosinophil (%)", unit: "%" },
-        { key: "hb", label: "Hemoglobin (Hb)", unit: "g/dL" },
-        { key: "plt", label: "Platelet (Plt)", unit: "cells/cu.mm" }
-      ]
-    },
-    {
-      key: "lft",
-      title: "LFT (ตับ)",
-      emoji: "💊",
-      items: [
-        { key: "ast", label: "AST", unit: "U/L" },
-        { key: "alt", label: "ALT", unit: "U/L" },
-        { key: "alp", label: "ALP", unit: "U/L" },
-        { key: "tbil", label: "Total Bilirubin", unit: "mg/dL" },
-        { key: "dbil", label: "Direct Bilirubin", unit: "mg/dL" }
+        { key: "eos_gt5", label: "Eosinophil >5%", unit: "%" },
+        { key: "eos_ge10", label: "Eosinophil ≥ 10%", unit: "%" },
+        { key: "atypical_lymph", label: "Atypical lymphocyte", unit: "%" },
+        { key: "wbc_gt11000", label: "White Blood Cell (WBC) > 11000 cells/cu.mm", unit: "cells/cu.mm" },
+        { key: "wbc_lt4000", label: "White Blood Cell (WBC) < 4000 cells/cu.mm", unit: "cells/cu.mm" },
+        { key: "neut_gt75", label: "Neutrophil > 75 (%)", unit: "%" },
+        { key: "anc_lt1500", label: "Absolute neutrophil count (ANC) < 1500 cells/cu.mm", unit: "cells/cu.mm" },
+        { key: "rbc_5_10_hpf", label: "RBC 5-10/HPF", unit: "cells/HPF" },
+        { key: "hb_drop_ge2_3", label: "Hemoglobin (Hb) ลดลง ≥ 2-3 g/dL ภายใน 24-48 ชม.", unit: "g/dL" },
+        { key: "hb_lt10", label: "Hemoglobin (Hb) < 10 g/dL", unit: "g/dL" },
+        { key: "hct_lt30", label: "Hematocrit (Hct) < 30%", unit: "%" },
+        { key: "plt_lt100k", label: "Platelet (Plt) < 100,000 cells/cu.mm", unit: "cells/cu.mm" },
+        { key: "plt_lt150k", label: "Platelet (Plt) < 150,000 cells/cu.mm", unit: "cells/cu.mm" }
       ]
     },
     {
@@ -37,24 +39,16 @@
       title: "RFT (ไต)",
       emoji: "🫧",
       items: [
-        { key: "bun", label: "BUN", unit: "mg/dL" },
-        { key: "cre", label: "Creatinine", unit: "mg/dL" },
-        { key: "egfr", label: "eGFR", unit: "mL/min/1.73m²" },
-        { key: "uo", label: "UO (Urine output)", unit: "mL/kg/hr" }
-      ]
-    },
-    {
-      key: "electro",
-      title: "Electrolytes",
-      emoji: "⚡",
-      items: [
-        { key: "na", label: "Na", unit: "mmol/L" },
-        { key: "k", label: "K", unit: "mmol/L" },
-        { key: "cl", label: "Cl", unit: "mmol/L" },
-        { key: "hco3", label: "HCO3- (TCO2)", unit: "mmol/L" },
-        { key: "ca", label: "Ca", unit: "mg/dL" },
-        { key: "mg", label: "Mg", unit: "mg/dL" },
-        { key: "phos", label: "Phosphate", unit: "mg/dL" }
+        {
+          key: "cr_aki",
+          label: "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน",
+          unit: "mg/dL"
+        },
+        {
+          key: "egfr_lt60",
+          label: "eGFR: < 60 mL/min/1.73m²",
+          unit: "mL/min/1.73m²"
+        }
       ]
     },
     {
@@ -62,24 +56,19 @@
       title: "Urinalysis (UA)",
       emoji: "🧪",
       items: [
-        { key: "protein", label: "Protein", unit: "mg/dL / +" },
-        { key: "rbc", label: "Blood/RBC", unit: "cells/HPF" },
-        { key: "wbc", label: "WBC", unit: "cells/HPF" },
-        { key: "nitrite", label: "Nitrite", unit: "pos/neg" },
-        { key: "le", label: "Leukocyte esterase", unit: "pos/neg" },
-        { key: "sg", label: "Specific gravity", unit: "" },
-        { key: "ph", label: "pH", unit: "" },
-        { key: "glucose", label: "Glucose", unit: "mg/dL / +" },
-        { key: "ketone", label: "Ketone", unit: "+" }
+        { key: "protein_pos", label: "protein+", unit: "+" }
       ]
     },
     {
-      key: "lung",
-      title: "ปอด",
-      emoji: "🫁",
+      key: "lft",
+      title: "LFT (ตับ)",
+      emoji: "💊",
       items: [
-        { key: "spo2", label: "SpO2", unit: "%" },
-        { key: "cxr", label: "Lung function (sound/CXR)", unit: "" }
+        {
+          key: "alt_ast_ge2x",
+          label: "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L",
+          unit: "U/L"
+        }
       ]
     },
     {
@@ -87,19 +76,31 @@
       title: "หัวใจ",
       emoji: "❤️",
       items: [
-        { key: "tropi", label: "Troponin I", unit: "ng/mL" },
-        { key: "tropt", label: "Troponin T", unit: "ng/mL" },
-        { key: "ckmb", label: "CK-MB", unit: "ng/mL" },
-        { key: "ekg", label: "EKG", unit: "" }
+        { key: "ekg_abnormal", label: "EKG ผิดปกติ", unit: "" },
+        { key: "tropi_gt004", label: "Troponin I >0.04 ng/mL", unit: "ng/mL" },
+        { key: "tropt_gt001_003", label: "Troponin T > 0.01-0.03 ng/mL", unit: "ng/mL" }
       ]
     },
     {
       key: "immuno",
-      title: "Immunology / Allergy",
+      title: "Immunology",
       emoji: "🧬",
       items: [
-        { key: "ige", label: "IgE", unit: "IU/mL" },
-        { key: "c3c4", label: "Complement (C3/C4)", unit: "mg/dL" }
+        { key: "igg_pos", label: "IgG+", unit: "" },
+        { key: "c3_pos", label: "C3+", unit: "" },
+        { key: "c3c4_low", label: "C3<90 mg/dL, C4<10 mg/dL", unit: "mg/dL" }
+      ]
+    },
+    {
+      key: "chem",
+      title: "Blood chemistry",
+      emoji: "🧫",
+      items: [
+        {
+          key: "ldh_high",
+          label: "Lactate dehydrogenase (LDH) สูง (2-10X ULN)",
+          unit: "U/L"
+        }
       ]
     }
   ];
@@ -284,9 +285,9 @@
         // ✅ ใช้ "ติ้ก" เป็นเงื่อนไขเดียวในการเอาไปคิดคะแนน
         if (checked) {
           const numVal = toNum(value);
-          const baseToken = group.key + ":" + item.key;     // เช่น "cbc:wbc"
-          const underToken = group.key + "_" + item.key;    // เช่น "cbc_wbc"
-          const simpleToken = item.key;                     // เช่น "wbc"
+          const baseToken = group.key + ":" + item.key;     // เช่น "cbc:eos_gt5"
+          const underToken = group.key + "_" + item.key;    // เช่น "cbc_eos_gt5"
+          const simpleToken = item.key;                     // เช่น "eos_gt5"
 
           [baseToken, underToken, simpleToken].forEach(tok => {
             if (!tok) return;
@@ -301,14 +302,25 @@
             };
           });
 
-          // สร้าง field ยอดนิยมแบบสั้น ๆ เผื่อสมองใช้
-          if (group.key === "cbc" && item.key === "wbc") store.wbc = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "cbc" && item.key === "eos") store.eos = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "lft" && item.key === "ast") store.ast = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "lft" && item.key === "alt") store.alt = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "rft" && item.key === "cre") store.cre = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "rft" && item.key === "egfr") store.egfr = Number.isFinite(numVal) ? numVal : undefined;
-          if (group.key === "lung" && item.key === "spo2") store.spO2 = Number.isFinite(numVal) ? numVal : undefined;
+          // mapping field ยอดนิยม (เผื่อสมองบางจุดใช้อยู่)
+          if (group.key === "cbc" && (item.key === "wbc_gt11000" || item.key === "wbc_lt4000")) {
+            store.wbc = Number.isFinite(numVal) ? numVal : undefined;
+          }
+          if (group.key === "cbc" && (item.key === "eos_gt5" || item.key === "eos_ge10")) {
+            store.eos = Number.isFinite(numVal) ? numVal : undefined;
+          }
+          if (group.key === "rft" && item.key === "cr_aki") {
+            store.cre = Number.isFinite(numVal) ? numVal : undefined;
+          }
+          if (group.key === "rft" && item.key === "egfr_lt60") {
+            store.egfr = Number.isFinite(numVal) ? numVal : undefined;
+          }
+          if (group.key === "lung" && item.key === "spo2_lt94") {
+            store.spO2 = Number.isFinite(numVal) ? numVal : undefined;
+          }
+          if (group.key === "chem" && item.key === "ldh_high") {
+            store.ldh = Number.isFinite(numVal) ? numVal : undefined;
+          }
         }
       });
       store[group.key] = groupObj;
