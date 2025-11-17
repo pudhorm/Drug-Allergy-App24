@@ -250,10 +250,20 @@
     const root = document.getElementById("page3");
     if (!root) return;
 
-    const store = (window.drugAllergyData.page3 = window.drugAllergyData.page3 || {});
+    // รีเซ็ต page3 ทุกครั้งที่เซฟ เพื่อไม่ให้ข้อมูลเก่าค้าง
+    const store = (window.drugAllergyData.page3 = {});
 
     const tokens = [];
     const labsFlat = {};
+
+    // เตรียมโครง alias สำหรับให้สมองใช้ (cbc, rft, lft, urine, cardio, gas, immuno ฯลฯ)
+    const cbcAlias = {};
+    const rftAlias = {};
+    const lftAlias = {};
+    const urineAlias = {};
+    const cardioAlias = {};
+    const gasAlias = {};
+    const immunoAlias = {};
 
     LAB_GROUPS.forEach(group => {
       const groupObj = {};
@@ -282,49 +292,226 @@
           };
         }
 
-        // ✅ ใช้ "ติ้ก" เป็นเงื่อนไขเดียวในการเอาไปคิดคะแนน
-        if (checked) {
-          const numVal = toNum(value);
-          const baseToken = group.key + ":" + item.key;     // เช่น "cbc:eos_gt5"
-          const underToken = group.key + "_" + item.key;    // เช่น "cbc_eos_gt5"
-          const simpleToken = item.key;                     // เช่น "eos_gt5"
+        if (!checked) return; // ✅ ไม่ติ๊ก = ไม่เอาไปคิดคะแนน
 
-          [baseToken, underToken, simpleToken].forEach(tok => {
-            if (!tok) return;
-            tokens.push(tok);
-            labsFlat[tok] = {
-              group: group.key,
-              item: item.key,
-              label: item.label,
-              value,
-              num: numVal,
-              detail
-            };
-          });
+        const numVal = toNum(value);
+        const baseToken = group.key + ":" + item.key;     // เช่น "cbc:eos_gt5"
+        const underToken = group.key + "_" + item.key;    // เช่น "cbc_eos_gt5"
+        const simpleToken = item.key;                     // เช่น "eos_gt5"
 
-          // mapping field ยอดนิยม (เผื่อสมองบางจุดใช้อยู่)
-          if (group.key === "cbc" && (item.key === "wbc_gt11000" || item.key === "wbc_lt4000")) {
-            store.wbc = Number.isFinite(numVal) ? numVal : undefined;
+        [baseToken, underToken, simpleToken].forEach(tok => {
+          if (!tok) return;
+          tokens.push(tok);
+          labsFlat[tok] = {
+            group: group.key,
+            item: item.key,
+            label: item.label,
+            value,
+            num: numVal,
+            detail
+          };
+        });
+
+        // ---------- mapping field ยอดนิยม (เดิม) ----------
+        if (group.key === "cbc" && (item.key === "wbc_gt11000" || item.key === "wbc_lt4000")) {
+          store.wbc = Number.isFinite(numVal) ? numVal : undefined;
+        }
+        if (group.key === "cbc" && (item.key === "eos_gt5" || item.key === "eos_ge10")) {
+          store.eos = Number.isFinite(numVal) ? numVal : undefined;
+        }
+        if (group.key === "rft" && item.key === "cr_aki") {
+          store.cre = Number.isFinite(numVal) ? numVal : undefined;
+        }
+        if (group.key === "rft" && item.key === "egfr_lt60") {
+          store.egfr = Number.isFinite(numVal) ? numVal : undefined;
+        }
+        if (group.key === "lung" && item.key === "spo2_lt94") {
+          store.spO2 = Number.isFinite(numVal) ? numVal : undefined;
+        }
+        if (group.key === "chem" && item.key === "ldh_high") {
+          store.ldhNum = Number.isFinite(numVal) ? numVal : undefined;
+        }
+
+        // ---------- เพิ่ม alias ให้ตรงกับสิ่งที่ brain.rules.js ใช้ ----------
+
+        // ปอด / gas
+        if (group.key === "lung") {
+          if (item.key === "spo2_lt94") {
+            const v = Number.isFinite(numVal) ? numVal : 93;
+            gasAlias.spo2 = { checked: true, value: String(v) };
           }
-          if (group.key === "cbc" && (item.key === "eos_gt5" || item.key === "eos_ge10")) {
-            store.eos = Number.isFinite(numVal) ? numVal : undefined;
-          }
-          if (group.key === "rft" && item.key === "cr_aki") {
-            store.cre = Number.isFinite(numVal) ? numVal : undefined;
-          }
-          if (group.key === "rft" && item.key === "egfr_lt60") {
-            store.egfr = Number.isFinite(numVal) ? numVal : undefined;
-          }
-          if (group.key === "lung" && item.key === "spo2_lt94") {
-            store.spO2 = Number.isFinite(numVal) ? numVal : undefined;
-          }
-          if (group.key === "chem" && item.key === "ldh_high") {
-            store.ldh = Number.isFinite(numVal) ? numVal : undefined;
+          if (item.key === "lung_abnormal") {
+            // ใช้ใน DRESS/Neutropenia ผ่าน flag(p3.lungInvolve)
+            store.lungInvolve = { checked: true };
           }
         }
+
+        // CBC
+        if (group.key === "cbc") {
+          // Eosinophil
+          if (item.key === "eos_gt5" || item.key === "eos_ge10") {
+            const fallback =
+              item.key === "eos_gt5" ? 6 : 10;
+            const v = Number.isFinite(numVal) ? numVal : fallback;
+            cbcAlias.eos = { checked: true, value: String(v) };
+          }
+
+          // Atypical lymphocyte → ใช้ใน DRESS
+          if (item.key === "atypical_lymph") {
+            cbcAlias.atypicalLymph = { checked: true, value: value || detail || "positive" };
+          }
+
+          // WBC >11000 / <4000
+          if (item.key === "wbc_gt11000") {
+            const v = Number.isFinite(numVal) ? numVal : 12000;
+            cbcAlias.wbc = { checked: true, value: String(v) };
+          }
+          if (item.key === "wbc_lt4000") {
+            const v = Number.isFinite(numVal) ? numVal : 3000;
+            cbcAlias.wbc = { checked: true, value: String(v) };
+          }
+
+          // Neutrophil >75%
+          if (item.key === "neut_gt75") {
+            const v = Number.isFinite(numVal) ? numVal : 80;
+            cbcAlias.neutrophil = { checked: true, value: String(v) };
+          }
+
+          // ANC <1500
+          if (item.key === "anc_lt1500") {
+            const v = Number.isFinite(numVal) ? numVal : 1000;
+            cbcAlias.anc = { checked: true, value: String(v) };
+          }
+
+          // RBC 5–10/HPF → map ไป UA.rbc ด้วย (ใช้ใน serum sickness / vasculitis)
+          if (item.key === "rbc_5_10_hpf") {
+            const v = Number.isFinite(numVal) ? numVal : 7;
+            urineAlias.rbc = { checked: true, value: String(v) };
+          }
+
+          // Hb ลด ≥2–3 g/dL (ใช้ใน hemolytic anemia)
+          if (item.key === "hb_drop_ge2_3") {
+            cbcAlias.hbDrop = { checked: true, value: value || "2-3" };
+          }
+
+          // Hb <10 g/dL
+          if (item.key === "hb_lt10") {
+            const v = Number.isFinite(numVal) ? numVal : 9.5;
+            cbcAlias.hb = { checked: true, value: String(v) };
+          }
+
+          // Hct <30%
+          if (item.key === "hct_lt30") {
+            const v = Number.isFinite(numVal) ? numVal : 28;
+            cbcAlias.hct = { checked: true, value: String(v) };
+          }
+
+          // Plt <100k / <150k
+          if (item.key === "plt_lt100k") {
+            const v = Number.isFinite(numVal) ? numVal : 90000;
+            cbcAlias.plt = { checked: true, value: String(v) };
+          }
+          if (item.key === "plt_lt150k") {
+            const v = Number.isFinite(numVal) ? numVal : 140000;
+            cbcAlias.plt = { checked: true, value: String(v) };
+          }
+        }
+
+        // RFT (Cr / eGFR)
+        if (group.key === "rft") {
+          if (item.key === "cr_aki") {
+            const v = Number.isFinite(numVal) ? numVal : 2.0;
+            rftAlias.cr = { checked: true, value: String(v) };
+          }
+          if (item.key === "egfr_lt60") {
+            const v = Number.isFinite(numVal) ? numVal : 50;
+            rftAlias.egfr = { checked: true, value: String(v) };
+          }
+        }
+
+        // UA → protein+
+        if (group.key === "ua") {
+          if (item.key === "protein_pos") {
+            urineAlias.protein = { checked: true, value: value || "+" };
+          }
+        }
+
+        // LFT ALT/AST ≥2x ULN
+        if (group.key === "lft") {
+          if (item.key === "alt_ast_ge2x") {
+            const v = Number.isFinite(numVal) ? numVal : 50;
+            lftAlias.alt = { checked: true, value: String(v) };
+            lftAlias.ast = { checked: true, value: String(v) };
+          }
+        }
+
+        // Heart / Cardio
+        if (group.key === "heart") {
+          if (item.key === "ekg_abnormal") {
+            cardioAlias.ekgAbnormal = { checked: true, value: "abnormal" };
+          }
+          if (item.key === "tropi_gt004") {
+            const v = Number.isFinite(numVal) ? numVal : 0.05;
+            cardioAlias.troponin = { checked: true, value: String(v) };
+          }
+          if (item.key === "tropt_gt001_003") {
+            const v = Number.isFinite(numVal) ? numVal : 0.02;
+            cardioAlias.troponin = { checked: true, value: String(v) };
+          }
+        }
+
+        // Immunology
+        if (group.key === "immuno") {
+          if (item.key === "c3c4_low") {
+            // ใช้ใน Serum sickness / Vasculitis ผ่าน c3,c4 ต่ำ
+            const c3v = 80;
+            const c4v = 8;
+            immunoAlias.c3 = { checked: true, value: String(c3v) };
+            immunoAlias.c4 = { checked: true, value: String(c4v) };
+          }
+          // igg_pos / c3_pos เก็บไว้เผื่อใช้ในอนาคต
+          if (item.key === "igg_pos") {
+            immunoAlias.igg = { checked: true, value: "positive" };
+          }
+          if (item.key === "c3_pos") {
+            immunoAlias.c3 = { checked: true, value: value || "positive" };
+          }
+        }
+
+        // LDH สูง (2–10x ULN) → ใช้ใน hemolytic anemia ผ่าน p3.ldh
+        if (group.key === "chem" && item.key === "ldh_high") {
+          const v = Number.isFinite(numVal) ? numVal : 3;
+          store.ldh = { checked: true, value: String(v) };
+        }
       });
+
+      // เก็บกลุ่มตาม key ที่หน้า 3 ใช้แสดง
       store[group.key] = groupObj;
     });
+
+    // ใส่ alias กลับเข้าโครงที่สมองใช้
+    if (Object.keys(cbcAlias).length) {
+      store.cbc = Object.assign(store.cbc || {}, cbcAlias);
+    }
+    if (Object.keys(rftAlias).length) {
+      store.rft = Object.assign(store.rft || {}, rftAlias);
+    }
+    if (Object.keys(lftAlias).length) {
+      store.lft = Object.assign(store.lft || {}, lftAlias);
+    }
+    if (Object.keys(urineAlias).length) {
+      store.urine = Object.assign(store.urine || {}, urineAlias);
+    }
+    if (Object.keys(cardioAlias).length) {
+      store.cardio = Object.assign(store.cardio || {}, cardioAlias);
+    }
+    if (Object.keys(gasAlias).length) {
+      store.gas = Object.assign(store.gas || {}, gasAlias);
+    }
+    if (Object.keys(immunoAlias).length) {
+      store.immunology = Object.assign(store.immunology || {}, immunoAlias);
+      store.immuno = store.immunology; // ให้ทั้ง immunology / immuno ใช้ได้
+    }
 
     // เก็บ tokens เฉพาะรายการที่ "ติ้กจริง ๆ"
     store.__tokens = tokens;
