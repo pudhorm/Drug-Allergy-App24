@@ -3,11 +3,11 @@
 // - คิดเฉพาะข้อที่ติ๊กจริง
 // - แต่ละ ADR แยกเกณฑ์กัน ไม่เอามาปนกัน
 // - 1 ข้อใหญ่ = 1 แต้ม (ถ้ามี weight x2/x3/x4 ก็คูณ)
-// - แปลงเป็น % ภายในแต่ละ ADR เอง (ไม่จำเป็นต้องรวม 100%)
+// - แปลงเป็น % ภายในแต่ละ ADR เอง
 
 (function () {
   // ---------------------------------------------------------------------------
-  // Helpers
+  // Helpers พื้นฐาน
   // ---------------------------------------------------------------------------
   function num(v) {
     if (v === null || v === undefined) return NaN;
@@ -15,7 +15,6 @@
     if (!s) return NaN;
     const n = Number(s);
     if (!Number.isFinite(n)) return NaN;
-    // ค่าที่เป็น 0 หรือติดลบ ถือว่า "ไม่ได้กรอก/ไม่ใช้"
     if (n <= 0) return NaN;
     return n;
   }
@@ -30,7 +29,7 @@
     return src.some((x) => targets.includes(x));
   }
 
-  // flag(): ใช้กับช่องติ้ก (หน้า 2, หน้า 3, บางช่องของหน้า 1)
+  // ใช้กับช่องติ้ก / object ที่มี gate
   function flag(v) {
     if (!v) return false;
     if (v === true) return true;
@@ -50,7 +49,6 @@
           return !!v[k];
         }
       }
-      // ไม่มี gate ก็ลองดูค่าใน object ว่ามีอะไรจริงบ้างไหม
       for (const k in v) {
         if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
         if (v[k]) return true;
@@ -61,8 +59,7 @@
     return !!v;
   }
 
-  // ใช้กับ value ที่มาจากหน้า 3 (หรือ object {use/value} ของหน้า 2/3)
-  // นับเฉพาะตอนที่ gate (use/checked/tick/on/selected) = true เท่านั้น
+  // numeric field ที่มี gate (ใช้กับข้อมูลจากหน้า 2 / หน้า 3 แบบเก่า)
   function nField(x) {
     if (x == null) return NaN;
     if (typeof x === "object") {
@@ -74,7 +71,6 @@
         flag(x.tick) ||
         flag(x.on) ||
         flag(x.selected);
-      // ถ้ามี checkbox gate แต่ไม่ได้ติ้ก → ไม่ใช้ค่านี้
       if (hasGate && !used) return NaN;
       if ("value" in x) return num(x.value);
       return NaN;
@@ -113,14 +109,23 @@
       .replace(/\s+/g, "");
   }
 
-  // แบ่งช่วงเวลาเป็นหมวด: within1h, h1to6, h6to24, w1..w6, other
   function onsetCategory(str) {
     const s = normOnset(str);
     if (!s) return "";
     if (s.includes("ภายใน1ชั่วโมง") || s.includes("ภายใน1ชม")) return "within1h";
-    if (s.includes("ภายใน1-6ชั่วโมง") || s.includes("1-6ชั่วโมง") || s.includes("1–6ชั่วโมง") || s.includes("1-6ชม"))
+    if (
+      s.includes("ภายใน1-6ชั่วโมง") ||
+      s.includes("1-6ชั่วโมง") ||
+      s.includes("1–6ชั่วโมง") ||
+      s.includes("1-6ชม")
+    )
       return "h1to6";
-    if (s.includes("ภายใน6-24ชั่วโมง") || s.includes("6-24ชั่วโมง") || s.includes("6–24ชั่วโมง") || s.includes("6-24ชม"))
+    if (
+      s.includes("ภายใน6-24ชั่วโมง") ||
+      s.includes("6-24ชั่วโมง") ||
+      s.includes("6–24ชั่วโมง") ||
+      s.includes("6-24ชม")
+    )
       return "h6to24";
     if (s.includes("1สัปดาห์")) return "w1";
     if (s.includes("2สัปดาห์")) return "w2";
@@ -131,13 +136,12 @@
     return "other";
   }
 
-  // ดึงค่า onset จาก field หลายแบบในหน้า 1
   function autoDetectOnset(p1) {
     if (!p1) return { raw: "", cat: "" };
 
-    // ถ้ามีโค้ดช่วงเวลาเก็บไว้ชัดเจนอยู่แล้ว (เช่น within1h/h1to6/...) ใช้อันนั้นก่อน
     if (typeof p1.onsetCategory === "string" && p1.onsetCategory.trim()) {
-      return { raw: p1.onsetCategory.trim(), cat: p1.onsetCategory.trim() };
+      const s = p1.onsetCategory.trim();
+      return { raw: s, cat: s };
     }
 
     const candidateKeys = [
@@ -184,8 +188,15 @@
     return cats.includes(cat);
   }
 
+  // ใช้กับ Lab หน้า 3: เช็คจาก token ที่ได้จาก checkbox
+  function hasLabToken(ctx, keys) {
+    const set = ctx.labTokenSet || new Set();
+    if (!Array.isArray(keys)) keys = [keys];
+    return keys.some((k) => set.has(k));
+  }
+
   // ---------------------------------------------------------------------------
-  // ดึง context จากหน้า 1–3  (อัปเดตให้รองรับ Lab หน้า 3 แบบใหม่)
+  // ดึง context จากหน้า 1–3
   // ---------------------------------------------------------------------------
   function getCtx() {
     const d = window.drugAllergyData || {};
@@ -193,7 +204,7 @@
     const p2 = d.page2 || {};
     const p3 = d.page3 || {};
 
-    // ---------------- หน้า 1 ----------------
+    // ---------- หน้า 1 ----------
     const shapes = arr(p1.rashShapes || p1.rashShape);
     const colors = arr(p1.rashColors || p1.rashColor);
     const locs = arr(p1.locations || p1.location);
@@ -222,33 +233,14 @@
 
     const mucosalCountGt1 = !!p1.mucosalCountGt1 || !!p1.sjs_mucosal_gt1;
 
-    // ลักษณะเลือดออกบนผิวหนัง (ใช้กับ pancytopenia/thrombocytopenia/vasculitis ฯลฯ)
-    const bleedingSkin = hasAny(shapes, ["จุดเลือดออก", "ฟกช้ำ", "ปื้น/จ้ำเลือด", "จ้ำเลือด"]);
-
-    // ---------------- หน้า 2 ----------------
+    // ---------- หน้า 2 ----------
     const resp = p2.resp || {};
     const cv = p2.cv || {};
     const gi = p2.gi || {};
     const msk = p2.msk || {};
-    const urineSym = p2.urine || p2.urinary || {};
+    const urine = p2.urine || p2.urinary || {};
     const eye = p2.eye || {};
     const other = p2.other || {};
-    const p2organs = p2.organs || {};
-
-    function organFlag(name) {
-      return flag(p2organs[name]);
-    }
-
-    const lymphNodeEnlarge = organFlag("ต่อมน้ำเหลืองโต");
-    const splenomegaly = organFlag("ม้ามโต");
-    const hepatitis = organFlag("ตับอักเสบ");
-    const nephritisOrg = organFlag("ไตอักเสบ");
-    const renalFailure = organFlag("ไตวาย");
-    const myocarditis = organFlag("กล้ามเนื้อหัวใจอักเสบ");
-    const thyroiditis = organFlag("ต่อมไทรอยด์อักเสบ");
-    const pneumonia = organFlag("ปอดอักเสบ");
-    const hepatomegaly = organFlag("ตับโต");
-    const legEdema = organFlag("ขาบวม");
 
     const dyspnea = flag(resp.dyspnea);
     const wheeze = flag(resp.wheeze);
@@ -259,7 +251,6 @@
       flag(cv.bpDrop40) || flag(cv.bpDrop40pct) || flag(cv.bpDrop40mmhg);
     const shockLike = flag(cv.shock);
 
-    // ไข้
     let fever = nField(other.fever);
     if (!Number.isFinite(fever)) fever = nField(p2.fever);
 
@@ -276,165 +267,59 @@
     const arthritis = flag(msk.arthritis);
     const myalgia = flag(msk.myalgia);
 
-    const oliguria = flag(urineSym.oliguria);
-    const hematuria = flag(urineSym.hematuria);
+    const oliguria = flag(urine.oliguria);
+    const hematuria = flag(urine.hematuria);
 
     const conjunctivitis = flag(eye.conjunctivitis);
     const cornealUlcer = flag(eye.cornealUlcer);
 
-    // ---------------- หน้า 3 (Lab) ----------------
+    // ---------- หน้า 3 (Lab ใหม่: ใช้ token จาก checkbox เป็นหลัก) ----------
     const cbc = p3.cbc || {};
     const lft = p3.lft || {};
     const rft = p3.rft || {};
-    const uaLab = p3.ua || p3.urine || {};
+    const urineLab = p3.ua || p3.urine || {};
+    const cardioLab = p3.heart || p3.cardio || {};
     const lungLab = p3.lung || {};
-    const heartLab = p3.heart || p3.cardio || {};
-    const immunoLab = p3.immunology || p3.immuno || {};
-    const chemLab = p3.chem || p3.bloodchem || {};
+    const immuno = p3.immuno || p3.immunology || {};
+    const chem = p3.chem || {};
 
-    const labsFlat = p3.__labs || {};
-    const labsArr = Object.values(labsFlat);
+    // ค่า numeric (ส่วนใหญ่จะ NaN เพราะเราเปลี่ยนเป็น option แทนตัวเลขแล้ว
+    // แต่อาจมี fallback จากเวอร์ชันเก่า เลยปล่อยให้คำนวณไว้ ไม่ใช้กับ Lab หน้า 3 ตามที่กำหนด)
+    const wbc = nField(cbc.wbc);
+    const neutroPct = nField(cbc.neutrophil || cbc.neut);
+    const eosPct = nField(cbc.eosinophil || cbc.eos);
+    const hb = nField(cbc.hb);
+    const hct = nField(cbc.hct);
+    const plt = nField(cbc.plt);
+    const anc = nField(cbc.anc);
 
-    function labHasLabel(substr) {
-      if (!substr || !labsArr.length) return false;
-      const needle = String(substr).toLowerCase();
-      return labsArr.some((e) =>
-        String(e.label || "").toLowerCase().includes(needle)
-      );
-    }
+    const ast = nField(lft.ast);
+    const alt = nField(lft.alt);
+    const tbil = nField(lft.tbil || lft.tBil);
+    const dbil = nField(lft.dbil || lft.dBil);
 
-    function labNumLabel(substr) {
-      if (!substr || !labsArr.length) return NaN;
-      const needle = String(substr).toLowerCase();
-      for (let i = 0; i < labsArr.length; i++) {
-        const e = labsArr[i];
-        if (String(e.label || "").toLowerCase().includes(needle)) {
-          if (Number.isFinite(e.num)) return e.num;
-          if (e.value != null) return num(e.value);
-          return NaN;
-        }
-      }
-      return NaN;
-    }
+    const bun = nField(rft.bun);
+    const cr = nField(rft.cr || rft.creatinine);
+    const egfr = nField(rft.egfr);
+    const uo = nField(rft.uo);
 
-    // CBC / hematology
-    let wbc = nField(cbc.wbc);
-    const hasWbcHigh = labHasLabel("White Blood Cell (WBC) > 11000");
-    const hasWbcLow = labHasLabel("White Blood Cell (WBC) < 4000");
-    if (!Number.isFinite(wbc)) {
-      if (hasWbcHigh) wbc = 12000;
-      else if (hasWbcLow) wbc = 3000;
-    }
+    const c3 = nField(immuno.c3);
+    const c4 = nField(immuno.c4);
 
-    let eosPct = nField(cbc.eosinophil || cbc.eos);
-    const hasEosGt5 = labHasLabel("Eosinophil >5");
-    const hasEosGe10 = labHasLabel("Eosinophil \u2265 10");
-    if (!Number.isFinite(eosPct)) {
-      if (hasEosGe10) eosPct = 10;
-      else if (hasEosGt5) eosPct = 6;
-    }
+    const protU = tField(urineLab.protein);
+    const rbcU = nField(urineLab.rbc);
 
-    let neutroPct = nField(cbc.neutrophil || cbc.neut);
-    const hasNeutGt75 = labHasLabel("Neutrophil > 75");
-    if (!Number.isFinite(neutroPct) && hasNeutGt75) neutroPct = 80;
-
-    let hb = nField(cbc.hb);
-    const hasHbDrop = labHasLabel("Hemoglobin (Hb) ลดลง");
-    const hasHbLt10 = labHasLabel("Hemoglobin (Hb) < 10");
-    if (!Number.isFinite(hb)) {
-      if (hasHbLt10) hb = 9;
-    }
-
-    let hct = nField(cbc.hct);
-    const hasHctLt30 = labHasLabel("Hematocrit (Hct) < 30");
-    if (!Number.isFinite(hct) && hasHctLt30) hct = 25;
-
-    let plt = nField(cbc.plt);
-    const hasPltLt100 = labHasLabel("Platelet (Plt) < 100,000");
-    const hasPltLt150 = labHasLabel("Platelet (Plt) < 150,000");
-    if (!Number.isFinite(plt)) {
-      if (hasPltLt100) plt = 90000;
-      else if (hasPltLt150) plt = 140000;
-    }
-
-    let anc = nField(cbc.anc);
-    const hasAncLt1500 = labHasLabel("Absolute neutrophil cout (ANC) < 1500");
-    if (!Number.isFinite(anc) && hasAncLt1500) anc = 1000;
-
-    // UA
-    let rbcU = nField(uaLab.rbc);
-    const rbc5to10 = labHasLabel("RBC 5-10/HPF");
-    if (!Number.isFinite(rbcU) && rbc5to10) rbcU = 7;
-
-    let protU = tField(uaLab.protein);
-    const proteinPos = labHasLabel("protein+");
-    if (!protU && proteinPos) protU = "+";
-
-    // LFT
-    let ast = nField(lft.ast);
-    let alt = nField(lft.alt);
-    const hasAstAltHigh =
-      labHasLabel("ALT/AST \u2265 2X ULN") ||
-      labHasLabel("ALT/AST \u2265 2X ULN หรือ \u2265 40");
-    if (!Number.isFinite(ast) && hasAstAltHigh) ast = 80;
-    if (!Number.isFinite(alt) && hasAstAltHigh) alt = 80;
-
-    const alp = NaN;
-    const tbil = NaN;
-    const dbil = NaN;
-
-    // RFT
-    let bun = nField(rft.bun);
-    let cr = nField(rft.cr || rft.creatinine);
-    const crAki = labHasLabel("Serum creatinine (Cr) เพิ่มขึ้น");
-    if (!Number.isFinite(cr) && crAki) cr = 1.5;
-
-    let egfr = nField(rft.egfr);
-    const egfrLow = labHasLabel("eGFR: < 60");
-    if (!Number.isFinite(egfr) && egfrLow) egfr = 50;
-
-    let uo = nField(rft.uo);
-
-    // Immunology
-    let c3 = nField(immunoLab.c3);
-    let c4 = nField(immunoLab.c4);
-    const c3c4Low = labHasLabel("C3<90") || labHasLabel("C3<90 mg/dL");
-    if (!Number.isFinite(c3) && c3c4Low) c3 = 80;
-    if (!Number.isFinite(c4) && c3c4Low) c4 = 8;
-
-    const iggPos = labHasLabel("IgG+");
-    const c3Pos = labHasLabel("C3+");
-
-    const crp = NaN;
-    const esr = NaN;
-    const igE = NaN;
-    const tryptase = NaN;
-
-    // SpO2 & lung
     let spo2 = nField(lungLab.spo2);
-    const spo2Low = labHasLabel("SpO2<94");
-    if (!Number.isFinite(spo2) && spo2Low) spo2 = 90;
     if (!Number.isFinite(spo2)) spo2 = nField(p2.spo2);
     if (!Number.isFinite(spo2)) spo2 = nField(p3.spo2);
-    const lungAbn = labHasLabel("Lung function (Abnormal Sound/CXR)");
 
-    // Heart: EKG, Troponin
-    let ekgAbnormal = flag(heartLab.ekgAbnormal || heartLab.ekg);
-    if (!ekgAbnormal && labHasLabel("EKG ผิดปกติ")) ekgAbnormal = true;
+    const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
+    const troponin = nField(cardioLab.troponin);
 
-    let troponinI = labNumLabel("Troponin I >0.04");
-    let troponinT = labNumLabel("Troponin T > 0.01-0.03");
-    let troponin = NaN;
-    if (Number.isFinite(troponinI)) troponin = troponinI;
-    else if (Number.isFinite(troponinT)) troponin = troponinT;
+    // token จากหน้า 3: ใช้เป็นหลักในการประเมิน Lab
+    const labTokens = Array.isArray(p3.__tokens) ? p3.__tokens.slice() : [];
+    const labTokenSet = new Set(labTokens);
 
-    // LDH
-    const ldhHigh = labHasLabel("Lactate dehydrogenase (LDH)");
-
-    // Atypical lymphocyte (ใช้กับ DRESS)
-    const atypicalLymph = labHasLabel("Atypical lymphocyte");
-
-    // ------------------------------------------------------------------
     return {
       p1,
       p2,
@@ -459,7 +344,6 @@
       scalePeel,
       scaleCrust,
       mucosalCountGt1,
-      bleedingSkin,
       dyspnea,
       wheeze,
       tachypnea,
@@ -481,10 +365,9 @@
       cornealUlcer,
       fever,
       fatigue,
-      // lab numeric (ตีความจากช่องที่ติ้ก)
+      // lab numeric (fallback เฉย ๆ)
       wbc,
       neutroPct,
-      lymphoPct: NaN,
       eosPct,
       hb,
       hct,
@@ -492,68 +375,29 @@
       anc,
       ast,
       alt,
-      alp,
       tbil,
       dbil,
       bun,
       cr,
       egfr,
       uo,
-      crp,
-      esr,
-      igE,
-      tryptase,
-      protU,
-      rbcU,
       c3,
       c4,
+      protU,
+      rbcU,
       spo2,
       ekgAbnormal,
       troponin,
-      // lab flags ตามเกณฑ์ใหม่
-      hasWbcHigh,
-      hasWbcLow,
-      hasEosGt5,
-      hasEosGe10,
-      hasNeutGt75,
-      hasHbDrop,
-      hasHbLt10,
-      hasHctLt30,
-      hasPltLt100,
-      hasPltLt150,
-      hasAncLt1500,
-      proteinPos,
-      spo2Low,
-      lungAbn,
-      iggPos,
-      c3Pos,
-      c3c4Low,
-      ldhHigh,
-      rbc5to10,
-      crAki,
-      egfrLow,
-      // organ involvement จากหน้า 2
-      lymphNodeEnlarge,
-      splenomegaly,
-      hepatitis,
-      nephritisOrg,
-      renalFailure,
-      myocarditis,
-      thyroiditis,
-      pneumonia,
-      hepatomegaly,
-      legEdema,
-      // เผื่อใช้ symptom ปัสสาวะ ฯลฯ
-      urine: urineSym,
-      atypicalLymph
+      urine,
+      labTokens,
+      labTokenSet
     };
   }
 
   // ---------------------------------------------------------------------------
-  // ADR Definitions — 21 ชนิด (แยกเกณฑ์คนละก้อน)
-  // แต่ละ ADR มี majors[]: { id, label, weight, check(ctx) }
+  // ADR Definitions — 21 ชนิด
+  // ใช้ Lab จากหน้า 3 ผ่าน token เช่น "eos_gt5", "cr_aki", "protein_pos" เท่านั้น
   // ---------------------------------------------------------------------------
-
   const ADR_DEFS = [
     // 1) Urticaria
     {
@@ -663,8 +507,7 @@
           label: "Lab: HR สูง หรือ SpO2 < 94%",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.spo2) && c.spo2 < 94) ||
-            c.spo2Low ||
+            hasLabToken(c, "spo2_lt94") ||
             nField(c.p2 && c.p2.cv && c.p2.cv.hrValue) > 100
         },
         {
@@ -763,7 +606,7 @@
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            (Number.isFinite(c.eosPct) && c.eosPct > 5)
+            hasLabToken(c, "eos_gt5") // ✅ แยก eos >5% ออกจาก eos ≥10%
         },
         {
           id: "distribution",
@@ -910,8 +753,7 @@
           label: "WBC > 11,000 หรือ Neutrophil > 75%",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.wbc) && c.wbc > 11000) ||
-            (Number.isFinite(c.neutroPct) && c.neutroPct > 75)
+            hasLabToken(c, ["wbc_gt11000", "neut_gt75"])
         }
       ]
     },
@@ -1029,7 +871,7 @@
           label: "ซีด/โลหิตจาง/เลือดออกในทางเดินอาหาร/กลืนลำบาก",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.hb) && c.hb < 10) ||
+            hasLabToken(c, "hb_lt10") ||
             c.dysphagia ||
             c.colickyPain
         },
@@ -1073,17 +915,10 @@
         },
         {
           id: "organ",
-          label: "ไตวาย/ตับอักเสบ/ปอดอักเสบ + Lab สนับสนุน",
+          label: "ไตวาย/ตับอักเสบ/ปอดอักเสบ (ใช้ Lab จากหน้า 3)",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.cr) && c.cr >= 1.5) ||
-            (Number.isFinite(c.egfr) && c.egfr < 60) ||
-            (Number.isFinite(c.alt) && c.alt >= 40) ||
-            (Number.isFinite(c.ast) && c.ast >= 40) ||
-            (/^\+/.test(c.protU || "") || /protein/i.test(c.protU || "")) ||
-            (Number.isFinite(c.spo2) && c.spo2 < 94) ||
-            c.spo2Low ||
-            c.pneumonia
+            hasLabToken(c, ["cr_aki", "egfr_lt60", "alt_ast_ge2x"])
         }
       ]
     },
@@ -1110,8 +945,7 @@
           label: "Eosinophil ≥ 10% หรือ atypical lymphocyte (x3)",
           weight: 3,
           check: (c) =>
-            (Number.isFinite(c.eosPct) && c.eosPct >= 10) ||
-            c.atypicalLymph
+            hasLabToken(c, ["eos_ge10", "atypical_lymph"])
         },
         {
           id: "skin_extra",
@@ -1143,18 +977,18 @@
         {
           id: "organ_lab",
           label:
-            "ALT/AST ≥2x ULN หรือ Cr เพิ่มขึ้น หรือ protein+ / SpO2 < 94% / EKG / Troponin",
+            "ALT/AST ≥2x ULN หรือ Cr เพิ่ม หรือ protein+ / SpO2 < 94% / EKG ผิดปกติ / Troponin ผิดปกติ",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.alt) && c.alt >= 40) ||
-            (Number.isFinite(c.ast) && c.ast >= 40) ||
-            (Number.isFinite(c.cr) && c.cr >= 1.5) ||
-            (/^\+/.test(c.protU || "") ||
-              /protein/i.test(c.protU || "")) ||
-            (Number.isFinite(c.spo2) && c.spo2 < 94) ||
-            c.spo2Low ||
-            c.ekgAbnormal ||
-            (Number.isFinite(c.troponin) && c.troponin > 0.01)
+            hasLabToken(c, [
+              "alt_ast_ge2x",
+              "cr_aki",
+              "protein_pos",
+              "spo2_lt94",
+              "ekg_abnormal",
+              "tropi_gt004",
+              "tropt_gt001_003"
+            ])
         }
       ]
     },
@@ -1458,25 +1292,21 @@
           label: "ต่อมน้ำเหลืองโต/ไตอักเสบ",
           weight: 1,
           check: (c) =>
-            c.lymphNodeEnlarge ||
-            c.nephritisOrg ||
-            (Number.isFinite(c.cr) && c.cr >= 1.3)
+            (c.p3 && flag(c.p3.lymphNodeEnlarge)) ||
+            hasLabToken(c, ["cr_aki", "egfr_lt60"])
         },
         {
           id: "lab",
-          label: "protein+ / C3, C4 ต่ำ",
+          label: "protein+ / C3<90, C4<10",
           weight: 1,
           check: (c) =>
-            (/^\+/.test(c.protU || "") ||
-              /protein/i.test(c.protU || "")) ||
-            (Number.isFinite(c.c3) && c.c3 < 90) ||
-            (Number.isFinite(c.c4) && c.c4 < 10)
+            hasLabToken(c, ["protein_pos", "c3c4_low"])
         },
         {
-          id: "rbc_range",
+          id: "rbc_lab",
           label: "RBC 5–10/HPF",
           weight: 1,
-          check: (c) => c.rbc5to10 || (Number.isFinite(c.rbcU) && c.rbcU >= 5)
+          check: (c) => hasLabToken(c, "rbc_5_10_hpf")
         },
         {
           id: "joint_major",
@@ -1510,17 +1340,14 @@
             c.arthralgia ||
             c.arthritis ||
             c.myalgia ||
-            c.lymphNodeEnlarge
+            (c.p3 && flag(c.p3.lymphNodeEnlarge))
         },
         {
           id: "organ",
           label: "ไตอักเสบ/ไตวาย",
           weight: 1,
           check: (c) =>
-            c.nephritisOrg ||
-            c.renalFailure ||
-            (Number.isFinite(c.cr) && c.cr >= 1.5) ||
-            (Number.isFinite(c.egfr) && c.egfr < 60)
+            hasLabToken(c, ["cr_aki", "egfr_lt60"])
         },
         {
           id: "bleed",
@@ -1534,11 +1361,7 @@
           label: "protein+ / C3, C4 ต่ำ / Cr เพิ่ม (x2)",
           weight: 2,
           check: (c) =>
-            (/^\+/.test(c.protU || "") ||
-              /protein/i.test(c.protU || "")) ||
-            (Number.isFinite(c.c3) && c.c3 < 90) ||
-            (Number.isFinite(c.c4) && c.c4 < 10) ||
-            (Number.isFinite(c.cr) && c.cr >= 1.5)
+            hasLabToken(c, ["protein_pos", "c3c4_low", "cr_aki"])
         },
         {
           id: "purpura_major",
@@ -1560,7 +1383,7 @@
           label: "ซีด/ดีซ่าน (x2)",
           weight: 2,
           check: (c) =>
-            (Number.isFinite(c.hb) && c.hb < 10) ||
+            hasLabToken(c, "hb_lt10") ||
             (c.p1 && flag(c.p1.jaundice))
         },
         {
@@ -1575,27 +1398,26 @@
           label: "ไตวาย",
           weight: 1,
           check: (c) =>
-            c.renalFailure ||
-            (Number.isFinite(c.cr) && c.cr >= 1.5) ||
-            (Number.isFinite(c.egfr) && c.egfr < 60)
+            hasLabToken(c, ["cr_aki", "egfr_lt60"])
         },
         {
-          id: "immuno",
-          label: "IgG+ หรือ C3+",
+          id: "immune_lab",
+          label: "IgG+ / C3+",
           weight: 1,
-          check: (c) => c.iggPos || c.c3Pos
+          check: (c) =>
+            hasLabToken(c, ["igg_pos", "c3_pos"])
         },
         {
           id: "hb_drop",
           label: "Hb ลด ≥ 2–3 g/dL ใน 24–48 ชม. (x3)",
           weight: 3,
-          check: (c) => c.hasHbDrop
+          check: (c) => hasLabToken(c, "hb_drop_ge2_3")
         },
         {
           id: "ldh",
           label: "LDH สูง (2–10x ULN)",
           weight: 1,
-          check: (c) => c.ldhHigh
+          check: (c) => hasLabToken(c, "ldh_high")
         }
       ]
     },
@@ -1610,35 +1432,32 @@
           label: "ซีด/อ่อนเพลีย",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.hb) && c.hb < 10) || c.fatigue
+            hasLabToken(c, "hb_lt10") || c.fatigue
         },
         {
           id: "bleed_major",
           label: "จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก (x3)",
           weight: 3,
-          check: (c) => c.bleedingSkin
+          check: (c) => c.p3 && flag(c.p3.bleedingSigns)
         },
         {
           id: "lab_wbc",
           label: "WBC < 4000 (x2)",
           weight: 2,
-          check: (c) =>
-            Number.isFinite(c.wbc) && c.wbc < 4000
+          check: (c) => hasLabToken(c, "wbc_lt4000")
         },
         {
           id: "lab_plt",
           label: "Plt < 100,000 (x2)",
           weight: 2,
-          check: (c) =>
-            Number.isFinite(c.plt) && c.plt < 100000
+          check: (c) => hasLabToken(c, "plt_lt100k")
         },
         {
           id: "lab_hb_hct",
           label: "Hb < 10 หรือ Hct < 30% (x2)",
           weight: 2,
           check: (c) =>
-            (Number.isFinite(c.hb) && c.hb < 10) ||
-            (Number.isFinite(c.hct) && c.hct < 30)
+            hasLabToken(c, ["hb_lt10", "hct_lt30"])
         }
       ]
     },
@@ -1667,16 +1486,16 @@
         },
         {
           id: "organ",
-          label: "ปอดอักเสบ/Lung function ผิดปกติ",
+          label: "ปอดอักเสบ",
           weight: 1,
-          check: (c) => c.pneumonia || c.lungAbn
+          check: (c) => c.p3 && flag(c.p3.lungInvolve)
         },
         {
           id: "anc_major",
           label: "ANC < 1500 (x4)",
           weight: 4,
           check: (c) =>
-            Number.isFinite(c.anc) && c.anc < 1500
+            hasLabToken(c, "anc_lt1500")
         }
       ]
     },
@@ -1696,17 +1515,16 @@
         {
           id: "bleed_sys",
           label:
-            "เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก (RBC สูงใน UA)",
+            "เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.rbcU) && c.rbcU >= 5)
+          check: (c) => c.p3 && flag(c.p3.bleedingGI)
         },
         {
           id: "plt_major",
           label: "Plt < 150,000",
           weight: 1,
           check: (c) =>
-            Number.isFinite(c.plt) && c.plt < 150000
+            hasLabToken(c, "plt_lt150k")
         }
       ]
     },
@@ -1736,24 +1554,21 @@
           label: "ขาบวม/บวม",
           weight: 1,
           check: (c) =>
-            c.legEdema || c.swell
+            hasAny(c.locs, ["ขา"]) || c.swell
         },
         {
           id: "renal_major",
           label: "Cr เพิ่ม ≥0.3 mg/dL หรือ eGFR < 60 (x3)",
           weight: 3,
           check: (c) =>
-            c.crAki ||
-            c.egfrLow ||
-            (Number.isFinite(c.cr) && c.cr >= 1.3) ||
-            (Number.isFinite(c.egfr) && c.egfr < 60)
+            hasLabToken(c, ["cr_aki", "egfr_lt60"])
         }
       ]
     }
   ];
 
   // ---------------------------------------------------------------------------
-  // Core scoring: คิดทีละ ADR, แยกเกณฑ์ไม่ปนกัน
+  // Core scoring
   // ---------------------------------------------------------------------------
   function computeAllADR() {
     const ctx = getCtx();
@@ -1807,7 +1622,7 @@
     const html = `
       <div class="p6-brain-summary">
         <p class="p6-muted" style="margin-bottom:.35rem;">
-          แสดงผลการประเมินตามโหมด C จากข้อมูลหน้า 1–3 (คิดเป็นเปอร์เซ็นต์ภายในแต่ละชนิดแยกกัน) — Lab หน้า 3 จะถูกนับเฉพาะรายการที่ติ้กเลือกแล้วเท่านั้น
+          แสดงผลการประเมินตามโหมด C จากข้อมูลหน้า 1–3 (คิดเป็นเปอร์เซ็นต์ภายในแต่ละชนิดแยกกัน) — Lab หน้า 3 จะถูกนำไปคิดเฉพาะรายการที่ติ้กเลือกแล้วเท่านั้น
         </p>
         <div class="p6-adr-list">
           ${sorted
@@ -1860,7 +1675,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Public API: brainComputeAndRender()
+  // Public API
   // ---------------------------------------------------------------------------
   function brainComputeAndRender() {
     injectStylesOnce();
@@ -1895,7 +1710,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-17-21ADR-lab-v2",
+    version: "2025-11-17-21ADR-LABTOKENS",
     defs: ADR_DEFS
   };
 })();
