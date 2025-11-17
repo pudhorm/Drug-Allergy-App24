@@ -37,7 +37,7 @@
         "เจ็บหน้าอก",
         "ใจสั่น",
         "BP ต่ำ (<90/60)",
-        "BP ลดลง ≥30% ของ baseline systolic เดิม",
+        "BP ลดลง ≥40 mmHg ของ baseline systolic เดิม",
         "HR สูง (>100)",
         "หน้ามืด/หมดสติ",
         "โลหิตจาง",
@@ -360,7 +360,7 @@
 
     // Cardiovascular
     if (has("cv","BP ต่ำ (<90/60)")) cv.bpLow = true;
-    if (has("cv","BP ลดลง ≥30% ของ baseline systolic เดิม")) cv.bpDrop40pct = true;
+    if (has("cv","BP ลดลง ≥40 mmHg ของ baseline systolic เดิม")) cv.bpDrop40pct = true;
     if (has("cv","HR สูง (>100)")) {
       cv.hrValue = { use: true, value: 110 }; // ให้ nField มองว่า HR>100
     }
