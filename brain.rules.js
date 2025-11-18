@@ -1970,7 +1970,7 @@
       ]
     },
 
-    // 19) Neutropenia — 4 ข้อหลัก
+    // 19) Neutropenia (ใช้ตามเวอร์ชันเดิมที่ตรงสเปก) — 4 ข้อหลัก
     {
       id: "neutropenia",
       label: "Neutropenia",
@@ -2159,7 +2159,7 @@
           const res = m.check(ctx);
           if (typeof res === "boolean") {
             ok = res;
-            if (ok) details = []; // จะไปสร้างข้อความ generic ทีหลัง
+            if (ok) details = [m.label];
           } else if (res && typeof res === "object") {
             if (Array.isArray(res.details)) {
               details = res.details.filter(Boolean);
@@ -2169,14 +2169,14 @@
               ok = typeof res.ok === "boolean" ? res.ok : true;
             } else if (typeof res.ok === "boolean") {
               ok = res.ok;
-              details = [];
+              if (ok) details = [m.label];
             } else {
               ok = !!res;
-              details = [];
+              if (ok) details = [m.label];
             }
           } else if (res) {
             ok = true;
-            details = [];
+            details = [m.label];
           }
         } catch (e) {
           ok = false;
@@ -2185,20 +2185,8 @@
 
         if (ok) {
           raw += w;
-
-          // *** แก้จุดสำคัญ: ถ้าไม่มี details จาก check()
-          // ให้สร้างข้อความ generic แทน ไม่เอา label ที่มีข้อย่อยทุกอันมาโชว์ ***
-          let finalDetails = Array.isArray(details) ? details.filter(Boolean) : [];
-          if (!finalDetails.length) {
-            let generic = m.label || "";
-            const idxColon = generic.indexOf(":");
-            if (idxColon !== -1) generic = generic.slice(0, idxColon);
-            generic = generic.trim();
-            if (!generic) generic = def.label || "เข้าเกณฑ์";
-            finalDetails = [`${generic}: เข้าเกณฑ์ตามข้อมูลที่กรอก`];
-          }
-
-          matchedDetails.push(...finalDetails);
+          if (!details || !details.length) details = [m.label];
+          matchedDetails.push(...details);
         }
       });
 
@@ -2318,7 +2306,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV3",
     defs: ADR_DEFS
   };
 })();
