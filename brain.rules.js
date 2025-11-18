@@ -578,7 +578,7 @@
       ]
     },
 
-    // 4) Maculopapular rash
+    // 4) Maculopapular rash (MP rash) — 8 ข้อ
     {
       id: "mpr",
       label: "Maculopapular rash",
@@ -598,19 +598,19 @@
         },
         {
           id: "typical",
-          label: "ลักษณะสำคัญ: จุดเล็กแดง (x2)",
+          label: "ลักษณะสำคัญ (x2): จุดเล็กแดง",
           weight: 2,
           check: (c) => hasAny(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"])
         },
         {
           id: "itch",
-          label: "คัน",
+          label: "อาการเพิ่มเติมทางผิวหนัง: คัน",
           weight: 1,
           check: (c) => c.itch
         },
         {
           id: "rare_sym",
-          label: "ไข้ Temp > 37.5 °C / Eosinophil > 5%",
+          label: "อาการที่พบน้อย: ไข้ > 37.5 °C / Eosinophil > 5%",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -626,29 +626,36 @@
           }
         },
         {
-          id: "distribution",
-          label: "ตำแหน่ง: สมมาตร/ลำตัว/แขน/หน้า/ลำคอ",
+          id: "location",
+          label: "ตำแหน่งที่พบ: สมมาตร/ลำตัว/แขน/ใบหน้า/ลำคอ",
           weight: 1,
           check: (c) =>
-            hasAny(c.locs, ["สมมาตร", "ลำตัว", "แขน", "หน้า", "ลำคอ"])
+            hasAny(c.locs, ["สมมาตร", "ลำตัว", "แขน", "หน้า", "ใบหน้า", "ลำคอ"])
         },
         {
           id: "onset",
-          label: "ระยะเวลา: ภายใน 1 ชม.–2 สัปดาห์",
+          label: "ระยะเวลาการเกิด: 1–6 ชม. / 6–24 ชม. / 1–2 สัปดาห์",
           weight: 1,
           check: (c) =>
-            onsetIsAny(c, [
-              "within1h",
-              "h1to6",
-              "h6to24",
-              "w1",
-              "w2"
-            ])
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
+        },
+        {
+          id: "organ",
+          label: "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ข้ออักเสบ/ไตอักเสบ/ตับอักเสบ",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.arthritis) details.push("ข้ออักเสบ");
+            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
+            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
 
-    // 5) Fixed drug eruption
+    // 5) Fixed drug eruption — 9 ข้อ
     {
       id: "fde",
       label: "Fixed drug eruption",
@@ -668,21 +675,21 @@
         },
         {
           id: "typical",
-          label: "ลักษณะสำคัญ: ม่วง/คล้ำ (x3)",
+          label: "ลักษณะสำคัญ (x3): ม่วง/คล้ำ",
           weight: 3,
           check: (c) =>
             hasAny(c.colors, ["ม่วง", "ม่วง/คล้ำ", "ดำ/คล้ำ", "คล้ำ"])
         },
         {
           id: "skin_extra",
-          label: "ผิวหนังหลุดลอกตรงกลาง/เจ็บ/แสบ/ตึง",
+          label: "ผิวหนังหลุดลอกตรงกลาง/เจ็บ/แสบ/ผิวหนังตึง",
           weight: 1,
           check: (c) =>
             c.peelCenter || c.pain || c.burn || hasAny(c.shapes, ["ตึง"])
         },
         {
           id: "rare",
-          label: "บวม/พอง/ตุ่มน้ำ",
+          label: "อาการที่พบน้อย: บวม/พอง/ตุ่มน้ำเล็ก-กลาง-ใหญ่",
           weight: 1,
           check: (c) =>
             c.swell || c.bullaeSmall || c.bullaeMed || c.bullaeLarge
@@ -690,7 +697,7 @@
         {
           id: "location",
           label:
-            "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิม",
+            "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิมกับครั้งก่อน",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -703,18 +710,40 @@
               "อวัยวะเพศ",
               "ตำแหน่งเดิมกับครั้งก่อน"
             ])
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–2 สัปดาห์",
+          weight: 1,
+          check: (c) => onsetIsAny(c, ["w1", "w2"])
+        },
+        {
+          id: "systemic",
+          label: "อาการระบบอื่นๆ: ไข้/คลื่นไส้อาเจียน/ปวดเมื่อยกล้ามเนื้อ",
+          weight: 1,
+          check: (c) =>
+            (Number.isFinite(c.fever) && c.fever > 37.5) ||
+            c.nauseaVomiting ||
+            c.myalgia
+        },
+        {
+          id: "border",
+          label: "ขอบ: ขอบเรียบ/ขอบเขตชัดเจน",
+          weight: 1,
+          check: (c) =>
+            hasAny(c.shapes, ["ขอบเรียบ", "ขอบเขตชัด"])
         }
       ]
     },
 
-    // 6) AGEP
+    // 6) AGEP (ตามเวอร์ชันเดิมที่สอดคล้องกับสเปก 9 ข้อ)
     {
       id: "agep",
       label: "AGEP",
       majors: [
         {
           id: "shape",
-          label: "รูปร่าง: ผื่นแดง",
+          label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
           check: (c) => hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
         },
@@ -726,7 +755,7 @@
         },
         {
           id: "typical",
-          label: "ลักษณะสำคัญ: ตุ่มหนอง (x3)",
+          label: "ลักษณะสำคัญ (x3): ตุ่มหนอง",
           weight: 3,
           check: (c) => c.pustule
         },
@@ -748,7 +777,7 @@
         },
         {
           id: "location",
-          label: "หน้า/รักแร้/ทั่วร่างกาย/ขาหนีบ",
+          label: "ตำแหน่ง: หน้า/รักแร้/ทั่วร่างกาย/ขาหนีบ",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["หน้า", "รักแร้", "ทั่วร่างกาย", "ขาหนีบ"])
@@ -767,7 +796,7 @@
         },
         {
           id: "lab",
-          label: "ผลตรวจ Lab: WBC > 11,000 / Neutrophil > 75%",
+          label: "Lab: WBC > 11,000 / Neutrophil > 75%",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -787,14 +816,14 @@
       ]
     },
 
-    // 7) SJS
+    // 7) SJS — 10 ข้อ
     {
       id: "sjs",
       label: "SJS",
       majors: [
         {
-          id: "shape_target",
-          label: "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
+          id: "shape",
+          label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["วงกลมคล้ายเป้าธนู", "เป้าธนูไม่ครบ 3 ชั้น"])
@@ -807,52 +836,62 @@
             hasAny(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "เทา", "แดง"])
         },
         {
-          id: "skin_detach",
-          label: "ผิวหนังหลุดลอกไม่เกิน 10% BSA (x3)",
+          id: "typical",
+          label: "ลักษณะสำคัญ (x3): ผิวหนังหลุดลอกไม่เกิน 10% BSA",
           weight: 3,
           check: (c) => c.peelLt10 || c.peelCenter
         },
         {
-          id: "blister",
-          label: "น้ำเหลือง/พอง/ตุ่มน้ำ",
+          id: "skin_extra",
+          label: "อาการผิวหนัง: น้ำเหลือง/พอง/ตุ่มน้ำเล็ก-กลาง-ใหญ่",
           weight: 1,
           check: (c) =>
             c.bullaeSmall || c.bullaeMed || c.bullaeLarge || c.pustule
         },
         {
           id: "crust",
-          label: "สะเก็ด",
+          label: "อาการที่พบ: สะเก็ด",
           weight: 1,
           check: (c) => c.scaleCrust
         },
         {
           id: "location",
-          label: "ตำแหน่ง: ลำตัว",
+          label: "ตำแหน่งที่พบ: ลำตัว",
           weight: 1,
           check: (c) => hasAny(c.locs, ["ลำตัว"])
         },
         {
           id: "onset",
-          label: "ระยะเวลา: 1 ชม.–3 สัปดาห์",
+          label: "ระยะเวลา: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
           check: (c) =>
-            onsetIsAny(c, [
-              "within1h",
-              "h1to6",
-              "h6to24",
-              "w1",
-              "w2",
-              "w3"
-            ])
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
         {
           id: "systemic",
-          label: "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เลือดออกในทางเดินอาหาร",
+          label: "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เลือดออกในทางเดินอาหาร",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
             c.myalgia ||
-            c.nauseaVomiting
+            c.nauseaVomiting ||
+            (c.p3 && flag(c.p3.gibleeding))
+        },
+        {
+          id: "organs",
+          label: "อวัยวะที่ผิดปกติ: ริมฝีปาก/รอบดวงตา/ลำตัว/แขน/ขา/หน้า/มือ/เท้า",
+          weight: 1,
+          check: (c) =>
+            hasAny(c.locs, [
+              "ริมฝีปาก",
+              "รอบดวงตา",
+              "ลำตัว",
+              "แขน",
+              "ขา",
+              "หน้า",
+              "มือ",
+              "เท้า"
+            ])
         },
         {
           id: "mucosal",
@@ -863,14 +902,14 @@
       ]
     },
 
-    // 8) TEN
+    // 8) TEN — 10 ข้อ
     {
       id: "ten",
       label: "TEN",
       majors: [
         {
           id: "shape",
-          label: "ผื่นแดง/ปื้นแดง/วงกลมคล้ายเป้าธนู",
+          label: "รูปร่าง: ผื่นแดง/ปื้นแดง/วงกลมคล้ายเป้าธนู",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง", "วงกลมคล้ายเป้าธนู"])
@@ -883,29 +922,32 @@
             hasAny(c.colors, ["แดง", "ดำ", "ดำ/คล้ำ", "คล้ำ"])
         },
         {
-          id: "skin_detach_major",
-          label: "ผิวหนังหลุดลอกเกิน 30% BSA (x3)",
+          id: "typical",
+          label: "ลักษณะสำคัญ (x3): ผิวหนังหลุดลอกเกิน 30% BSA",
           weight: 3,
           check: (c) => c.peelGt30
         },
         {
-          id: "bullae_major",
-          label: "ตุ่มน้ำขนาดใหญ่/น้ำเหลือง/สะเก็ด",
+          id: "skin_extra",
+          label: "อาการเพิ่มเติมทางผิวหนัง: ตุ่มน้ำขนาดใหญ่/น้ำเหลือง/สะเก็ด",
           weight: 1,
           check: (c) =>
             c.bullaeLarge || c.scaleCrust || c.pustule
         },
         {
-          id: "gi_bleed",
-          label: "เลือดออกในทางเดินอาหาร/กลืนลำบาก",
+          id: "rare",
+          label: "อาการที่พบน้อย: ซีด/โลหิตจาง/เลือดออกในทางเดินอาหาร/กลืนลำบาก",
           weight: 1,
           check: (c) =>
-            c.dysphagia || c.colickyPain
+            (c.p1 && flag(c.p1.pale)) ||
+            (c.p3 && flag(c.p3.anemia)) ||
+            (c.p3 && flag(c.p3.gibleeding)) ||
+            c.dysphagia
         },
         {
           id: "location",
           label:
-            "ตำแหน่ง: ลำตัว/แขน/ขา/หน้า/มือ/เท้า/ศีรษะ/ทั่วร่างกาย/ริมฝีปาก",
+            "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/หน้า/มือ/เท้า/ศีรษะ/ทั่วร่างกาย/ริมฝีปาก",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -922,14 +964,14 @@
         },
         {
           id: "onset",
-          label: "ระยะเวลา: 1–3 สัปดาห์",
+          label: "ระยะเวลาการเกิด: 1–3 สัปดาห์",
           weight: 1,
           check: (c) => onsetIsAny(c, ["w1", "w2", "w3"])
         },
         {
           id: "systemic",
           label:
-            "ไข้/ปวดกล้ามเนื้อ/คลื่นไส้-อาเจียน/เจ็บคอ/ปวดข้อ/ท้องเสีย/เยื่อบุตาอักเสบ",
+            "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เจ็บคอ/ปวดข้อ/ท้องเสีย/เยื่อบุตาอักเสบ",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -942,30 +984,39 @@
         },
         {
           id: "organ",
-          label: "Lab & organ involvement (ไต/ตับ/ปอด)",
+          label: "อวัยวะที่ผิดปกติ: ไตวาย/ตับอักเสบ/ปอดอักเสบ",
           weight: 1,
           check: (c) => {
             const details = [];
-
+            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
+            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
+            if (c.p3 && flag(c.p3.lungPneumonia)) details.push("ปอดอักเสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "lab",
+          label:
+            "ผลตรวจ Lab: Cr เพิ่มขึ้น / protein+ / SpO₂ <94% / ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L",
+          weight: 1,
+          check: (c) => {
+            const details = [];
             if (hasLabToken(c, "cr_aki")) {
               let txt =
                 "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
               if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
               details.push(txt);
             }
-
             if (hasLabToken(c, "protein_pos")) {
               let txt = "protein+ ในปัสสาวะ";
               if (c.protU) txt += ` (${c.protU})`;
               details.push(txt);
             }
-
             if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
               let txt = "SpO₂ < 94%";
               if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
               details.push(txt);
             }
-
             if (hasLabToken(c, "alt_ast_ge2x")) {
               let txt = "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L";
               const parts = [];
@@ -974,33 +1025,32 @@
               if (parts.length) txt += ` (${parts.join(", ")})`;
               details.push(txt);
             }
-
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
       ]
     },
 
-    // 9) DRESS
+    // 9) DRESS — 9 ข้อ
     {
       id: "dress",
       label: "DRESS",
       majors: [
         {
-          id: "rash",
-          label: "ผื่นแดง/ปื้นแดง",
+          id: "shape",
+          label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
           check: (c) => hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
         },
         {
           id: "color",
-          label: "สีแดง",
+          label: "สี: แดง",
           weight: 1,
           check: (c) => hasAny(c.colors, ["แดง"])
         },
         {
           id: "blood_major",
-          label: "กลุ่มเม็ดเลือด (x3)",
+          label: "ลักษณะสำคัญ (x3): Eosinophil ≥ 10% / Atypical lymphocyte",
           weight: 3,
           check: (c) => {
             const details = [];
@@ -1017,66 +1067,27 @@
         },
         {
           id: "skin_extra",
-          label: "ตุ่มน้ำ/จ้ำเลือด",
+          label: "อาการเพิ่มเติมทางผิวหนัง: ตุ่มน้ำเล็ก-กลาง-ใหญ่/จ้ำเลือด",
           weight: 1,
           check: (c) =>
             c.bullaeSmall || c.bullaeMed || c.bullaeLarge || c.pustule
         },
         {
           id: "location",
-          label: "หน้า/ลำตัว/แขน/ขา",
+          label: "ตำแหน่งที่พบ: หน้า/ลำตัว/แขน/ขา",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["หน้า", "ลำตัว", "แขน", "ขา"])
         },
         {
-          id: "fever",
-          label: "ไข้ > 37.5 °C",
-          weight: 1,
-          check: (c) => Number.isFinite(c.fever) && c.fever > 37.5
-        },
-        {
-          id: "onset",
-          label: "ระยะเวลา: 1–6 สัปดาห์",
-          weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["w1", "w2", "w3", "w4", "w5", "w6"])
-        },
-        {
-          id: "organ_lab",
-          label: "Lab organ involvement",
+          id: "systemic",
+          label: "อาการระบบอื่นๆ: ไข้ / Lung function (Abnormal Sound/CXR)",
           weight: 1,
           check: (c) => {
             const details = [];
-
-            if (hasLabToken(c, "alt_ast_ge2x")) {
-              let txt = "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L";
-              const parts = [];
-              if (Number.isFinite(c.ast)) parts.push(`AST ${c.ast}`);
-              if (Number.isFinite(c.alt)) parts.push(`ALT ${c.alt}`);
-              if (parts.length) txt += ` (${parts.join(", ")})`;
-              details.push(txt);
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
             }
-
-            if (hasLabToken(c, "cr_aki")) {
-              let txt =
-                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
-              if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
-              details.push(txt);
-            }
-
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
-            }
-
-            if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
-              let txt = "SpO₂ < 94%";
-              if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
-              details.push(txt);
-            }
-
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
@@ -1086,71 +1097,133 @@
             if (hasLabToken(c, lungTokens)) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
-
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["w1", "w2", "w3", "w4", "w5", "w6"])
+        },
+        {
+          id: "lab",
+          label:
+            "ผลตรวจ Lab: ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L / Cr เพิ่มขึ้น / protein+ / SpO₂ <94% / EKG ผิดปกติ / Troponin ผิดปกติ",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (hasLabToken(c, "alt_ast_ge2x")) {
+              let txt = "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L";
+              const parts = [];
+              if (Number.isFinite(c.ast)) parts.push(`AST ${c.ast}`);
+              if (Number.isFinite(c.alt)) parts.push(`ALT ${c.alt}`);
+              if (parts.length) txt += ` (${parts.join(", ")})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "cr_aki")) {
+              let txt =
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
+              if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "protein_pos")) {
+              let txt = "protein+ ในปัสสาวะ";
+              if (c.protU) txt += ` (${c.protU})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
+              let txt = "SpO₂ < 94%";
+              if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
+              details.push(txt);
+            }
             if (hasLabToken(c, "ekg_abnormal") || c.ekgAbnormal) {
               details.push("EKG ผิดปกติ");
             }
-
             if (hasLabToken(c, ["tropi_gt004", "tropt_gt001_003"])) {
               let txt = "Troponin ผิดปกติ";
               if (Number.isFinite(c.troponin)) txt += ` (${c.troponin})`;
               details.push(txt);
             }
-
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "organ",
+          label:
+            "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ตับอักเสบ/ไตอักเสบ/ไตวาย/ปอดอักเสบ/กล้ามเนื้อหัวใจอักเสบ/ต่อมไทรอยด์อักเสบ",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
+            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
+            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
+            if (c.p3 && flag(c.p3.lungPneumonia)) details.push("ปอดอักเสบ");
+            if (c.p3 && flag(c.p3.myocarditis)) details.push("กล้ามเนื้อหัวใจอักเสบ");
+            if (c.p3 && flag(c.p3.thyroiditis)) details.push("ต่อมไทรอยด์อักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
       ]
     },
 
-    // 10) Erythema multiforme
+    // 10) Erythema multiforme (EM) — 9 ข้อ
     {
       id: "em",
       label: "Erythema multiforme",
       majors: [
         {
           id: "shape",
-          label: "ตุ่มนูน/ขอบวงนูนแดงด้านในเรียบ",
+          label: "รูปร่าง: ตุ่มนูน/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["ตุ่มนูน", "ขอบวงนูนแดงด้านในเรียบ"])
         },
         {
           id: "color",
-          label: "สีแดง/แดงซีด",
+          label: "สี: แดง/แดงซีด",
           weight: 1,
           check: (c) => hasAny(c.colors, ["แดง", "แดงซีด"])
         },
         {
           id: "typical",
-          label: "วงกลม 3 ชั้น (เป้าธนู) (x3)",
+          label: "ลักษณะสำคัญ (x3): วงกลม 3 ชั้น (เป้าธนู)",
           weight: 3,
           check: (c) =>
             hasAny(c.shapes, ["วงกลม 3 ชั้น", "เป้าธนู 3 ชั้น"])
         },
         {
-          id: "blister",
-          label: "พอง/ตุ่มน้ำ",
+          id: "skin_extra",
+          label: "อาการเพิ่มเติมทางผิวหนัง: พอง/ตุ่มน้ำเล็ก-กลาง",
           weight: 1,
           check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+            c.bullaeSmall || c.bullaeMed
         },
         {
           id: "crust",
-          label: "สะเก็ด",
+          label: "อาการที่พบน้อย: สะเก็ด",
           weight: 1,
           check: (c) => c.scaleCrust
         },
         {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
+        },
+        {
           id: "mucosal",
-          label: "ช่องปาก/จมูก/ทวาร/อวัยวะเพศ",
+          label: "ตำแหน่งที่พบ 1: ช่องปาก/จมูก/ทวาร/อวัยวะเพศ",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["ช่องปาก", "จมูก", "ทวาร", "อวัยวะเพศ"])
         },
         {
           id: "systemic",
-          label: "ไข้/อ่อนเพลีย/ปวดกล้ามเนื้อ/เจ็บคอ/ปวดข้อ",
+          label: "อาการระบบอื่นๆ: ไข้/อ่อนเพลีย/ปวดกล้ามเนื้อ/เจ็บคอ/ปวดข้อ",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -1160,8 +1233,8 @@
             c.arthralgia
         },
         {
-          id: "limb_loc",
-          label: "มือ/เท้า/แขน/ขา/หน้า/ลำตัว/หลัง/ลำคอ",
+          id: "location2",
+          label: "ตำแหน่งที่พบ 2: มือ/เท้า/แขน/ขา/หน้า/ลำตัว/หลัง/ลำคอ",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, [
@@ -1178,224 +1251,313 @@
       ]
     },
 
-    // 11) Photosensitivity drug eruption
+    // 11) Photosensitivity drug eruption — 8 ข้อ
     {
       id: "photo",
       label: "Photosensitivity drug eruption",
       majors: [
         {
           id: "shape",
-          label: "ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
+          label: "รูปร่าง: ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["ขอบเขตชัด", "ปื้นแดง", "จุดแดงเล็ก", "จุดเล็กแดง"])
         },
         {
           id: "color",
-          label: "ดำ/คล้ำ/แดง",
+          label: "สี: ดำ/คล้ำ/แดง",
           weight: 1,
           check: (c) =>
             hasAny(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "แดง"])
         },
         {
           id: "burn_major",
-          label: "แดงไหม้ (x2)",
+          label: "ลักษณะสำคัญ (x2): แดงไหม้",
           weight: 2,
-          check: (c) => hasAny(c.colors, ["แดงไหม้"]) || c.burn
+          check: (c) =>
+            hasAny(c.colors, ["แดงไหม้"]) || c.burn
         },
         {
-          id: "exudate",
-          label: "น้ำเหลือง/สะเก็ด/ตุ่มน้ำ/ลอก/ขุย/คัน",
+          id: "skin_extra",
+          label: "อาการเพิ่มเติมทางผิวหนัง: น้ำเหลือง/สะเก็ด",
+          weight: 1,
+          check: (c) => c.scaleCrust
+        },
+        {
+          id: "may",
+          label: "อาการที่อาจพบ: ตุ่มน้ำเล็ก-กลาง-ใหญ่/ลอก/ขุย/คัน",
           weight: 1,
           check: (c) =>
-            c.scaleCrust ||
-            c.scaleDry ||
-            c.scalePeel ||
-            c.itch ||
             c.bullaeSmall ||
             c.bullaeMed ||
-            c.bullaeLarge
+            c.bullaeLarge ||
+            c.scalePeel ||
+            c.scaleDry ||
+            c.itch
         },
         {
           id: "location",
-          label: "หน้า/หน้าอก/มือ/แขน/ขา",
+          label: "ตำแหน่งที่พบ: หน้า/หน้าอก/มือ/แขน/ขา",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["หน้า", "หน้าอก", "มือ", "แขน", "ขา"])
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: ภายใน 1 ชม./1–6 ชม./6–24 ชม./1 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["within1h", "h1to6", "h6to24", "w1"])
+        },
+        {
+          id: "burn_pain_major",
+          label: "อาการเด่น (x2): แสบ",
+          weight: 2,
+          check: (c) => c.burn
         }
       ]
     },
 
-    // 12) Exfoliative dermatitis
+    // 12) Exfoliative dermatitis — 10 ข้อ
     {
       id: "exf",
       label: "Exfoliative dermatitis",
       majors: [
         {
           id: "shape",
-          label: "ตึง",
+          label: "รูปร่าง: ตึง",
           weight: 1,
           check: (c) => hasAny(c.shapes, ["ตึง"])
         },
         {
           id: "color",
-          label: "สีแดง",
+          label: "สี: แดง",
           weight: 1,
           check: (c) => hasAny(c.colors, ["แดง"])
         },
         {
           id: "dry_major",
-          label: "แห้ง (x3)",
+          label: "ลักษณะสำคัญ (x3): แห้ง",
           weight: 3,
           check: (c) => c.scaleDry
         },
         {
           id: "scale_major",
-          label: "ขุย (x3)",
+          label: "อาการเพิ่มเติมทางผิวหนัง (x3): ขุย",
           weight: 3,
           check: (c) => c.scaleCrust
         },
         {
           id: "itch",
-          label: "คัน",
+          label: "อาการอื่นๆ: คัน",
           weight: 1,
           check: (c) => c.itch
         },
         {
           id: "location",
-          label: "ทั่วร่างกาย/มือ/เท้า/ศีรษะ",
+          label: "ตำแหน่งที่พบ: ทั่วร่างกาย/มือ/เท้า/ศีรษะ",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["ทั่วร่างกาย", "มือ", "เท้า", "ศีรษะ"])
         },
         {
-          id: "systemic",
-          label: "ไข้/หนาวสั่น/อ่อนเพลีย/ดีซ่าน",
+          id: "onset",
+          label:
+            "ระยะเวลาการเกิด: 3 สัปดาห์ / 1–6 ชม. / 6–24 ชม. / 1–2 สัปดาห์ / 4 สัปดาห์ / อื่นๆ <4สัปดาห์",
           weight: 1,
           check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) || c.fatigue
+            onsetIsAny(c, ["w3", "h1to6", "h6to24", "w1", "w2", "w4", "other"])
+        },
+        {
+          id: "systemic",
+          label: "อาการระบบอื่นๆ: ไข้/หนาวสั่น/อ่อนเพลีย/ดีซ่าน",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.p2 && c.p2.other && flag(c.p2.other.chills)) {
+              details.push("หนาวสั่น");
+            }
+            if (c.fatigue) details.push("อ่อนเพลีย");
+            if (c.p1 && flag(c.p1.jaundice)) {
+              details.push("ดีซ่าน (ตัวเหลือง/ตาเหลือง)");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "organ",
+          label: "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ตับโต/ม้ามโต/ขาบวม",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.hepatomegaly)) details.push("ตับโต");
+            if (c.p3 && flag(c.p3.splenomegaly)) details.push("ม้ามโต");
+            if (c.swell && hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "highlight",
+          label: "ลักษณะเด่น (x3): มันเงา/ลอก",
+          weight: 3,
+          check: (c) =>
+            hasAny(c.colors, ["มันเงา"]) || c.scalePeel
         }
       ]
     },
 
-    // 13) Eczematous drug eruption
+    // 13) Eczematous drug eruption — 10 ข้อ
     {
       id: "eczema",
       label: "Eczematous drug eruption",
       majors: [
         {
           id: "shape",
-          label: "ตุ่มนูน/ปื้นแดง",
+          label: "รูปร่าง: ตุ่มนูน/ปื้นแดง",
           weight: 1,
           check: (c) => hasAny(c.shapes, ["ตุ่มนูน", "ปื้นแดง"])
         },
         {
           id: "color",
-          label: "สีแดง",
+          label: "สี: แดง",
           weight: 1,
           check: (c) => hasAny(c.colors, ["แดง"])
         },
         {
           id: "itch_major",
-          label: "คัน (x2)",
+          label: "ลักษณะสำคัญ (x2): คัน",
           weight: 2,
           check: (c) => c.itch
         },
         {
           id: "thick",
-          label: "นูนหนา/ผื่นแดง",
+          label: "อาการเพิ่มเติมทางผิวหนัง: นูนหนา/ผื่นแดง",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นแดง"])
         },
         {
           id: "exudate",
-          label: "จุดเล็กแดง/น้ำเหลือง/สะเก็ด",
+          label: "อาการที่พบอื่นๆ: จุดเล็กแดง/น้ำเหลือง/สะเก็ด",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["จุดเล็กแดง"]) || c.scaleCrust
         },
         {
           id: "location",
-          label: "ลำตัว/แขน/ขา/หน้า/ลำคอ",
+          label: "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/หน้า/ลำคอ",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["ลำตัว", "แขน", "ขา", "หน้า", "ลำคอ"])
         },
         {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+        },
+        {
           id: "dry_scale",
-          label: "ขุย/แห้ง/ลอก (x2)",
+          label: "อาการที่อาจพบ (x2): ขุย/แห้ง/ลอก",
           weight: 2,
           check: (c) => c.scaleDry || c.scalePeel || c.scaleCrust
+        },
+        {
+          id: "distribution",
+          label: "การกระจายตัว: สมมาตร",
+          weight: 1,
+          check: (c) => hasAny(c.locs, ["สมมาตร"])
+        },
+        {
+          id: "vesicles",
+          label: "ตุ่มน้ำ: เล็ก/กลาง/ใหญ่",
+          weight: 1,
+          check: (c) =>
+            c.bullaeSmall || c.bullaeMed || c.bullaeLarge
         }
       ]
     },
 
-    // 14) Bullous Drug Eruption
+    // 14) Bullous drug eruption — 7 ข้อ
     {
       id: "bullous",
       label: "Bullous drug eruption",
       majors: [
         {
           id: "vesicle",
-          label: "ตุ่มน้ำขนาดเล็ก/พอง/ตึง",
+          label: "รูปร่าง: ตุ่มน้ำขนาดเล็ก/พอง/ตึง",
           weight: 1,
           check: (c) =>
             c.bullaeSmall ||
-            c.bullaeMed ||
-            c.bullaeLarge ||
             hasAny(c.shapes, ["พอง", "ตึง"])
         },
         {
           id: "color",
-          label: "สีแดง",
+          label: "สี: แดง",
           weight: 1,
           check: (c) => hasAny(c.colors, ["แดง"])
         },
         {
           id: "vesicle_major",
-          label: "ตุ่มน้ำขนาดกลาง/ใหญ่ (x2)",
+          label: "ลักษณะสำคัญ (x2): ตุ่มน้ำขนาดกลาง/ใหญ่",
           weight: 2,
           check: (c) => c.bullaeMed || c.bullaeLarge
         },
         {
           id: "pain_burn",
-          label: "เจ็บ/แสบ",
+          label: "อาการเพิ่มเติมทางผิวหนัง: เจ็บ/แสบ",
           weight: 1,
           check: (c) => c.pain || c.burn
         },
         {
           id: "inside_clear",
-          label: "น้ำใส (x3)",
+          label: "สีด้านใน (x3): ใส",
           weight: 3,
           check: (c) => hasAny(c.colors, ["ใส"])
         },
         {
           id: "location",
-          label: "ลำตัว/แขน/ขา/เท้า",
+          label: "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/เท้า",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["ลำตัว", "แขน", "ขา", "เท้า"])
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         }
       ]
     },
 
-    // 15) Serum sickness
+    // 15) Serum sickness — 8 ข้อ
     {
       id: "serum_sickness",
       label: "Serum sickness",
       majors: [
         {
           id: "skin",
-          label: "ตุ่มนูน/แดง/บวม/คัน",
+          label: "อาการผิวหนัง: ตุ่มนูน/แดง/บวม/คัน",
           weight: 1,
-          check: (c) => c.itch || c.swell || hasAny(c.colors, ["แดง"])
+          check: (c) =>
+            c.itch ||
+            c.swell ||
+            hasAny(c.colors, ["แดง"]) ||
+            hasAny(c.shapes, ["ตุ่มนูน"])
         },
         {
           id: "fever_major",
-          label: "ไข้ > 37.5 °C (x2)",
+          label: "อาการ (พบมาก) (x2): ไข้ > 37.5 °C",
           weight: 2,
-          check: (c) => Number.isFinite(c.fever) && c.fever > 37.5
+          check: (c) =>
+            Number.isFinite(c.fever) && c.fever > 37.5
         },
         {
           id: "organ",
@@ -1413,8 +1575,8 @@
           }
         },
         {
-          id: "lab",
-          label: "protein+ / C3<90 mg/dL, C4<10 mg/dL",
+          id: "lab1",
+          label: "ผลตรวจ Lab: protein+ / C3<90, C4<10",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1435,8 +1597,15 @@
           }
         },
         {
-          id: "rbc_lab",
-          label: "RBC 5–10/HPF ในปัสสาวะ",
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+        },
+        {
+          id: "lab2",
+          label: "ผลตรวจ Lab2: RBC 5–10/HPF ในปัสสาวะ",
           weight: 1,
           check: (c) => {
             if (hasLabToken(c, "rbc_5_10_hpf")) {
@@ -1447,21 +1616,28 @@
         },
         {
           id: "joint_major",
-          label: "ปวดข้อ/ข้ออักเสบ (x2)",
+          label: "อาการระบบอื่นๆ (x2): ปวดข้อ/ข้ออักเสบ",
           weight: 2,
           check: (c) => c.arthralgia || c.arthritis
+        },
+        {
+          id: "location",
+          label: "ตำแหน่งที่เกิด: รอบดวงตา/มือ/เท้า/ลำตัว/แขน/ขา",
+          weight: 1,
+          check: (c) =>
+            hasAny(c.locs, ["รอบดวงตา", "มือ", "เท้า", "ลำตัว", "แขน", "ขา"])
         }
       ]
     },
 
-    // 16) Vasculitis
+    // 16) Vasculitis — 8 ข้อ
     {
       id: "vasculitis",
       label: "Vasculitis",
       majors: [
         {
           id: "skin",
-          label: "ตุ่มนูน/ผื่นแดง/แดง",
+          label: "อาการผิวหนัง: ตุ่มนูน/ผื่นแดง/แดง",
           weight: 1,
           check: (c) =>
             hasAny(c.shapes, ["ตุ่มนูน", "ผื่นแดง"]) ||
@@ -1470,14 +1646,19 @@
         {
           id: "systemic",
           label:
-            "ไข้/ปวดข้อ/ข้ออักเสบ/ปวดกล้ามเนื้อ/ต่อมน้ำเหลืองโต",
+            "อาการระบบอื่นๆ: ไข้/ปวดข้อ/ข้ออักเสบ/ปวดกล้ามเนื้อ/ต่อมน้ำเหลืองโต",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.arthralgia ||
-            c.arthritis ||
-            c.myalgia ||
-            (c.p3 && flag(c.p3.lymphNodeEnlarge))
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.arthralgia) details.push("ปวดข้อ");
+            if (c.arthritis) details.push("ข้ออักเสบ");
+            if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "organ",
@@ -1485,29 +1666,41 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.nephritis)) {
-              details.push("ไตอักเสบ");
-            }
-            if (c.p3 && flag(c.p3.renalFailure)) {
-              details.push("ไตวาย");
-            }
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) {
-              details.push("ต่อมน้ำเหลืองโต");
-            }
+            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
+            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "bleed",
-          label: "ไอเป็นเลือด/เลือดออกในปอด/เลือดออกในทางเดินอาหาร",
+          label: "อาการ: ไอเป็นเลือด/ถุงลมเลือดออก/เลือดออกในทางเดินอาหาร",
           weight: 1,
-          check: (c) =>
-            c.p2 && c.p2.resp && flag(c.p2.resp.hemoptysis)
+          check: (c) => {
+            const details = [];
+            if (c.p2 && c.p2.resp && flag(c.p2.resp.hemoptysis)) {
+              details.push("ไอเป็นเลือด");
+            }
+            if (c.p3 && flag(c.p3.alveolarHemorrhage)) {
+              details.push("ถุงลมเลือดออก");
+            }
+            if (c.p3 && flag(c.p3.gibleeding)) {
+              details.push("เลือดออกในทางเดินอาหาร");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
-          id: "lab_major",
-          label: "protein+ / C3<90 mg/dL, C4<10 mg/dL / Cr เพิ่มขึ้น (x2)",
-          weight: 2,
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+        },
+        {
+          id: "lab2",
+          label: "ผลตรวจ Lab2: protein+ / C3<90, C4<10",
+          weight: 1,
           check: (c) => {
             const details = [];
             if (hasLabToken(c, "protein_pos")) {
@@ -1523,18 +1716,27 @@
               if (parts.length) txt += ` (${parts.join(", ")})`;
               details.push(txt);
             }
-            if (hasLabToken(c, "cr_aki")) {
-              let txt =
-                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
-              if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
-              details.push(txt);
-            }
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
-          id: "purpura_major",
-          label: "จ้ำเลือด/ขา (x2)",
+          id: "lab3",
+          label:
+            "ผลตรวจ Lab3: Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน",
+          weight: 1,
+          check: (c) => {
+            if (hasLabToken(c, "cr_aki")) {
+              let txt =
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
+              if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
+              return { ok: true, details: [txt] };
+            }
+            return { ok: false };
+          }
+        },
+        {
+          id: "highlight",
+          label: "อาการเด่น (x2): จ้ำเลือด/ขา",
           weight: 2,
           check: (c) =>
             hasAny(c.shapes, ["จ้ำเลือด"]) || hasAny(c.locs, ["ขา"])
@@ -1542,42 +1744,41 @@
       ]
     },
 
-    // 17) Hemolytic anemia
+    // 17) Hemolytic anemia — 9 ข้อ
     {
       id: "hemolytic_anemia",
       label: "Hemolytic anemia",
       majors: [
         {
-          id: "pale_jaundice_major",
-          label: "ซีด/ดีซ่าน (x2)",
+          id: "sym_major",
+          label: "อาการ (x2): ซีด/ดีซ่าน",
           weight: 2,
           check: (c) => {
             const details = [];
+            if (c.p1 && flag(c.p1.pale)) details.push("ซีด");
             if (c.p1 && flag(c.p1.jaundice)) {
               details.push("ดีซ่าน (ตัวเหลือง/ตาเหลือง)");
-            }
-            if (c.p1 && flag(c.p1.pale)) {
-              details.push("ซีด");
             }
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "urine_major",
-          label: "ปัสสาวะสีชา/สีดำ (x3)",
+          label: "อาการระบบอื่นๆ (x3): ปัสสาวะสีชา/สีดำ",
           weight: 3,
           check: (c) =>
             c.urine && flag(c.urine.darkUrine)
         },
         {
-          id: "renal",
-          label: "ไตวายจาก hemolysis",
+          id: "organ",
+          label: "อวัยวะที่ผิดปกติ: ไตวาย",
           weight: 1,
-          check: () => ({ ok: false })
+          check: (c) =>
+            c.p3 && flag(c.p3.renalFailure)
         },
         {
-          id: "immune_lab",
-          label: "IgG+ / C3+",
+          id: "lab1",
+          label: "ผลตรวจ Lab: IgG+ / C3+",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1591,51 +1792,157 @@
           }
         },
         {
-          id: "hb_drop",
-          label: "Hb ลด ≥ 2–3 g/dL ใน 24–48 ชม. (x3)",
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
+        },
+        {
+          id: "lab2",
+          label:
+            "ผลตรวจ Lab2 (x3): Hb ลดลง ≥ 2–3 g/dL ภายใน 24–48 ชม.",
           weight: 3,
           check: (c) =>
             hasLabToken(c, "hb_drop_ge2_3")
         },
         {
-          id: "ldh",
-          label: "LDH สูง (2–10x ULN)",
+          id: "lab3",
+          label: "ผลตรวจ Lab3: LDH สูง (2–10X ULN)",
           weight: 1,
           check: (c) =>
             hasLabToken(c, "ldh_high")
+        },
+        {
+          id: "bp",
+          label: "BP: BP ต่ำ (<90/60) หรือ BP ลดลง ≥40 mmHg ของ baseline systolic เดิม",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.hypotension) {
+              details.push("BP ต่ำ (<90/60)");
+            }
+            if (c.bpDrop40) {
+              details.push("BP ลดลง ≥40 mmHg ของ baseline systolic เดิม");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "others",
+          label: "อาการอื่น: ปวดหลังส่วนเอว/ปวดแน่นชายโครงขวา",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.p3 && flag(c.p3.flankPain)) details.push("ปวดหลังส่วนเอว");
+            if (c.p3 && flag(c.p3.ruqPain)) details.push("ปวดแน่นชายโครงขวา");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
 
-    // 18) Pancytopenia
+    // 18) Pancytopenia — 10 ข้อ
     {
       id: "pancytopenia",
       label: "Pancytopenia",
       majors: [
         {
           id: "sym",
-          label: "ซีด/อ่อนเพลีย",
+          label: "อาการ: ซีด/อ่อนเพลีย",
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p1 && flag(c.p1.pale)) {
-              details.push("ซีด");
+            if (c.p1 && flag(c.p1.pale)) details.push("ซีด");
+            if (c.fatigue) details.push("อ่อนเพลีย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
+        {
+          id: "systemic",
+          label: "อาการระบบอื่นๆ: ปัสสาวะสีชา/สีดำ/หนาวสั่น/เจ็บคอ/แผลในปาก",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (c.urine && flag(c.urine.darkUrine)) {
+              details.push("ปัสสาวะสีชา/สีดำ");
             }
-            if (c.fatigue) {
-              details.push("อ่อนเพลีย");
+            if (c.p2 && c.p2.other && flag(c.p2.other.chills)) {
+              details.push("หนาวสั่น");
+            }
+            if (c.soreThroat) details.push("เจ็บคอ");
+            if (c.p2 && c.p2.other && flag(c.p2.other.mouthUlcer)) {
+              details.push("แผลในปาก");
             }
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "bleed_major",
-          label: "จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก (x3)",
+          label:
+            "อาการที่ผิดปกติ (x3): จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก",
           weight: 3,
           check: (c) => c.p3 && flag(c.p3.bleedingSigns)
         },
         {
+          id: "hr_high",
+          label: "ผลตรวจร่างกาย: HR สูง (>100)",
+          weight: 1,
+          check: (c) => {
+            const hr = nField(c.p2 && c.p2.cv && c.p2.cv.hrValue);
+            if (Number.isFinite(hr) && hr > 100) {
+              return {
+                ok: true,
+                details: [`HR สูง (>100 bpm, ปัจจุบัน ${hr})`]
+              };
+            }
+            return { ok: false };
+          }
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–2 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
+        },
+        {
+          id: "lab_fever",
+          label: "ผลตรวจ Lab2: ไข้ Temp > 37.5 °C",
+          weight: 1,
+          check: (c) =>
+            Number.isFinite(c.fever) && c.fever > 37.5
+        },
+        {
+          id: "lab_hb",
+          label: "ผลตรวจ Lab3 (x2): Hemoglobin (Hb) < 10 g/dL",
+          weight: 2,
+          check: (c) => {
+            if (hasLabToken(c, "hb_lt10")) {
+              let txt = "Hemoglobin (Hb) < 10 g/dL";
+              if (Number.isFinite(c.hb)) txt += ` (Hb ${c.hb})`;
+              return { ok: true, details: [txt] };
+            }
+            return { ok: false };
+          }
+        },
+        {
+          id: "lab_hct",
+          label: "ผลตรวจ Lab4 (x2): Hematocrit (Hct) < 30%",
+          weight: 2,
+          check: (c) => {
+            if (hasLabToken(c, "hct_lt30")) {
+              let txt = "Hematocrit (Hct) < 30%";
+              if (Number.isFinite(c.hct)) txt += ` (Hct ${c.hct}%)`;
+              return { ok: true, details: [txt] };
+            }
+            return { ok: false };
+          }
+        },
+        {
           id: "lab_wbc",
-          label: "WBC < 4000 (x2)",
+          label:
+            "ผลตรวจ Lab5 (x2): White Blood Cell (WBC) < 4000 cells/cu.mm",
           weight: 2,
           check: (c) => {
             if (hasLabToken(c, "wbc_lt4000")) {
@@ -1648,7 +1955,8 @@
         },
         {
           id: "lab_plt",
-          label: "Plt < 100,000 (x2)",
+          label:
+            "ผลตรวจ Lab6 (x2): Platelet (Plt) < 100,000 cells/cu.mm",
           weight: 2,
           check: (c) => {
             if (hasLabToken(c, "plt_lt100k")) {
@@ -1658,37 +1966,18 @@
             }
             return { ok: false };
           }
-        },
-        {
-          id: "lab_hb_hct",
-          label: "Hb < 10 หรือ Hct < 30% (x2)",
-          weight: 2,
-          check: (c) => {
-            const details = [];
-            if (hasLabToken(c, "hb_lt10")) {
-              let txt = "Hemoglobin (Hb) < 10 g/dL";
-              if (Number.isFinite(c.hb)) txt += ` (Hb ${c.hb})`;
-              details.push(txt);
-            }
-            if (hasLabToken(c, "hct_lt30")) {
-              let txt = "Hematocrit (Hct) < 30%";
-              if (Number.isFinite(c.hct)) txt += ` (Hct ${c.hct}%)`;
-              details.push(txt);
-            }
-            return details.length ? { ok: true, details } : { ok: false };
-          }
         }
       ]
     },
 
-    // 19) Neutropenia
+    // 19) Neutropenia (ใช้ตามเวอร์ชันเดิมที่ตรงสเปก) — 4 ข้อหลัก
     {
       id: "neutropenia",
       label: "Neutropenia",
       majors: [
         {
           id: "sym",
-          label: "หนาวสั่น/เจ็บคอ/แผลในปาก",
+          label: "อาการ: หนาวสั่น/เจ็บคอ/แผลในปาก",
           weight: 1,
           check: (c) =>
             (c.p2 &&
@@ -1713,11 +2002,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-
             if (c.p3 && flag(c.p3.lungPneumonia)) {
               details.push("ปอดอักเสบ");
             }
-
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
@@ -1727,7 +2014,6 @@
             if (hasLabToken(c, lungTokens)) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
-
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1747,14 +2033,14 @@
       ]
     },
 
-    // 20) Thrombocytopenia
+    // 20) Thrombocytopenia — 4 ข้อ
     {
       id: "thrombocytopenia",
       label: "Thrombocytopenia",
       majors: [
         {
           id: "bleed_skin_major",
-          label: "จุดเลือดออก/ปื้น-จ้ำเลือด (x2)",
+          label: "อาการ (x2): จุดเลือดออก/ปื้น-จ้ำเลือด",
           weight: 2,
           check: (c) =>
             hasAny(c.shapes, ["จุดเลือดออก", "ปื้น/จ้ำเลือด", "จ้ำเลือด"])
@@ -1762,13 +2048,13 @@
         {
           id: "bleed_sys",
           label:
-            "เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
+            "อาการระบบอื่นๆ: เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
           weight: 1,
           check: (c) => c.p3 && flag(c.p3.bleedingGI)
         },
         {
           id: "plt_major",
-          label: "Platelet (Plt) < 150,000 cells/cu.mm",
+          label: "ผลตรวจ Lab: Platelet (Plt) < 150,000 cells/cu.mm",
           weight: 1,
           check: (c) => {
             if (hasLabToken(c, "plt_lt150k")) {
@@ -1778,18 +2064,25 @@
             }
             return { ok: false };
           }
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
         }
       ]
     },
 
-    // 21) Nephritis
+    // 21) Nephritis — 5 ข้อ
     {
       id: "nephritis",
       label: "Nephritis",
       majors: [
         {
           id: "sym",
-          label: "ไข้/ปวดข้อ/อ่อนเพลีย",
+          label: "อาการ: ไข้/ปวดข้อ/อ่อนเพลีย",
           weight: 1,
           check: (c) =>
             (Number.isFinite(c.fever) && c.fever > 37.5) ||
@@ -1798,20 +2091,22 @@
         },
         {
           id: "urine_sym",
-          label: "ปัสสาวะออกน้อย/ปัสสาวะขุ่น",
+          label: "อาการระบบอื่นๆ: ปัสสาวะออกน้อย/ปัสสาวะขุ่น",
           weight: 1,
-          check: (c) => c.oliguria || (c.urine && flag(c.urine.turbid))
+          check: (c) =>
+            c.oliguria || (c.urine && flag(c.urine.turbid))
         },
         {
           id: "edema",
-          label: "ขาบวม/บวม",
+          label: "อวัยวะที่ผิดปกติ: ขาบวม/บวม",
           weight: 1,
           check: (c) =>
             hasAny(c.locs, ["ขา"]) || c.swell
         },
         {
           id: "renal_major",
-          label: "Serum creatinine (Cr) เพิ่มขึ้น หรือ eGFR ลด (x3)",
+          label:
+            "ผลตรวจ Lab (x3): Cr เพิ่มขึ้น หรือ eGFR < 60 mL/min/1.73m²",
           weight: 3,
           check: (c) => {
             const details = [];
@@ -1828,6 +2123,13 @@
             }
             return details.length ? { ok: true, details } : { ok: false };
           }
+        },
+        {
+          id: "onset",
+          label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–2 สัปดาห์",
+          weight: 1,
+          check: (c) =>
+            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
         }
       ]
     }
@@ -1960,6 +2262,7 @@
       .p6-adr-body{margin-left:30px;margin-top:2px;}
       .p6-adr-majors{margin:0;padding-left:16px;font-size:12px;color:#4b5563;}
       .p6-adr-majors li{margin:1px 0;}
+      .p6-muted{font-size:12px;color:#6b7280;}
     `;
     const el = document.createElement("style");
     el.id = "p6-brain-style";
@@ -2003,7 +2306,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV2",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV3",
     defs: ADR_DEFS
   };
 })();
