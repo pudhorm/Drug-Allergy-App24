@@ -1,9 +1,14 @@
+```js
 // ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
 // โหมด C: "แมตช์ตรงตัว" ระหว่างสิ่งที่ผู้ใช้ติ๊กในหน้า 1–3 กับเกณฑ์ของแต่ละ ADR
 // - คิดเฉพาะข้อที่ติ๊กจริง
 // - แต่ละ ADR แยกเกณฑ์กัน ไม่เอามาปนกัน
 // - 1 ข้อใหญ่ = 1 แต้ม (ถ้ามี weight x2/x3/x4 ก็คูณ)
 // - แปลงเป็น % ภายในแต่ละ ADR เอง
+//
+// เวอร์ชันนี้ปรับ "รายละเอียดข้อที่เข้าเกณฑ์" ให้แสดงเฉพาะตัวเลือกที่ติ๊กจริง
+// เช่น label เดิม: "รูปร่าง: วงกลม/วงรี" → ถ้าติ๊กวงกลมอย่างเดียวจะแสดงเพียง "วงกลม"
+// ใช้ได้กับ label ทุกอันที่เขียนเป็นรูปแบบ "หัวข้อ: ตัวเลือก1/ตัวเลือก2/..."
 
 (function () {
   // ---------------------------------------------------------------------------
@@ -2138,6 +2143,66 @@
   // ---------------------------------------------------------------------------
   // Core scoring
   // ---------------------------------------------------------------------------
+
+  // Helper ใหม่: แตก label แบบ "หัวข้อ: ตัวเลือก1/ตัวเลือก2/..." แล้วเลือกเฉพาะตัวเลือกที่ "มีจริง" ใน context
+  function deriveDetailsFromLabel(label, ctx) {
+    if (!label) return [];
+    const idx = label.indexOf(":");
+    let body = idx >= 0 ? label.slice(idx + 1) : label;
+    if (!body) return [];
+
+    const rawTokens = body.split(/[\/,]/);
+    const out = [];
+
+    const pushUnique = (txt) => {
+      if (!txt) return;
+      if (!out.includes(txt)) out.push(txt);
+    };
+
+    rawTokens.forEach((part) => {
+      const t = part.trim();
+      if (!t) return;
+
+      // เช็คใน shapes / colors / locs ก่อน (ใช้กับรูปร่าง/สี/ตำแหน่ง)
+      if (Array.isArray(ctx.shapes) && ctx.shapes.includes(t)) {
+        pushUnique(t);
+        return;
+      }
+      if (Array.isArray(ctx.colors) && ctx.colors.includes(t)) {
+        pushUnique(t);
+        return;
+      }
+      if (Array.isArray(ctx.locs) && ctx.locs.includes(t)) {
+        pushUnique(t);
+        return;
+      }
+
+      // mapping ง่ายๆ สำหรับอาการพื้นฐานที่ไม่ใช่ array
+      if (t === "คัน" && ctx.itch) {
+        pushUnique("คัน");
+        return;
+      }
+      if (t === "ไม่คัน" && !ctx.itch) {
+        pushUnique("ไม่คัน");
+        return;
+      }
+      if (t === "บวม" && ctx.swell) {
+        pushUnique("บวม");
+        return;
+      }
+      if ((t === "ปวด" || t === "เจ็บ") && ctx.pain) {
+        pushUnique(t);
+        return;
+      }
+      if (t === "แสบ" && ctx.burn) {
+        pushUnique("แสบ");
+        return;
+      }
+    });
+
+    return out;
+  }
+
   function computeAllADR() {
     const ctx = getCtx();
     const results = {};
@@ -2159,7 +2224,10 @@
           const res = m.check(ctx);
           if (typeof res === "boolean") {
             ok = res;
-            if (ok) details = [m.label];
+            if (ok) {
+              const derived = deriveDetailsFromLabel(m.label, ctx);
+              details = derived.length ? derived : [m.label];
+            }
           } else if (res && typeof res === "object") {
             if (Array.isArray(res.details)) {
               details = res.details.filter(Boolean);
@@ -2169,14 +2237,21 @@
               ok = typeof res.ok === "boolean" ? res.ok : true;
             } else if (typeof res.ok === "boolean") {
               ok = res.ok;
-              if (ok) details = [m.label];
+              if (ok) {
+                const derived = deriveDetailsFromLabel(m.label, ctx);
+                details = derived.length ? derived : [m.label];
+              }
             } else {
               ok = !!res;
-              if (ok) details = [m.label];
+              if (ok) {
+                const derived = deriveDetailsFromLabel(m.label, ctx);
+                details = derived.length ? derived : [m.label];
+              }
             }
           } else if (res) {
             ok = true;
-            details = [m.label];
+            const derived = deriveDetailsFromLabel(m.label, ctx);
+            details = derived.length ? derived : [m.label];
           }
         } catch (e) {
           ok = false;
@@ -2306,7 +2381,8 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV3",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4",
     defs: ADR_DEFS
   };
 })();
+```
