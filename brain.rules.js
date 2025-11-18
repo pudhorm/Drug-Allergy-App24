@@ -24,6 +24,16 @@
     return Array.isArray(v) ? v : [v];
   }
 
+  // ดึงเฉพาะค่าจาก list ที่อยู่ใน allowed (ใช้ทำรายละเอียดข้อย่อยที่ติ๊กจริง)
+  function detailFromList(list, allowed) {
+    const src = arr(list);
+    const result = [];
+    allowed.forEach((item) => {
+      if (src.includes(item)) result.push(item);
+    });
+    return result;
+  }
+
   function hasAny(list, targets) {
     const src = arr(list);
     return src.some((x) => targets.includes(x));
@@ -404,41 +414,57 @@
           id: "shape",
           label: "รูปร่าง: ขอบหยัก/วงกลม/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ขอบหยัก", "วงกลม", "ขอบวงนูนแดงด้านในเรียบ"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "ขอบหยัก",
+              "วงกลม",
+              "ขอบวงนูนแดงด้านในเรียบ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง/แดงซีด/ซีด/สีผิวปกติ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["แดง", "แดงซีด", "ซีด", "สีผิวปกติ"])
+          check: (c) => {
+            const details = detailFromList(c.colors, [
+              "แดง",
+              "แดงซีด",
+              "ซีด",
+              "สีผิวปกติ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ: ตุ่มนูน/ปื้นนูน (x2)",
           weight: 2,
-          check: (c) => hasAny(c.shapes, ["ตุ่มนูน", "ปื้นนูน"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "itch",
           label: "คัน",
           weight: 1,
-          check: (c) => c.itch
+          check: (c) => (c.itch ? { ok: true, details: ["คัน"] } : { ok: false })
         },
         {
           id: "swelling",
           label: "บวม",
           weight: 1,
-          check: (c) => c.swell
+          check: (c) => (c.swell ? { ok: true, details: ["บวม"] } : { ok: false })
         },
         {
           id: "location",
           label:
             "ตำแหน่ง: ทั่วร่างกาย/มือ/เท้า/แขน/ขา/หน้า/รอบดวงตา/ลำคอ/ลำตัว/หลัง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, [
+          check: (c) => {
+            const details = detailFromList(c.locs, [
               "ทั่วร่างกาย",
               "มือ",
               "เท้า",
@@ -449,7 +475,9 @@
               "ลำคอ",
               "ลำตัว",
               "หลัง"
-            ])
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -469,34 +497,60 @@
           id: "shape_skin",
           label: "รูปร่างผื่น/บวม/ตึง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"]) ||
-            c.swell
+          check: (c) => {
+            const details = [];
+            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"]));
+            if (c.swell) details.push("บวม");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "resp_major",
           label: "หายใจมีเสียงวี๊ด/หอบเหนื่อย/หายใจลำบาก (x2)",
           weight: 2,
-          check: (c) => c.wheeze || c.dyspnea || c.tachypnea
+          check: (c) => {
+            const details = [];
+            if (c.wheeze) details.push("หายใจมีเสียงวี๊ด");
+            if (c.dyspnea) details.push("หายใจลำบาก");
+            if (c.tachypnea) details.push("หอบเหนื่อย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
           label: "อาการผิวหนัง: คัน/แดง/สีผิวปกติ",
           weight: 1,
-          check: (c) => c.itch || hasAny(c.colors, ["แดง", "สีผิวปกติ"])
+          check: (c) => {
+            const details = [];
+            if (c.itch) details.push("คัน");
+            details.push(...detailFromList(c.colors, ["แดง", "สีผิวปกติ"]));
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "gi",
           label: "ท้องเสีย/กลืนลำบาก/ปวดบิดท้อง/คลื่นไส้-อาเจียน",
           weight: 1,
-          check: (c) =>
-            c.diarrhea || c.dysphagia || c.colickyPain || c.nauseaVomiting
+          check: (c) => {
+            const details = [];
+            if (c.diarrhea) details.push("ท้องเสีย");
+            if (c.dysphagia) details.push("กลืนลำบาก");
+            if (c.colickyPain) details.push("ปวดบิดท้อง");
+            if (c.nauseaVomiting) details.push("คลื่นไส้-อาเจียน");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "bp_major",
           label: "BP ต่ำ หรือ BP ลด ≥40 mmHg จาก baseline",
           weight: 2,
-          check: (c) => c.hypotension || c.bpDrop40 || c.shockLike
+          check: (c) => {
+            const details = [];
+            if (c.hypotension) details.push("BP ต่ำ");
+            if (c.bpDrop40) details.push("BP ลด ≥40 mmHg จาก baseline");
+            if (c.shockLike) details.push("ภาวะช็อก");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "lab_major",
@@ -536,38 +590,63 @@
           id: "shape_thick",
           label: "รูปร่าง: นูนหนา/ขอบไม่ชัดเจน",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["นูนหนา", "ขอบไม่ชัดเจน"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["นูนหนา", "ขอบไม่ชัดเจน"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: สีผิวปกติ/แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["สีผิวปกติ", "แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["สีผิวปกติ", "แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "swelling_major",
           label: "ลักษณะสำคัญ: บวม (x2)",
           weight: 2,
-          check: (c) => c.swell
+          check: (c) =>
+            c.swell ? { ok: true, details: ["บวม"] } : { ok: false }
         },
         {
           id: "skin_tense",
           label: "ผิวหนังตึง",
           weight: 1,
-          check: (c) => c.burn || c.pain || hasAny(c.shapes, ["ตึง"])
+          check: (c) => {
+            const details = [];
+            if (c.burn || c.pain) details.push("ผิวหนังตึง/เจ็บ/แสบ");
+            if (hasAny(c.shapes, ["ตึง"])) details.push("ตึง");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "sym_others",
           label: "อาการอื่น: คัน/ไม่คัน/ปวด/แสบ",
           weight: 1,
-          check: (c) => c.itch || c.pain || c.burn
+          check: (c) => {
+            const details = [];
+            if (c.itch) details.push("คัน");
+            if (c.pain) details.push("ปวด");
+            if (c.burn) details.push("แสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่ง: ริมฝีปาก/รอบดวงตา/ลิ้น/อวัยวะเพศ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ริมฝีปาก", "รอบดวงตา", "ลิ้น", "อวัยวะเพศ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "ริมฝีปาก",
+              "รอบดวงตา",
+              "ลิ้น",
+              "อวัยวะเพศ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -587,26 +666,35 @@
           id: "shape",
           label: "รูปร่าง: ปื้นแดง/ปื้นนูน/ตุ่มนูน",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ปื้นแดง", "ปื้นนูน", "ตุ่มนูน"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ปื้นแดง", "ปื้นนูน", "ตุ่มนูน"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x2): จุดเล็กแดง",
           weight: 2,
-          check: (c) => hasAny(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "itch",
           label: "อาการเพิ่มเติมทางผิวหนัง: คัน",
           weight: 1,
-          check: (c) => c.itch
+          check: (c) =>
+            c.itch ? { ok: true, details: ["คัน"] } : { ok: false }
         },
         {
           id: "rare_sym",
@@ -629,8 +717,17 @@
           id: "location",
           label: "ตำแหน่งที่พบ: สมมาตร/ลำตัว/แขน/ใบหน้า/ลำคอ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["สมมาตร", "ลำตัว", "แขน", "หน้า", "ใบหน้า", "ลำคอ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "สมมาตร",
+              "ลำตัว",
+              "แขน",
+              "หน้า",
+              "ใบหน้า",
+              "ลำคอ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -664,43 +761,74 @@
           id: "shape",
           label: "รูปร่าง: วงกลม/วงรี",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["วงกลม", "วงรี"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["วงกลม", "วงรี"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["แดง", "ดำ", "ดำ/คล้ำ", "คล้ำ", "ม่วง/คล้ำ"])
+          check: (c) => {
+            const details = detailFromList(c.colors, [
+              "แดง",
+              "ดำ",
+              "ดำ/คล้ำ",
+              "คล้ำ",
+              "ม่วง/คล้ำ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x3): ม่วง/คล้ำ",
           weight: 3,
-          check: (c) =>
-            hasAny(c.colors, ["ม่วง", "ม่วง/คล้ำ", "ดำ/คล้ำ", "คล้ำ"])
+          check: (c) => {
+            const details = detailFromList(c.colors, [
+              "ม่วง",
+              "ม่วง/คล้ำ",
+              "ดำ/คล้ำ",
+              "คล้ำ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
           label: "ผิวหนังหลุดลอกตรงกลาง/เจ็บ/แสบ/ผิวหนังตึง",
           weight: 1,
-          check: (c) =>
-            c.peelCenter || c.pain || c.burn || hasAny(c.shapes, ["ตึง"])
+          check: (c) => {
+            const details = [];
+            if (c.peelCenter) details.push("ผิวหนังหลุดลอกตรงกลาง");
+            if (c.pain) details.push("เจ็บ");
+            if (c.burn) details.push("แสบ");
+            if (hasAny(c.shapes, ["ตึง"])) details.push("ผิวหนังตึง");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "rare",
           label: "อาการที่พบน้อย: บวม/พอง/ตุ่มน้ำเล็ก-กลาง-ใหญ่",
           weight: 1,
-          check: (c) =>
-            c.swell || c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+          check: (c) => {
+            const details = [];
+            if (c.swell) details.push("บวม");
+            if (hasAny(c.shapes, ["พอง"])) details.push("พอง");
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label:
             "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิมกับครั้งก่อน",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, [
+          check: (c) => {
+            const details = detailFromList(c.locs, [
               "ริมฝีปาก",
               "หน้า",
               "มือ",
@@ -709,7 +837,9 @@
               "ขา",
               "อวัยวะเพศ",
               "ตำแหน่งเดิมกับครั้งก่อน"
-            ])
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -721,17 +851,24 @@
           id: "systemic",
           label: "อาการระบบอื่นๆ: ไข้/คลื่นไส้อาเจียน/ปวดเมื่อยกล้ามเนื้อ",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.nauseaVomiting ||
-            c.myalgia
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.nauseaVomiting) details.push("คลื่นไส้อาเจียน");
+            if (c.myalgia) details.push("ปวดเมื่อยกล้ามเนื้อ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "border",
           label: "ขอบ: ขอบเรียบ/ขอบเขตชัดเจน",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ขอบเรียบ", "ขอบเขตชัด"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ขอบเรียบ", "ขอบเขตชัด"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -745,42 +882,65 @@
           id: "shape",
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ผื่นแดง", "ปื้นแดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง/เหลือง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง", "เหลือง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง", "เหลือง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x3): ตุ่มหนอง",
           weight: 3,
-          check: (c) => c.pustule
+          check: (c) =>
+            c.pustule ? { ok: true, details: ["ตุ่มหนอง"] } : { ok: false }
         },
         {
           id: "skin_extra",
           label: "บวม/คัน/เจ็บ",
           weight: 1,
-          check: (c) => c.swell || c.itch || c.pain
+          check: (c) => {
+            const details = [];
+            if (c.swell) details.push("บวม");
+            if (c.itch) details.push("คัน");
+            if (c.pain) details.push("เจ็บ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "scale",
           label: "ปื้น/จ้ำเลือด/แห้ง/ลอก/ขุย",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["จ้ำเลือด"]) ||
-            c.scaleDry ||
-            c.scalePeel ||
-            c.scaleCrust
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.shapes, ["จ้ำเลือด"])) details.push("จ้ำเลือด");
+            if (c.scaleDry) details.push("แห้ง");
+            if (c.scalePeel) details.push("ลอก");
+            if (c.scaleCrust) details.push("ขุย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่ง: หน้า/รักแร้/ทั่วร่างกาย/ขาหนีบ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["หน้า", "รักแร้", "ทั่วร่างกาย", "ขาหนีบ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "หน้า",
+              "รักแร้",
+              "ทั่วร่างกาย",
+              "ขาหนีบ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -792,7 +952,8 @@
           id: "fever",
           label: "ไข้ > 37.5 °C",
           weight: 1,
-          check: (c) => Number.isFinite(c.fever) && c.fever > 37.5
+          check: (c) =>
+            Number.isFinite(c.fever) && c.fever > 37.5
         },
         {
           id: "lab",
@@ -825,40 +986,68 @@
           id: "shape",
           label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["วงกลมคล้ายเป้าธนู", "เป้าธนูไม่ครบ 3 ชั้น"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "วงกลมคล้ายเป้าธนู",
+              "เป้าธนูไม่ครบ 3 ชั้น"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: ดำ/คล้ำ/เทา/แดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "เทา", "แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, [
+              "ดำ",
+              "ดำ/คล้ำ",
+              "คล้ำ",
+              "เทา",
+              "แดง"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x3): ผิวหนังหลุดลอกไม่เกิน 10% BSA",
           weight: 3,
-          check: (c) => c.peelLt10 || c.peelCenter
+          check: (c) => {
+            if (c.peelLt10 || c.peelCenter) {
+              return { ok: true, details: ["ผิวหนังหลุดลอกไม่เกิน 10% BSA"] };
+            }
+            return { ok: false };
+          }
         },
         {
           id: "skin_extra",
           label: "อาการผิวหนัง: น้ำเหลือง/พอง/ตุ่มน้ำเล็ก-กลาง-ใหญ่",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge || c.pustule
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            if (c.pustule) details.push("ตุ่มหนอง/น้ำเหลือง");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "crust",
           label: "อาการที่พบ: สะเก็ด",
           weight: 1,
-          check: (c) => c.scaleCrust
+          check: (c) =>
+            c.scaleCrust ? { ok: true, details: ["สะเก็ด"] } : { ok: false }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: ลำตัว",
           weight: 1,
-          check: (c) => hasAny(c.locs, ["ลำตัว"])
+          check: (c) => {
+            const details = detailFromList(c.locs, ["ลำตัว"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -871,18 +1060,23 @@
           id: "systemic",
           label: "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เลือดออกในทางเดินอาหาร",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.myalgia ||
-            c.nauseaVomiting ||
-            (c.p3 && flag(c.p3.gibleeding))
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
+            if (c.nauseaVomiting) details.push("คลื่นไส้อาเจียน");
+            if (c.p3 && flag(c.p3.gibleeding)) details.push("เลือดออกในทางเดินอาหาร");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "organs",
           label: "อวัยวะที่ผิดปกติ: ริมฝีปาก/รอบดวงตา/ลำตัว/แขน/ขา/หน้า/มือ/เท้า",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, [
+          check: (c) => {
+            const details = detailFromList(c.locs, [
               "ริมฝีปาก",
               "รอบดวงตา",
               "ลำตัว",
@@ -891,13 +1085,18 @@
               "หน้า",
               "มือ",
               "เท้า"
-            ])
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "mucosal",
           label: "จำนวนผื่นบริเวณเยื่อบุ > 1 (x2)",
           weight: 2,
-          check: (c) => c.mucosalCountGt1
+          check: (c) =>
+            c.mucosalCountGt1
+              ? { ok: true, details: ["จำนวนผื่นบริเวณเยื่อบุ > 1 จุด"] }
+              : { ok: false }
         }
       ]
     },
@@ -911,46 +1110,65 @@
           id: "shape",
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง/วงกลมคล้ายเป้าธนู",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง", "วงกลมคล้ายเป้าธนู"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "ผื่นแดง",
+              "ปื้นแดง",
+              "วงกลมคล้ายเป้าธนู"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["แดง", "ดำ", "ดำ/คล้ำ", "คล้ำ"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง", "ดำ", "ดำ/คล้ำ", "คล้ำ"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x3): ผิวหนังหลุดลอกเกิน 30% BSA",
           weight: 3,
-          check: (c) => c.peelGt30
+          check: (c) =>
+            c.peelGt30
+              ? { ok: true, details: ["ผิวหนังหลุดลอกเกิน 30% BSA"] }
+              : { ok: false }
         },
         {
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: ตุ่มน้ำขนาดใหญ่/น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) =>
-            c.bullaeLarge || c.scaleCrust || c.pustule
+          check: (c) => {
+            const details = [];
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            if (c.pustule) details.push("น้ำเหลือง/ตุ่มหนอง");
+            if (c.scaleCrust) details.push("สะเก็ด");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "rare",
           label: "อาการที่พบน้อย: ซีด/โลหิตจาง/เลือดออกในทางเดินอาหาร/กลืนลำบาก",
           weight: 1,
-          check: (c) =>
-            (c.p1 && flag(c.p1.pale)) ||
-            (c.p3 && flag(c.p3.anemia)) ||
-            (c.p3 && flag(c.p3.gibleeding)) ||
-            c.dysphagia
+          check: (c) => {
+            const details = [];
+            if (c.p1 && flag(c.p1.pale)) details.push("ซีด/โลหิตจาง");
+            if (c.p3 && flag(c.p3.anemia)) details.push("โลหิตจาง");
+            if (c.p3 && flag(c.p3.gibleeding)) details.push("เลือดออกในทางเดินอาหาร");
+            if (c.dysphagia) details.push("กลืนลำบาก");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label:
             "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/หน้า/มือ/เท้า/ศีรษะ/ทั่วร่างกาย/ริมฝีปาก",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, [
+          check: (c) => {
+            const details = detailFromList(c.locs, [
               "ลำตัว",
               "แขน",
               "ขา",
@@ -960,7 +1178,9 @@
               "ศีรษะ",
               "ทั่วร่างกาย",
               "ริมฝีปาก"
-            ])
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -973,14 +1193,19 @@
           label:
             "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เจ็บคอ/ปวดข้อ/ท้องเสีย/เยื่อบุตาอักเสบ",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.myalgia ||
-            c.nauseaVomiting ||
-            c.soreThroat ||
-            c.arthralgia ||
-            c.diarrhea ||
-            c.conjunctivitis
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
+            if (c.nauseaVomiting) details.push("คลื่นไส้อาเจียน");
+            if (c.soreThroat) details.push("เจ็บคอ");
+            if (c.arthralgia) details.push("ปวดข้อ");
+            if (c.diarrhea) details.push("ท้องเสีย");
+            if (c.conjunctivitis) details.push("เยื่อบุตาอักเสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "organ",
@@ -1040,13 +1265,19 @@
           id: "shape",
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["ผื่นแดง", "ปื้นแดง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ผื่นแดง", "ปื้นแดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "blood_major",
@@ -1069,15 +1300,28 @@
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: ตุ่มน้ำเล็ก-กลาง-ใหญ่/จ้ำเลือด",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge || c.pustule
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            if (c.pustule) details.push("ตุ่มหนอง/จ้ำเลือด");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: หน้า/ลำตัว/แขน/ขา",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["หน้า", "ลำตัว", "แขน", "ขา"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "หน้า",
+              "ลำตัว",
+              "แขน",
+              "ขา"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "systemic",
@@ -1178,34 +1422,53 @@
           id: "shape",
           label: "รูปร่าง: ตุ่มนูน/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ตุ่มนูน", "ขอบวงนูนแดงด้านในเรียบ"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "ตุ่มนูน",
+              "ขอบวงนูนแดงด้านในเรียบ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง/แดงซีด",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง", "แดงซีด"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง", "แดงซีด"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "typical",
           label: "ลักษณะสำคัญ (x3): วงกลม 3 ชั้น (เป้าธนู)",
           weight: 3,
-          check: (c) =>
-            hasAny(c.shapes, ["วงกลม 3 ชั้น", "เป้าธนู 3 ชั้น"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "วงกลม 3 ชั้น",
+              "เป้าธนู 3 ชั้น"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: พอง/ตุ่มน้ำเล็ก-กลาง",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall || c.bullaeMed
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (hasAny(c.shapes, ["พอง"])) details.push("พอง");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "crust",
           label: "อาการที่พบน้อย: สะเก็ด",
           weight: 1,
-          check: (c) => c.scaleCrust
+          check: (c) =>
+            c.scaleCrust ? { ok: true, details: ["สะเก็ด"] } : { ok: false }
         },
         {
           id: "onset",
@@ -1218,26 +1481,38 @@
           id: "mucosal",
           label: "ตำแหน่งที่พบ 1: ช่องปาก/จมูก/ทวาร/อวัยวะเพศ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ช่องปาก", "จมูก", "ทวาร", "อวัยวะเพศ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "ช่องปาก",
+              "จมูก",
+              "ทวาร",
+              "อวัยวะเพศ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "systemic",
           label: "อาการระบบอื่นๆ: ไข้/อ่อนเพลีย/ปวดกล้ามเนื้อ/เจ็บคอ/ปวดข้อ",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.fatigue ||
-            c.myalgia ||
-            c.soreThroat ||
-            c.arthralgia
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.fatigue) details.push("อ่อนเพลีย");
+            if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
+            if (c.soreThroat) details.push("เจ็บคอ");
+            if (c.arthralgia) details.push("ปวดข้อ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location2",
           label: "ตำแหน่งที่พบ 2: มือ/เท้า/แขน/ขา/หน้า/ลำตัว/หลัง/ลำคอ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, [
+          check: (c) => {
+            const details = detailFromList(c.locs, [
               "มือ",
               "เท้า",
               "แขน",
@@ -1246,7 +1521,9 @@
               "ลำตัว",
               "หลัง",
               "ลำคอ"
-            ])
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -1260,47 +1537,74 @@
           id: "shape",
           label: "รูปร่าง: ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ขอบเขตชัด", "ปื้นแดง", "จุดแดงเล็ก", "จุดเล็กแดง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "ขอบเขตชัด",
+              "ปื้นแดง",
+              "จุดแดงเล็ก",
+              "จุดเล็กแดง"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: ดำ/คล้ำ/แดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "burn_major",
           label: "ลักษณะสำคัญ (x2): แดงไหม้",
           weight: 2,
-          check: (c) =>
-            hasAny(c.colors, ["แดงไหม้"]) || c.burn
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.colors, ["แดงไหม้"])) details.push("แดงไหม้");
+            if (c.burn) details.push("แสบ/ไหม้แดด");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) => c.scaleCrust
+          check: (c) =>
+            c.scaleCrust
+              ? { ok: true, details: ["สะเก็ด/น้ำเหลืองแห้ง"] }
+              : { ok: false }
         },
         {
           id: "may",
           label: "อาการที่อาจพบ: ตุ่มน้ำเล็ก-กลาง-ใหญ่/ลอก/ขุย/คัน",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall ||
-            c.bullaeMed ||
-            c.bullaeLarge ||
-            c.scalePeel ||
-            c.scaleDry ||
-            c.itch
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            if (c.scalePeel) details.push("ลอก");
+            if (c.scaleDry) details.push("ขุย/แห้ง");
+            if (c.itch) details.push("คัน");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: หน้า/หน้าอก/มือ/แขน/ขา",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["หน้า", "หน้าอก", "มือ", "แขน", "ขา"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "หน้า",
+              "หน้าอก",
+              "มือ",
+              "แขน",
+              "ขา"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -1313,7 +1617,8 @@
           id: "burn_pain_major",
           label: "อาการเด่น (x2): แสบ",
           weight: 2,
-          check: (c) => c.burn
+          check: (c) =>
+            c.burn ? { ok: true, details: ["แสบ"] } : { ok: false }
         }
       ]
     },
@@ -1327,38 +1632,54 @@
           id: "shape",
           label: "รูปร่าง: ตึง",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["ตึง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ตึง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "dry_major",
           label: "ลักษณะสำคัญ (x3): แห้ง",
           weight: 3,
-          check: (c) => c.scaleDry
+          check: (c) =>
+            c.scaleDry ? { ok: true, details: ["แห้ง"] } : { ok: false }
         },
         {
           id: "scale_major",
           label: "อาการเพิ่มเติมทางผิวหนัง (x3): ขุย",
           weight: 3,
-          check: (c) => c.scaleCrust
+          check: (c) =>
+            c.scaleCrust ? { ok: true, details: ["ขุย"] } : { ok: false }
         },
         {
           id: "itch",
           label: "อาการอื่นๆ: คัน",
           weight: 1,
-          check: (c) => c.itch
+          check: (c) =>
+            c.itch ? { ok: true, details: ["คัน"] } : { ok: false }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: ทั่วร่างกาย/มือ/เท้า/ศีรษะ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ทั่วร่างกาย", "มือ", "เท้า", "ศีรษะ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "ทั่วร่างกาย",
+              "มือ",
+              "เท้า",
+              "ศีรษะ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -1404,8 +1725,12 @@
           id: "highlight",
           label: "ลักษณะเด่น (x3): มันเงา/ลอก",
           weight: 3,
-          check: (c) =>
-            hasAny(c.colors, ["มันเงา"]) || c.scalePeel
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.colors, ["มันเงา"])) details.push("มันเงา");
+            if (c.scalePeel) details.push("ลอก");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -1419,40 +1744,61 @@
           id: "shape",
           label: "รูปร่าง: ตุ่มนูน/ปื้นแดง",
           weight: 1,
-          check: (c) => hasAny(c.shapes, ["ตุ่มนูน", "ปื้นแดง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นแดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "itch_major",
           label: "ลักษณะสำคัญ (x2): คัน",
           weight: 2,
-          check: (c) => c.itch
+          check: (c) =>
+            c.itch ? { ok: true, details: ["คัน"] } : { ok: false }
         },
         {
           id: "thick",
           label: "อาการเพิ่มเติมทางผิวหนัง: นูนหนา/ผื่นแดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นแดง"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นแดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "exudate",
           label: "อาการที่พบอื่นๆ: จุดเล็กแดง/น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["จุดเล็กแดง"]) || c.scaleCrust
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.shapes, ["จุดเล็กแดง"])) details.push("จุดเล็กแดง");
+            if (c.scaleCrust) details.push("น้ำเหลือง/สะเก็ด");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/หน้า/ลำคอ",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ลำตัว", "แขน", "ขา", "หน้า", "ลำคอ"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "ลำตัว",
+              "แขน",
+              "ขา",
+              "หน้า",
+              "ลำคอ"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -1465,20 +1811,34 @@
           id: "dry_scale",
           label: "อาการที่อาจพบ (x2): ขุย/แห้ง/ลอก",
           weight: 2,
-          check: (c) => c.scaleDry || c.scalePeel || c.scaleCrust
+          check: (c) => {
+            const details = [];
+            if (c.scaleDry) details.push("แห้ง");
+            if (c.scalePeel) details.push("ลอก");
+            if (c.scaleCrust) details.push("ขุย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "distribution",
           label: "การกระจายตัว: สมมาตร",
           weight: 1,
-          check: (c) => hasAny(c.locs, ["สมมาตร"])
+          check: (c) => {
+            const details = detailFromList(c.locs, ["สมมาตร"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "vesicles",
           label: "ตุ่มน้ำ: เล็ก/กลาง/ใหญ่",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall || c.bullaeMed || c.bullaeLarge
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -1492,40 +1852,62 @@
           id: "vesicle",
           label: "รูปร่าง: ตุ่มน้ำขนาดเล็ก/พอง/ตึง",
           weight: 1,
-          check: (c) =>
-            c.bullaeSmall ||
-            hasAny(c.shapes, ["พอง", "ตึง"])
+          check: (c) => {
+            const details = [];
+            if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
+            if (hasAny(c.shapes, ["พอง"])) details.push("พอง");
+            if (hasAny(c.shapes, ["ตึง"])) details.push("ตึง");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
           label: "สี: แดง",
           weight: 1,
-          check: (c) => hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["แดง"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "vesicle_major",
           label: "ลักษณะสำคัญ (x2): ตุ่มน้ำขนาดกลาง/ใหญ่",
           weight: 2,
-          check: (c) => c.bullaeMed || c.bullaeLarge
+          check: (c) => {
+            const details = [];
+            if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
+            if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "pain_burn",
           label: "อาการเพิ่มเติมทางผิวหนัง: เจ็บ/แสบ",
           weight: 1,
-          check: (c) => c.pain || c.burn
+          check: (c) => {
+            const details = [];
+            if (c.pain) details.push("เจ็บ");
+            if (c.burn) details.push("แสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "inside_clear",
           label: "สีด้านใน (x3): ใส",
           weight: 3,
-          check: (c) => hasAny(c.colors, ["ใส"])
+          check: (c) => {
+            const details = detailFromList(c.colors, ["ใส"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่งที่พบ: ลำตัว/แขน/ขา/เท้า",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ลำตัว", "แขน", "ขา", "เท้า"])
+          check: (c) => {
+            const details = detailFromList(c.locs, ["ลำตัว", "แขน", "ขา", "เท้า"]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "onset",
@@ -1546,11 +1928,14 @@
           id: "skin",
           label: "อาการผิวหนัง: ตุ่มนูน/แดง/บวม/คัน",
           weight: 1,
-          check: (c) =>
-            c.itch ||
-            c.swell ||
-            hasAny(c.colors, ["แดง"]) ||
-            hasAny(c.shapes, ["ตุ่มนูน"])
+          check: (c) => {
+            const details = [];
+            if (c.itch) details.push("คัน");
+            if (c.swell) details.push("บวม");
+            details.push(...detailFromList(c.colors, ["แดง"]));
+            details.push(...detailFromList(c.shapes, ["ตุ่มนูน"]));
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "fever_major",
@@ -1618,14 +2003,28 @@
           id: "joint_major",
           label: "อาการระบบอื่นๆ (x2): ปวดข้อ/ข้ออักเสบ",
           weight: 2,
-          check: (c) => c.arthralgia || c.arthritis
+          check: (c) => {
+            const details = [];
+            if (c.arthralgia) details.push("ปวดข้อ");
+            if (c.arthritis) details.push("ข้ออักเสบ");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "location",
           label: "ตำแหน่งที่เกิด: รอบดวงตา/มือ/เท้า/ลำตัว/แขน/ขา",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["รอบดวงตา", "มือ", "เท้า", "ลำตัว", "แขน", "ขา"])
+          check: (c) => {
+            const details = detailFromList(c.locs, [
+              "รอบดวงตา",
+              "มือ",
+              "เท้า",
+              "ลำตัว",
+              "แขน",
+              "ขา"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -1639,9 +2038,12 @@
           id: "skin",
           label: "อาการผิวหนัง: ตุ่มนูน/ผื่นแดง/แดง",
           weight: 1,
-          check: (c) =>
-            hasAny(c.shapes, ["ตุ่มนูน", "ผื่นแดง"]) ||
-            hasAny(c.colors, ["แดง"])
+          check: (c) => {
+            const details = [];
+            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ผื่นแดง"]));
+            details.push(...detailFromList(c.colors, ["แดง"]));
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "systemic",
@@ -1738,8 +2140,12 @@
           id: "highlight",
           label: "อาการเด่น (x2): จ้ำเลือด/ขา",
           weight: 2,
-          check: (c) =>
-            hasAny(c.shapes, ["จ้ำเลือด"]) || hasAny(c.locs, ["ขา"])
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.shapes, ["จ้ำเลือด"])) details.push("จ้ำเลือด");
+            if (hasAny(c.locs, ["ขา"])) details.push("ขา");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -1768,6 +2174,8 @@
           weight: 3,
           check: (c) =>
             c.urine && flag(c.urine.darkUrine)
+              ? { ok: true, details: ["ปัสสาวะสีชา/สีดำ"] }
+              : { ok: false }
         },
         {
           id: "organ",
@@ -1775,6 +2183,8 @@
           weight: 1,
           check: (c) =>
             c.p3 && flag(c.p3.renalFailure)
+              ? { ok: true, details: ["ไตวาย"] }
+              : { ok: false }
         },
         {
           id: "lab1",
@@ -1805,6 +2215,8 @@
           weight: 3,
           check: (c) =>
             hasLabToken(c, "hb_drop_ge2_3")
+              ? { ok: true, details: ["Hb ลดลง ≥ 2–3 g/dL ภายใน 24–48 ชม."] }
+              : { ok: false }
         },
         {
           id: "lab3",
@@ -1812,6 +2224,8 @@
           weight: 1,
           check: (c) =>
             hasLabToken(c, "ldh_high")
+              ? { ok: true, details: ["LDH สูง (2–10X ULN)"] }
+              : { ok: false }
         },
         {
           id: "bp",
@@ -1882,7 +2296,10 @@
           label:
             "อาการที่ผิดปกติ (x3): จุดเลือดออก/ฟกช้ำ/เลือดกำเดา/เหงือกเลือดออก",
           weight: 3,
-          check: (c) => c.p3 && flag(c.p3.bleedingSigns)
+          check: (c) =>
+            c.p3 && flag(c.p3.bleedingSigns)
+              ? { ok: true, details: ["จุดเลือดออก/ฟกช้ำ/เลือดออกง่าย"] }
+              : { ok: false }
         },
         {
           id: "hr_high",
@@ -1970,7 +2387,7 @@
       ]
     },
 
-    // 19) Neutropenia (ใช้ตามเวอร์ชันเดิมที่ตรงสเปก) — 4 ข้อหลัก
+    // 19) Neutropenia — 4 ข้อหลัก
     {
       id: "neutropenia",
       label: "Neutropenia",
@@ -1979,14 +2396,15 @@
           id: "sym",
           label: "อาการ: หนาวสั่น/เจ็บคอ/แผลในปาก",
           weight: 1,
-          check: (c) =>
-            (c.p2 &&
-              c.p2.other &&
-              flag(c.p2.other.chills)) ||
-            c.soreThroat ||
-            (c.p2 &&
-              c.p2.other &&
-              flag(c.p2.other.mouthUlcer))
+          check: (c) => {
+            const details = [];
+            if (c.p2 && c.p2.other && flag(c.p2.other.chills)) details.push("หนาวสั่น");
+            if (c.soreThroat) details.push("เจ็บคอ");
+            if (c.p2 && c.p2.other && flag(c.p2.other.mouthUlcer)) {
+              details.push("แผลในปาก");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "fever",
@@ -2042,15 +2460,24 @@
           id: "bleed_skin_major",
           label: "อาการ (x2): จุดเลือดออก/ปื้น-จ้ำเลือด",
           weight: 2,
-          check: (c) =>
-            hasAny(c.shapes, ["จุดเลือดออก", "ปื้น/จ้ำเลือด", "จ้ำเลือด"])
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "จุดเลือดออก",
+              "ปื้น/จ้ำเลือด",
+              "จ้ำเลือด"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "bleed_sys",
           label:
             "อาการระบบอื่นๆ: เหงือกเลือดออก/เลือดออกในทางเดินอาหาร/ปัสสาวะเลือดออก",
           weight: 1,
-          check: (c) => c.p3 && flag(c.p3.bleedingGI)
+          check: (c) =>
+            c.p3 && flag(c.p3.bleedingGI)
+              ? { ok: true, details: ["เลือดออกในทางเดินอาหาร/อวัยวะอื่น"] }
+              : { ok: false }
         },
         {
           id: "plt_major",
@@ -2084,24 +2511,37 @@
           id: "sym",
           label: "อาการ: ไข้/ปวดข้อ/อ่อนเพลีย",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            c.arthralgia ||
-            c.fatigue
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (c.arthralgia) details.push("ปวดข้อ");
+            if (c.fatigue) details.push("อ่อนเพลีย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "urine_sym",
           label: "อาการระบบอื่นๆ: ปัสสาวะออกน้อย/ปัสสาวะขุ่น",
           weight: 1,
-          check: (c) =>
-            c.oliguria || (c.urine && flag(c.urine.turbid))
+          check: (c) => {
+            const details = [];
+            if (c.oliguria) details.push("ปัสสาวะออกน้อย");
+            if (c.urine && flag(c.urine.turbid)) details.push("ปัสสาวะขุ่น");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "edema",
           label: "อวัยวะที่ผิดปกติ: ขาบวม/บวม",
           weight: 1,
-          check: (c) =>
-            hasAny(c.locs, ["ขา"]) || c.swell
+          check: (c) => {
+            const details = [];
+            if (hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
+            if (c.swell) details.push("บวม");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "renal_major",
@@ -2306,7 +2746,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV3",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4",
     defs: ADR_DEFS
   };
 })();
