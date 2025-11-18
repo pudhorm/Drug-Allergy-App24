@@ -396,10 +396,6 @@
 
   // ---------------------------------------------------------------------------
   // ADR Definitions — 21 ชนิด
-  // ใช้ Lab จากหน้า 3 ผ่าน token เช่น "eos_gt5", "cr_aki", "protein_pos" เท่านั้น
-  // และให้ m.check(c) สามารถคืน:
-  //   - boolean          → ใช้ label ของ major
-  //   - {ok, details[]}  → ok=true/false, details = รายการข้อความย่อยสำหรับแสดงผล
   // ---------------------------------------------------------------------------
   const ADR_DEFS = [
     // 1) Urticaria
@@ -617,11 +613,20 @@
         },
         {
           id: "rare_sym",
-          label: "ไข้ หรือ Eosinophil > 5%",
+          label: "ไข้ Temp > 37.5 °C / Eosinophil > 5%",
           weight: 1,
-          check: (c) =>
-            (Number.isFinite(c.fever) && c.fever > 37.5) ||
-            hasLabToken(c, "eos_gt5")
+          check: (c) => {
+            const details = [];
+            if (Number.isFinite(c.fever) && c.fever > 37.5) {
+              details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
+            }
+            if (hasLabToken(c, "eos_gt5")) {
+              let txt = "Eosinophil > 5%";
+              if (Number.isFinite(c.eosPct)) txt += ` (${c.eosPct}%)`;
+              details.push(txt);
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "distribution",
@@ -929,7 +934,6 @@
         },
         {
           id: "organ",
-          // เพิ่ม protein+ และ SpO2 <94% ตามเกณฑ์ TEN
           label: "ไตวาย/ตับอักเสบ/ปอดอักเสบ (ใช้ Lab จากหน้า 3)",
           weight: 1,
           check: (c) => {
@@ -982,10 +986,20 @@
         },
         {
           id: "blood_major",
-          label: "Eosinophil ≥ 10% หรือ atypical lymphocyte (x3)",
+          label: "กลุ่มเม็ดเลือด (x3)",
           weight: 3,
-          check: (c) =>
-            hasLabToken(c, ["eos_ge10", "atypical_lymph"])
+          check: (c) => {
+            const details = [];
+            if (hasLabToken(c, "eos_ge10")) {
+              let txt = "Eosinophil ≥ 10%";
+              if (Number.isFinite(c.eosPct)) txt += ` (${c.eosPct}%)`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "atypical_lymph")) {
+              details.push("Atypical lymphocyte");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
@@ -1016,9 +1030,7 @@
         },
         {
           id: "organ_lab",
-          // แยก sub-item: ALT/AST, Cr, protein+, SpO2, Lung function, EKG, Troponin
-          label:
-            "Lab organ involvement",
+          label: "Lab organ involvement",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1681,18 +1693,15 @@
         },
         {
           id: "organ",
-          // แยกข้อความตามสิ่งที่ติ้กจริง: ปอดอักเสบ vs Lung function abnormal
           label: "อวัยวะที่ผิดปกติ: ปอดอักเสบ / Lung function (Abnormal Sound/CXR)",
           weight: 1,
           check: (c) => {
             const details = [];
 
-            // 3.1 ปอดอักเสบ — ถ้าใน page3 มี field แยกให้ใช้ตรงนี้
             if (c.p3 && flag(c.p3.lungPneumonia)) {
               details.push("ปอดอักเสบ");
             }
 
-            // 3.2 Lung function (Abnormal Sound/CXR) — ใช้ token แบบเดียวกับ DRESS
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
@@ -1978,7 +1987,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-17-21ADR-LABTOKENS-FIX-LUNGFUNC-SPO2",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS",
     defs: ADR_DEFS
   };
 })();
