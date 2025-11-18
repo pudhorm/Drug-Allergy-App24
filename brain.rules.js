@@ -1,14 +1,9 @@
-```js
 // ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
 // โหมด C: "แมตช์ตรงตัว" ระหว่างสิ่งที่ผู้ใช้ติ๊กในหน้า 1–3 กับเกณฑ์ของแต่ละ ADR
 // - คิดเฉพาะข้อที่ติ๊กจริง
 // - แต่ละ ADR แยกเกณฑ์กัน ไม่เอามาปนกัน
 // - 1 ข้อใหญ่ = 1 แต้ม (ถ้ามี weight x2/x3/x4 ก็คูณ)
 // - แปลงเป็น % ภายในแต่ละ ADR เอง
-//
-// เวอร์ชันนี้ปรับ "รายละเอียดข้อที่เข้าเกณฑ์" ให้แสดงเฉพาะตัวเลือกที่ติ๊กจริง
-// เช่น label เดิม: "รูปร่าง: วงกลม/วงรี" → ถ้าติ๊กวงกลมอย่างเดียวจะแสดงเพียง "วงกลม"
-// ใช้ได้กับ label ทุกอันที่เขียนเป็นรูปแบบ "หัวข้อ: ตัวเลือก1/ตัวเลือก2/..."
 
 (function () {
   // ---------------------------------------------------------------------------
@@ -1975,7 +1970,7 @@
       ]
     },
 
-    // 19) Neutropenia (ใช้ตามเวอร์ชันเดิมที่ตรงสเปก) — 4 ข้อหลัก
+    // 19) Neutropenia — 4 ข้อหลัก
     {
       id: "neutropenia",
       label: "Neutropenia",
@@ -2143,66 +2138,6 @@
   // ---------------------------------------------------------------------------
   // Core scoring
   // ---------------------------------------------------------------------------
-
-  // Helper ใหม่: แตก label แบบ "หัวข้อ: ตัวเลือก1/ตัวเลือก2/..." แล้วเลือกเฉพาะตัวเลือกที่ "มีจริง" ใน context
-  function deriveDetailsFromLabel(label, ctx) {
-    if (!label) return [];
-    const idx = label.indexOf(":");
-    let body = idx >= 0 ? label.slice(idx + 1) : label;
-    if (!body) return [];
-
-    const rawTokens = body.split(/[\/,]/);
-    const out = [];
-
-    const pushUnique = (txt) => {
-      if (!txt) return;
-      if (!out.includes(txt)) out.push(txt);
-    };
-
-    rawTokens.forEach((part) => {
-      const t = part.trim();
-      if (!t) return;
-
-      // เช็คใน shapes / colors / locs ก่อน (ใช้กับรูปร่าง/สี/ตำแหน่ง)
-      if (Array.isArray(ctx.shapes) && ctx.shapes.includes(t)) {
-        pushUnique(t);
-        return;
-      }
-      if (Array.isArray(ctx.colors) && ctx.colors.includes(t)) {
-        pushUnique(t);
-        return;
-      }
-      if (Array.isArray(ctx.locs) && ctx.locs.includes(t)) {
-        pushUnique(t);
-        return;
-      }
-
-      // mapping ง่ายๆ สำหรับอาการพื้นฐานที่ไม่ใช่ array
-      if (t === "คัน" && ctx.itch) {
-        pushUnique("คัน");
-        return;
-      }
-      if (t === "ไม่คัน" && !ctx.itch) {
-        pushUnique("ไม่คัน");
-        return;
-      }
-      if (t === "บวม" && ctx.swell) {
-        pushUnique("บวม");
-        return;
-      }
-      if ((t === "ปวด" || t === "เจ็บ") && ctx.pain) {
-        pushUnique(t);
-        return;
-      }
-      if (t === "แสบ" && ctx.burn) {
-        pushUnique("แสบ");
-        return;
-      }
-    });
-
-    return out;
-  }
-
   function computeAllADR() {
     const ctx = getCtx();
     const results = {};
@@ -2224,10 +2159,7 @@
           const res = m.check(ctx);
           if (typeof res === "boolean") {
             ok = res;
-            if (ok) {
-              const derived = deriveDetailsFromLabel(m.label, ctx);
-              details = derived.length ? derived : [m.label];
-            }
+            if (ok) details = []; // จะไปสร้างข้อความ generic ทีหลัง
           } else if (res && typeof res === "object") {
             if (Array.isArray(res.details)) {
               details = res.details.filter(Boolean);
@@ -2237,21 +2169,14 @@
               ok = typeof res.ok === "boolean" ? res.ok : true;
             } else if (typeof res.ok === "boolean") {
               ok = res.ok;
-              if (ok) {
-                const derived = deriveDetailsFromLabel(m.label, ctx);
-                details = derived.length ? derived : [m.label];
-              }
+              details = [];
             } else {
               ok = !!res;
-              if (ok) {
-                const derived = deriveDetailsFromLabel(m.label, ctx);
-                details = derived.length ? derived : [m.label];
-              }
+              details = [];
             }
           } else if (res) {
             ok = true;
-            const derived = deriveDetailsFromLabel(m.label, ctx);
-            details = derived.length ? derived : [m.label];
+            details = [];
           }
         } catch (e) {
           ok = false;
@@ -2260,8 +2185,20 @@
 
         if (ok) {
           raw += w;
-          if (!details || !details.length) details = [m.label];
-          matchedDetails.push(...details);
+
+          // *** แก้จุดสำคัญ: ถ้าไม่มี details จาก check()
+          // ให้สร้างข้อความ generic แทน ไม่เอา label ที่มีข้อย่อยทุกอันมาโชว์ ***
+          let finalDetails = Array.isArray(details) ? details.filter(Boolean) : [];
+          if (!finalDetails.length) {
+            let generic = m.label || "";
+            const idxColon = generic.indexOf(":");
+            if (idxColon !== -1) generic = generic.slice(0, idxColon);
+            generic = generic.trim();
+            if (!generic) generic = def.label || "เข้าเกณฑ์";
+            finalDetails = [`${generic}: เข้าเกณฑ์ตามข้อมูลที่กรอก`];
+          }
+
+          matchedDetails.push(...finalDetails);
         }
       });
 
@@ -2385,4 +2322,3 @@
     defs: ADR_DEFS
   };
 })();
-```
