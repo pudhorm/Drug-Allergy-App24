@@ -283,7 +283,6 @@
     const immuno = p3.immuno || p3.immunology || {};
     const chem = p3.chem || {};
 
-    // ค่า numeric (ใช้แสดงผลต่อท้ายข้อความ)
     const wbc = nField(cbc.wbc);
     const neutroPct = nField(cbc.neutrophil || cbc.neut);
     const eosPct = nField(cbc.eosinophil || cbc.eos);
@@ -315,7 +314,6 @@
     const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
     const troponin = nField(cardioLab.troponin);
 
-    // token จากหน้า 3: ใช้เป็นหลักในการประเมิน Lab
     const labTokens = Array.isArray(p3.__tokens) ? p3.__tokens.slice() : [];
     const labTokenSet = new Set(labTokens);
 
@@ -364,7 +362,6 @@
       cornealUlcer,
       fever,
       fatigue,
-      // lab numeric (ใช้ประกอบข้อความ)
       wbc,
       neutroPct,
       eosPct,
@@ -770,10 +767,22 @@
         },
         {
           id: "lab",
-          label: "WBC > 11,000 หรือ Neutrophil > 75%",
+          label: "ผลตรวจ Lab: WBC > 11,000 / Neutrophil > 75%",
           weight: 1,
-          check: (c) =>
-            hasLabToken(c, ["wbc_gt11000", "neut_gt75"])
+          check: (c) => {
+            const details = [];
+            if (hasLabToken(c, "wbc_gt11000")) {
+              let txt = "White Blood Cell (WBC) > 11,000 cells/cu.mm";
+              if (Number.isFinite(c.wbc)) txt += ` (WBC ${c.wbc})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "neut_gt75")) {
+              let txt = "Neutrophil > 75%";
+              if (Number.isFinite(c.neutroPct)) txt += ` (${c.neutroPct}%)`;
+              details.push(txt);
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         }
       ]
     },
@@ -887,12 +896,11 @@
             c.bullaeLarge || c.scaleCrust || c.pustule
         },
         {
-          id: "anemia_bp",
+          id: "gi_bleed",
           label: "เลือดออกในทางเดินอาหาร/กลืนลำบาก",
           weight: 1,
           check: (c) =>
-            c.dysphagia ||
-            c.colickyPain
+            c.dysphagia || c.colickyPain
         },
         {
           id: "location",
@@ -934,33 +942,39 @@
         },
         {
           id: "organ",
-          label: "ไตวาย/ตับอักเสบ/ปอดอักเสบ (ใช้ Lab จากหน้า 3)",
+          label: "Lab & organ involvement (ไต/ตับ/ปอด)",
           weight: 1,
           check: (c) => {
             const details = [];
+
             if (hasLabToken(c, "cr_aki")) {
-              let txt = "Serum creatinine (Cr) เพิ่มขึ้นตามเกณฑ์ AKI";
+              let txt =
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
               if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
               details.push(txt);
             }
+
             if (hasLabToken(c, "protein_pos")) {
               let txt = "protein+ ในปัสสาวะ";
               if (c.protU) txt += ` (${c.protU})`;
               details.push(txt);
             }
+
             if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
               let txt = "SpO₂ < 94%";
               if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
               details.push(txt);
             }
+
             if (hasLabToken(c, "alt_ast_ge2x")) {
-              let txt = "ALT/AST ≥2x ULN หรือ ≥ 40 U/L";
+              let txt = "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L";
               const parts = [];
               if (Number.isFinite(c.ast)) parts.push(`AST ${c.ast}`);
               if (Number.isFinite(c.alt)) parts.push(`ALT ${c.alt}`);
               if (parts.length) txt += ` (${parts.join(", ")})`;
               details.push(txt);
             }
+
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -1036,7 +1050,7 @@
             const details = [];
 
             if (hasLabToken(c, "alt_ast_ge2x")) {
-              let txt = "ALT/AST ≥2x ULN หรือ ≥ 40 U/L";
+              let txt = "ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L";
               const parts = [];
               if (Number.isFinite(c.ast)) parts.push(`AST ${c.ast}`);
               if (Number.isFinite(c.alt)) parts.push(`ALT ${c.alt}`);
@@ -1046,7 +1060,7 @@
 
             if (hasLabToken(c, "cr_aki")) {
               let txt =
-                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5x ภายใน 7 วัน";
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
               if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
               details.push(txt);
             }
@@ -1385,19 +1399,22 @@
         },
         {
           id: "organ",
-          label: "ต่อมน้ำเหลืองโต",
+          label: "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ไตอักเสบ",
           weight: 1,
           check: (c) => {
             const details = [];
             if (c.p3 && flag(c.p3.lymphNodeEnlarge)) {
               details.push("ต่อมน้ำเหลืองโต");
             }
+            if (c.p3 && flag(c.p3.nephritis)) {
+              details.push("ไตอักเสบ");
+            }
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "lab",
-          label: "protein+ / C3<90, C4<10",
+          label: "protein+ / C3<90 mg/dL, C4<10 mg/dL",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1407,7 +1424,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3/C4 ต่ำ";
+              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
@@ -1419,7 +1436,7 @@
         },
         {
           id: "rbc_lab",
-          label: "RBC 5–10/HPF",
+          label: "RBC 5–10/HPF ในปัสสาวะ",
           weight: 1,
           check: (c) => {
             if (hasLabToken(c, "rbc_5_10_hpf")) {
@@ -1464,22 +1481,18 @@
         },
         {
           id: "organ",
-          label: "ไตเกี่ยวข้องจาก Lab (Cr/Protein/RBC)",
+          label: "อวัยวะที่ผิดปกติ: ไตอักเสบ/ไตวาย/ต่อมน้ำเหลืองโต",
           weight: 1,
           check: (c) => {
             const details = [];
-            if (hasLabToken(c, "cr_aki")) {
-              let txt = "Cr เพิ่มขึ้นตามเกณฑ์ AKI";
-              if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
-              details.push(txt);
+            if (c.p3 && flag(c.p3.nephritis)) {
+              details.push("ไตอักเสบ");
             }
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
+            if (c.p3 && flag(c.p3.renalFailure)) {
+              details.push("ไตวาย");
             }
-            if (hasLabToken(c, "rbc_5_10_hpf")) {
-              details.push("RBC 5–10/HPF ในปัสสาวะ");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) {
+              details.push("ต่อมน้ำเหลืองโต");
             }
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1493,7 +1506,7 @@
         },
         {
           id: "lab_major",
-          label: "protein+ / C3, C4 ต่ำ / Cr เพิ่ม (x2)",
+          label: "protein+ / C3<90 mg/dL, C4<10 mg/dL / Cr เพิ่มขึ้น (x2)",
           weight: 2,
           check: (c) => {
             const details = [];
@@ -1503,7 +1516,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3/C4 ต่ำ";
+              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
@@ -1511,7 +1524,8 @@
               details.push(txt);
             }
             if (hasLabToken(c, "cr_aki")) {
-              let txt = "Cr เพิ่มขึ้นตามเกณฑ์ AKI";
+              let txt =
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
               if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
               details.push(txt);
             }
@@ -1540,7 +1554,10 @@
           check: (c) => {
             const details = [];
             if (c.p1 && flag(c.p1.jaundice)) {
-              details.push("ดีซ่าน");
+              details.push("ดีซ่าน (ตัวเหลือง/ตาเหลือง)");
+            }
+            if (c.p1 && flag(c.p1.pale)) {
+              details.push("ซีด");
             }
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1601,10 +1618,8 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (hasLabToken(c, "hb_lt10")) {
-              let txt = "Hemoglobin (Hb) < 10 g/dL";
-              if (Number.isFinite(c.hb)) txt += ` (Hb ${c.hb})`;
-              details.push(txt);
+            if (c.p1 && flag(c.p1.pale)) {
+              details.push("ซีด");
             }
             if (c.fatigue) {
               details.push("อ่อนเพลีย");
@@ -1693,7 +1708,8 @@
         },
         {
           id: "organ",
-          label: "อวัยวะที่ผิดปกติ: ปอดอักเสบ / Lung function (Abnormal Sound/CXR)",
+          label:
+            "อวัยวะที่ผิดปกติ: ปอดอักเสบ / Lung function (Abnormal Sound/CXR)",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1795,13 +1811,13 @@
         },
         {
           id: "renal_major",
-          label: "Serum creatinine (Cr) เพิ่มขึ้น หรือ AKI (x3)",
+          label: "Serum creatinine (Cr) เพิ่มขึ้น หรือ eGFR ลด (x3)",
           weight: 3,
           check: (c) => {
             const details = [];
             if (hasLabToken(c, "cr_aki")) {
               let txt =
-                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5x ภายใน 7 วัน";
+                "Serum creatinine (Cr) เพิ่มขึ้น ≥0.3 mg/dL ภายใน 48 ชม. หรือ ≥1.5X จาก baseline ภายใน 7 วัน";
               if (Number.isFinite(c.cr)) txt += ` (Cr ${c.cr})`;
               details.push(txt);
             }
@@ -1987,7 +2003,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV2",
     defs: ADR_DEFS
   };
 })();
