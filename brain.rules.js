@@ -214,6 +214,20 @@
     const p2 = d.page2 || {};
     const p3 = d.page3 || {};
 
+    // ***** FIX: flatten "ส่วนที่ 2 อวัยวะที่ผิดปกติ" ของหน้า 3 มาที่ p3.xxx *****
+    // ถ้าโครงสร้างเก็บไว้ใน p3.organs / p3.organ / p3.organAbnormal
+    // ให้ copy มาเป็น p3.hepatitis, p3.nephritis ฯลฯ เพื่อให้กฎเดิมอ่านได้
+    const organContainers = [p3.organs, p3.organ, p3.organAbnormal];
+    organContainers.forEach((og) => {
+      if (!og || typeof og !== "object") return;
+      Object.keys(og).forEach((k) => {
+        if (p3[k] === undefined) {
+          p3[k] = og[k];
+        }
+      });
+    });
+    // ***** จบส่วน flatten อวัยวะ *****
+
     // ---------- หน้า 1 ----------
     const shapes = arr(p1.rashShapes || p1.rashShape);
     const colors = arr(p1.rashColors || p1.rashColor);
@@ -450,13 +464,15 @@
           id: "itch",
           label: "คัน",
           weight: 1,
-          check: (c) => (c.itch ? { ok: true, details: ["คัน"] } : { ok: false })
+          check: (c) =>
+            c.itch ? { ok: true, details: ["คัน"] } : { ok: false }
         },
         {
           id: "swelling",
           label: "บวม",
           weight: 1,
-          check: (c) => (c.swell ? { ok: true, details: ["บวม"] } : { ok: false })
+          check: (c) =>
+            c.swell ? { ok: true, details: ["บวม"] } : { ok: false }
         },
         {
           id: "location",
@@ -499,7 +515,15 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"]));
+            details.push(
+              ...detailFromList(c.shapes, [
+                "ตุ่มนูน",
+                "ปื้นนูน",
+                "บวม",
+                "นูนหนา",
+                "ตึง"
+              ])
+            );
             if (c.swell) details.push("บวม");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -561,7 +585,9 @@
             const hr = nField(c.p2 && c.p2.cv && c.p2.cv.hrValue);
             if (Number.isFinite(hr) && hr > 100) {
               details.push(
-                `HR สูง (>100 bpm${Number.isFinite(hr) ? `, ปัจจุบัน ${hr}` : ""})`
+                `HR สูง (>100 bpm${
+                  Number.isFinite(hr) ? `, ปัจจุบัน ${hr}` : ""
+                })`
               );
             }
             if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
@@ -667,7 +693,11 @@
           label: "รูปร่าง: ปื้นแดง/ปื้นนูน/ตุ่มนูน",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.shapes, ["ปื้นแดง", "ปื้นนูน", "ตุ่มนูน"]);
+            const details = detailFromList(c.shapes, [
+              "ปื้นแดง",
+              "ปื้นนูน",
+              "ตุ่มนูน"
+            ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -733,16 +763,17 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม. / 6–24 ชม. / 1–2 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
         },
         {
           id: "organ",
-          label: "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ข้ออักเสบ/ไตอักเสบ/ตับอักเสบ",
+          label:
+            "อวัยวะที่ผิดปกติ: ต่อมน้ำเหลืองโต/ข้ออักเสบ/ไตอักเสบ/ตับอักเสบ",
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
+              details.push("ต่อมน้ำเหลืองโต");
             if (c.arthritis) details.push("ข้ออักเสบ");
             if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
             if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
@@ -1052,12 +1083,12 @@
           id: "onset",
           label: "ระยะเวลา: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
         {
           id: "systemic",
-          label: "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เลือดออกในทางเดินอาหาร",
+          label:
+            "อาการระบบอื่นๆ: ไข้/ปวดกล้ามเนื้อ/คลื่นไส้อาเจียน/เลือดออกในทางเดินอาหาร",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1066,13 +1097,15 @@
             }
             if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
             if (c.nauseaVomiting) details.push("คลื่นไส้อาเจียน");
-            if (c.p3 && flag(c.p3.gibleeding)) details.push("เลือดออกในทางเดินอาหาร");
+            if (c.p3 && flag(c.p3.gibleeding))
+              details.push("เลือดออกในทางเดินอาหาร");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "organs",
-          label: "อวัยวะที่ผิดปกติ: ริมฝีปาก/รอบดวงตา/ลำตัว/แขน/ขา/หน้า/มือ/เท้า",
+          label:
+            "อวัยวะที่ผิดปกติ: ริมฝีปาก/รอบดวงตา/ลำตัว/แขน/ขา/หน้า/มือ/เท้า",
           weight: 1,
           check: (c) => {
             const details = detailFromList(c.locs, [
@@ -1123,7 +1156,12 @@
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.colors, ["แดง", "ดำ", "ดำ/คล้ำ", "คล้ำ"]);
+            const details = detailFromList(c.colors, [
+              "แดง",
+              "ดำ",
+              "ดำ/คล้ำ",
+              "คล้ำ"
+            ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1150,13 +1188,15 @@
         },
         {
           id: "rare",
-          label: "อาการที่พบน้อย: ซีด/โลหิตจาง/เลือดออกในทางเดินอาหาร/กลืนลำบาก",
+          label:
+            "อาการที่พบน้อย: ซีด/โลหิตจาง/เลือดออกในทางเดินอาหาร/กลืนลำบาก",
           weight: 1,
           check: (c) => {
             const details = [];
             if (c.p1 && flag(c.p1.pale)) details.push("ซีด/โลหิตจาง");
             if (c.p3 && flag(c.p3.anemia)) details.push("โลหิตจาง");
-            if (c.p3 && flag(c.p3.gibleeding)) details.push("เลือดออกในทางเดินอาหาร");
+            if (c.p3 && flag(c.p3.gibleeding))
+              details.push("เลือดออกในทางเดินอาหาร");
             if (c.dysphagia) details.push("กลืนลำบาก");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1324,7 +1364,8 @@
         },
         {
           id: "systemic",
-          label: "อาการระบบอื่นๆ: ไข้ / Lung function (Abnormal Sound/CXR)",
+          label:
+            "อาการระบบอื่นๆ: ไข้ / Lung function (Abnormal Sound/CXR)",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1347,8 +1388,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["w1", "w2", "w3", "w4", "w5", "w6"])
+          check: (c) => onsetIsAny(c, ["w1", "w2", "w3", "w4", "w5", "w6"])
         },
         {
           id: "lab",
@@ -1399,13 +1439,16 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
+              details.push("ต่อมน้ำเหลืองโต");
             if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
             if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
             if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
             if (c.p3 && flag(c.p3.lungPneumonia)) details.push("ปอดอักเสบ");
-            if (c.p3 && flag(c.p3.myocarditis)) details.push("กล้ามเนื้อหัวใจอักเสบ");
-            if (c.p3 && flag(c.p3.thyroiditis)) details.push("ต่อมไทรอยด์อักเสบ");
+            if (c.p3 && flag(c.p3.myocarditis))
+              details.push("กล้ามเนื้อหัวใจอักเสบ");
+            if (c.p3 && flag(c.p3.thyroiditis))
+              details.push("ต่อมไทรอยด์อักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -1473,8 +1516,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1"])
         },
         {
           id: "mucosal",
@@ -1492,7 +1534,8 @@
         },
         {
           id: "systemic",
-          label: "อาการระบบอื่นๆ: ไข้/อ่อนเพลีย/ปวดกล้ามเนื้อ/เจ็บคอ/ปวดข้อ",
+          label:
+            "อาการระบบอื่นๆ: ไข้/อ่อนเพลีย/ปวดกล้ามเนื้อ/เจ็บคอ/ปวดข้อ",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1551,7 +1594,12 @@
           label: "สี: ดำ/คล้ำ/แดง",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "แดง"]);
+            const details = detailFromList(c.colors, [
+              "ดำ",
+              "ดำ/คล้ำ",
+              "คล้ำ",
+              "แดง"
+            ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1713,7 +1761,8 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
+              details.push("ต่อมน้ำเหลืองโต");
             if (c.p3 && flag(c.p3.hepatomegaly)) details.push("ตับโต");
             if (c.p3 && flag(c.p3.splenomegaly)) details.push("ม้ามโต");
             if (c.swell && hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
@@ -1769,7 +1818,11 @@
           label: "อาการเพิ่มเติมทางผิวหนัง: นูนหนา/ผื่นแดง",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นแดง"]);
+            const details = detailFromList(c.shapes, [
+              "นูนหนา",
+              "ผื่นแดง",
+              "ปื้นแดง"
+            ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1803,8 +1856,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
         {
           id: "dry_scale",
@@ -1912,8 +1964,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         }
       ]
     },
@@ -1949,12 +2000,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) {
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
               details.push("ต่อมน้ำเหลืองโต");
-            }
-            if (c.p3 && flag(c.p3.nephritis)) {
-              details.push("ไตอักเสบ");
-            }
+            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1984,8 +2032,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
         {
           id: "lab2",
@@ -2039,7 +2086,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ผื่นแดง"]));
+            details.push(
+              ...detailFromList(c.shapes, ["ตุ่มนูน", "ผื่นแดง"])
+            );
             details.push(...detailFromList(c.colors, ["แดง"]));
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -2057,7 +2106,8 @@
             if (c.arthralgia) details.push("ปวดข้อ");
             if (c.arthritis) details.push("ข้ออักเสบ");
             if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
+              details.push("ต่อมน้ำเหลืองโต");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2069,7 +2119,8 @@
             const details = [];
             if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
             if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.p3 && flag(c.p3.lymphNodeEnlarge))
+              details.push("ต่อมน้ำเหลืองโต");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2095,8 +2146,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
         {
           id: "lab2",
@@ -2204,8 +2254,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1"])
         },
         {
           id: "lab2",
@@ -2248,7 +2297,8 @@
           check: (c) => {
             const details = [];
             if (c.p3 && flag(c.p3.flankPain)) details.push("ปวดหลังส่วนเอว");
-            if (c.p3 && flag(c.p3.ruqPain)) details.push("ปวดแน่นชายโครงขวา");
+            if (c.p3 && flag(c.p3.ruqPain))
+              details.push("ปวดแน่นชายโครงขวา");
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -2273,7 +2323,8 @@
         },
         {
           id: "systemic",
-          label: "อาการระบบอื่นๆ: ปัสสาวะสีชา/สีดำ/หนาวสั่น/เจ็บคอ/แผลในปาก",
+          label:
+            "อาการระบบอื่นๆ: ปัสสาวะสีชา/สีดำ/หนาวสั่น/เจ็บคอ/แผลในปาก",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -2297,7 +2348,10 @@
           weight: 3,
           check: (c) =>
             c.p3 && flag(c.p3.bleedingSigns)
-              ? { ok: true, details: ["จุดเลือดออก/ฟกช้ำ/เลือดออกง่าย"] }
+              ? {
+                  ok: true,
+                  details: ["จุดเลือดออก/ฟกช้ำ/เลือดออกง่าย"]
+                }
               : { ok: false }
         },
         {
@@ -2319,8 +2373,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–2 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
         },
         {
           id: "lab_fever",
@@ -2397,7 +2450,8 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p2 && c.p2.other && flag(c.p2.other.chills)) details.push("หนาวสั่น");
+            if (c.p2 && c.p2.other && flag(c.p2.other.chills))
+              details.push("หนาวสั่น");
             if (c.soreThroat) details.push("เจ็บคอ");
             if (c.p2 && c.p2.other && flag(c.p2.other.mouthUlcer)) {
               details.push("แผลในปาก");
@@ -2475,7 +2529,10 @@
           weight: 1,
           check: (c) =>
             c.p3 && flag(c.p3.bleedingGI)
-              ? { ok: true, details: ["เลือดออกในทางเดินอาหาร/อวัยวะอื่น"] }
+              ? {
+                  ok: true,
+                  details: ["เลือดออกในทางเดินอาหาร/อวัยวะอื่น"]
+                }
               : { ok: false }
         },
         {
@@ -2495,8 +2552,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1"])
         }
       ]
     },
@@ -2567,8 +2623,7 @@
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–2 สัปดาห์",
           weight: 1,
-          check: (c) =>
-            onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
+          check: (c) => onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2"])
         }
       ]
     }
@@ -2649,9 +2704,7 @@
     if (!box) return;
 
     const { results } = all;
-    const sorted = Object.values(results).sort(
-      (a, b) => b.percent - a.percent
-    );
+    const sorted = Object.values(results).sort((a, b) => b.percent - a.percent);
 
     const html = `
       <div class="p6-brain-summary">
@@ -2745,7 +2798,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV5-ORGFLATTEN",
     defs: ADR_DEFS
   };
 })();
