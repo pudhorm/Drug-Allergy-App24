@@ -324,62 +324,78 @@
     const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
     const troponin = nField(cardioLab.troponin);
 
-    // ---------- อวัยวะที่ผิดปกติ (สำหรับส่วนที่ 1 หน้า 6) ----------
-    // ใช้เฉพาะช่องที่ผู้ใช้ "ติ้กเลือกแล้ว" จากหน้า 2/หน้า 3
-    // ไม่ดึงจากค่าแลปอัตโนมัติ ตามที่กำหนดว่า "ไม่ต้องเอาค่าแลปไปลิ้งกับอวัยวะหรืออาการที่ผิดปกติ"
-    const organAbnormal = [];
+    // ----- อวัยวะที่ผิดปกติ: รวมจากหน้า 2 และหน้า 3 -----
+    const organ2 = p2.organs || p2.organ || p2.organsAbnormal || {};
+    const organ3 = p3.organs || p3.organ || p3.organsAbnormal || {};
 
-    function collectOrgans(map, source) {
-      if (!map || typeof map !== "object") return;
-      Object.keys(map).forEach((name) => {
-        if (!name) return;
-        const v = map[name];
-        let detail = "";
-
-        if (v != null && typeof v === "object") {
-          // ใช้ flag() ตรวจว่า "ช่องนี้ถือว่าเลือกจริง" หรือไม่
-          if (!flag(v)) return;
-          detail = tField(
-            v.detail ||
-              v.note ||
-              v.text ||
-              v.comment ||
-              v.label ||
-              v.value
-          );
-        } else {
-          // primitive: true/1/"yes" ถือว่าเลือก, อย่างอื่นไม่เอา
-          if (!flag(v)) return;
-          detail = "";
-        }
-
-        organAbnormal.push({
-          name,
-          source,
-          detail
-        });
-      });
+    function organFlag(obj, key) {
+      if (!obj || !key) return false;
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) return false;
+      return flag(obj[key]);
     }
 
-    // รองรับทั้งหน้า 2 และหน้า 3 ถ้ามีโครงสร้าง organs
-    collectOrgans(p2.organs, "page2");
-    collectOrgans(p3.organs, "page3");
-    collectOrgans(p3.organ, "page3");
-    collectOrgans(p3.organInvolvement, "page3");
+    const organLymph =
+      organFlag(organ2, "lymphNodeEnlarge") ||
+      organFlag(organ2, "lymph") ||
+      organFlag(organ3, "lymphNodeEnlarge") ||
+      organFlag(organ3, "lymph") ||
+      (p3 && flag(p3.lymphNodeEnlarge));
 
-    // กรณี "ขาบวม" จากหน้า 1 (บวม + ระบุตำแหน่งขา) แต่ยังไม่มีใน organs
-    if (
-      !organAbnormal.some((o) => o.name === "ขาบวม") &&
-      swell &&
-      hasAny(locs, ["ขา", "ขาทั้งสองข้าง"])
-    ) {
-      organAbnormal.push({
-        name: "ขาบวม",
-        source: "page1",
-        detail: ""
-      });
-    }
+    const organLiver =
+      organFlag(organ2, "hepatitis") ||
+      organFlag(organ2, "liver") ||
+      organFlag(organ3, "hepatitis") ||
+      organFlag(organ3, "liver") ||
+      (p3 && flag(p3.hepatitis));
 
+    const organKidney =
+      organFlag(organ2, "nephritis") ||
+      organFlag(organ2, "kidney") ||
+      organFlag(organ3, "nephritis") ||
+      organFlag(organ3, "kidney") ||
+      (p3 && flag(p3.nephritis));
+
+    const organRenalFailure =
+      organFlag(organ2, "renalFailure") ||
+      organFlag(organ2, "renal_fail") ||
+      organFlag(organ3, "renalFailure") ||
+      organFlag(organ3, "renal_fail") ||
+      (p3 && flag(p3.renalFailure));
+
+    const organLung =
+      organFlag(organ2, "lungPneumonia") ||
+      organFlag(organ2, "pneumonia") ||
+      organFlag(organ2, "lung") ||
+      organFlag(organ3, "lungPneumonia") ||
+      organFlag(organ3, "pneumonia") ||
+      organFlag(organ3, "lung") ||
+      (p3 && flag(p3.lungPneumonia));
+
+    const organMyocarditis =
+      organFlag(organ2, "myocarditis") ||
+      organFlag(organ2, "heart") ||
+      organFlag(organ3, "myocarditis") ||
+      organFlag(organ3, "heart") ||
+      (p3 && flag(p3.myocarditis));
+
+    const organThyroiditis =
+      organFlag(organ2, "thyroiditis") ||
+      organFlag(organ2, "thyroid") ||
+      organFlag(organ3, "thyroiditis") ||
+      organFlag(organ3, "thyroid") ||
+      (p3 && flag(p3.thyroiditis));
+
+    const organHepatomegaly =
+      organFlag(organ2, "hepatomegaly") ||
+      organFlag(organ3, "hepatomegaly") ||
+      (p3 && flag(p3.hepatomegaly));
+
+    const organSplenomegaly =
+      organFlag(organ2, "splenomegaly") ||
+      organFlag(organ3, "splenomegaly") ||
+      (p3 && flag(p3.splenomegaly));
+
+    // ----- Lab tokens -----
     const labTokens = Array.isArray(p3.__tokens) ? p3.__tokens.slice() : [];
     const labTokenSet = new Set(labTokens);
 
@@ -454,7 +470,16 @@
       lungLab,
       labTokens,
       labTokenSet,
-      organAbnormal   // <<< เพิ่ม field นี้ให้ brainResult ใช้แสดง "อวัยวะที่ผิดปกติ"
+      // flags อวัยวะที่ผิดปกติ (รวมจากหน้า 2/3)
+      organLiver,
+      organKidney,
+      organRenalFailure,
+      organLung,
+      organMyocarditis,
+      organThyroiditis,
+      organLymph,
+      organHepatomegaly,
+      organSplenomegaly
     };
   }
 
@@ -556,7 +581,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"]));
+            details.push(
+              ...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"])
+            );
             if (c.swell) details.push("บวม");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -799,10 +826,10 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
             if (c.arthritis) details.push("ข้ออักเสบ");
-            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
-            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
+            if (c.organKidney) details.push("ไตอักเสบ");
+            if (c.organLiver) details.push("ตับอักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -843,8 +870,10 @@
           label: "ลักษณะสำคัญ (x3): ม่วง/คล้ำ",
           weight: 3,
           check: (c) => {
+            // เพิ่ม "ม่วง/คล้ำ" ให้เข้าเกณฑ์ x3 ด้วย
             const details = detailFromList(c.colors, [
               "ม่วง",
+              "ม่วง/คล้ำ",
               "ดำ/คล้ำ",
               "คล้ำ"
             ]);
@@ -1269,9 +1298,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
-            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
-            if (c.p3 && flag(c.p3.lungPneumonia)) details.push("ปอดอักเสบ");
+            if (c.organRenalFailure) details.push("ไตวาย");
+            if (c.organLiver) details.push("ตับอักเสบ");
+            if (c.organLung) details.push("ปอดอักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1456,13 +1485,13 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
-            if (c.p3 && flag(c.p3.hepatitis)) details.push("ตับอักเสบ");
-            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
-            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
-            if (c.p3 && flag(c.p3.lungPneumonia)) details.push("ปอดอักเสบ");
-            if (c.p3 && flag(c.p3.myocarditis)) details.push("กล้ามเนื้อหัวใจอักเสบ");
-            if (c.p3 && flag(c.p3.thyroiditis)) details.push("ต่อมไทรอยด์อักเสบ");
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organLiver) details.push("ตับอักเสบ");
+            if (c.organKidney) details.push("ไตอักเสบ");
+            if (c.organRenalFailure) details.push("ไตวาย");
+            if (c.organLung) details.push("ปอดอักเสบ");
+            if (c.organMyocarditis) details.push("กล้ามเนื้อหัวใจอักเสบ");
+            if (c.organThyroiditis) details.push("ต่อมไทรอยด์อักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -1770,9 +1799,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
-            if (c.p3 && flag(c.p3.hepatomegaly)) details.push("ตับโต");
-            if (c.p3 && flag(c.p3.splenomegaly)) details.push("ม้ามโต");
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organHepatomegaly) details.push("ตับโต");
+            if (c.organSplenomegaly) details.push("ม้ามโต");
             if (c.swell && hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -2006,10 +2035,10 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) {
+            if (c.organLymph) {
               details.push("ต่อมน้ำเหลืองโต");
             }
-            if (c.p3 && flag(c.p3.nephritis)) {
+            if (c.organKidney) {
               details.push("ไตอักเสบ");
             }
             return details.length ? { ok: true, details } : { ok: false };
@@ -2114,7 +2143,7 @@
             if (c.arthralgia) details.push("ปวดข้อ");
             if (c.arthritis) details.push("ข้ออักเสบ");
             if (c.myalgia) details.push("ปวดกล้ามเนื้อ");
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2124,9 +2153,9 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.nephritis)) details.push("ไตอักเสบ");
-            if (c.p3 && flag(c.p3.renalFailure)) details.push("ไตวาย");
-            if (c.p3 && flag(c.p3.lymphNodeEnlarge)) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organKidney) details.push("ไตอักเสบ");
+            if (c.organRenalFailure) details.push("ไตวาย");
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2238,7 +2267,7 @@
           label: "อวัยวะที่ผิดปกติ: ไตวาย",
           weight: 1,
           check: (c) =>
-            c.p3 && flag(c.p3.renalFailure)
+            c.organRenalFailure
               ? { ok: true, details: ["ไตวาย"] }
               : { ok: false }
         },
@@ -2476,7 +2505,7 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.p3 && flag(c.p3.lungPneumonia)) {
+            if (c.organLung) {
               details.push("ปอดอักเสบ");
             }
             const lungTokens = [
@@ -2681,8 +2710,31 @@
 
         if (ok) {
           raw += w;
-          if (!details || !details.length) details = [m.label];
-          matchedDetails.push(...details);
+
+          let texts = [];
+
+          if (details && details.length) {
+            if (w > 1) {
+              // น้ำหนัก x2/x3/x4 ให้แสดง label (ถ้ามี) + รายละเอียด
+              const hasExplicitWeight = /\(x\d+\)/.test(m.label || "");
+              const baseLabel = hasExplicitWeight
+                ? m.label
+                : (m.label ? `${m.label} (x${w})` : `น้ำหนัก x${w}`);
+              texts.push(`${baseLabel}: ${details.join(" / ")}`);
+            } else {
+              // น้ำหนักปกติ แสดงเฉพาะรายละเอียด (ตรงกับ requirement ว่าให้แสดงเฉพาะข้อย่อยที่ติ้ก)
+              texts = details.slice();
+            }
+          } else {
+            // ไม่มีรายละเอียดย่อย ให้แสดง label (รวม weight ถ้ามี)
+            if (w > 1 && m.label && !/\(x\d+\)/.test(m.label)) {
+              texts = [`${m.label} (x${w})`];
+            } else if (m.label) {
+              texts = [m.label];
+            }
+          }
+
+          matchedDetails.push(...texts);
         }
       });
 
@@ -2698,8 +2750,7 @@
       scoresForChart[def.label] = Math.round(percent);
     });
 
-    // เพิ่ม organAbnormal จาก ctx ให้ brain.js ใช้แสดง "อวัยวะที่ผิดปกติ" ในหน้า 6
-    return { results, scoresForChart, organAbnormal: ctx.organAbnormal || [] };
+    return { results, scoresForChart };
   }
 
   function renderResultIntoP6Box(all) {
@@ -2789,7 +2840,7 @@
         box.innerHTML =
           '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่กดบันทึก</div>';
       }
-      const empty = { results: {}, scoresForChart: {}, organAbnormal: [] };
+      const empty = { results: {}, scoresForChart: {} };
       window.brainResult = empty;
       return empty;
     }
@@ -2803,7 +2854,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4-ORGANS",
+    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV5",
     defs: ADR_DEFS
   };
 })();
