@@ -1,3 +1,4 @@
+```javascript
 // ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
 // โหมด C: "แมตช์ตรงตัว" ระหว่างสิ่งที่ผู้ใช้ติ๊กในหน้า 1–3 กับเกณฑ์ของแต่ละ ADR
 // - คิดเฉพาะข้อที่ติ๊กจริง
@@ -2631,13 +2632,14 @@
       });
 
       const percent = max > 0 ? (raw / max) * 100 : 0;
+      const uniqueDetails = Array.from(new Set(matchedDetails));
       results[def.id] = {
         id: def.id,
         label: def.label,
         raw,
         max,
         percent,
-        matchedMajors: matchedDetails
+        matchedMajors: uniqueDetails
       };
       scoresForChart[def.label] = Math.round(percent);
     });
@@ -2750,3 +2752,4 @@
     defs: ADR_DEFS
   };
 })();
+```
