@@ -324,6 +324,62 @@
     const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
     const troponin = nField(cardioLab.troponin);
 
+    // ---------- อวัยวะที่ผิดปกติ (สำหรับส่วนที่ 1 หน้า 6) ----------
+    // ใช้เฉพาะช่องที่ผู้ใช้ "ติ้กเลือกแล้ว" จากหน้า 2/หน้า 3
+    // ไม่ดึงจากค่าแลปอัตโนมัติ ตามที่กำหนดว่า "ไม่ต้องเอาค่าแลปไปลิ้งกับอวัยวะหรืออาการที่ผิดปกติ"
+    const organAbnormal = [];
+
+    function collectOrgans(map, source) {
+      if (!map || typeof map !== "object") return;
+      Object.keys(map).forEach((name) => {
+        if (!name) return;
+        const v = map[name];
+        let detail = "";
+
+        if (v != null && typeof v === "object") {
+          // ใช้ flag() ตรวจว่า "ช่องนี้ถือว่าเลือกจริง" หรือไม่
+          if (!flag(v)) return;
+          detail = tField(
+            v.detail ||
+              v.note ||
+              v.text ||
+              v.comment ||
+              v.label ||
+              v.value
+          );
+        } else {
+          // primitive: true/1/"yes" ถือว่าเลือก, อย่างอื่นไม่เอา
+          if (!flag(v)) return;
+          detail = "";
+        }
+
+        organAbnormal.push({
+          name,
+          source,
+          detail
+        });
+      });
+    }
+
+    // รองรับทั้งหน้า 2 และหน้า 3 ถ้ามีโครงสร้าง organs
+    collectOrgans(p2.organs, "page2");
+    collectOrgans(p3.organs, "page3");
+    collectOrgans(p3.organ, "page3");
+    collectOrgans(p3.organInvolvement, "page3");
+
+    // กรณี "ขาบวม" จากหน้า 1 (บวม + ระบุตำแหน่งขา) แต่ยังไม่มีใน organs
+    if (
+      !organAbnormal.some((o) => o.name === "ขาบวม") &&
+      swell &&
+      hasAny(locs, ["ขา", "ขาทั้งสองข้าง"])
+    ) {
+      organAbnormal.push({
+        name: "ขาบวม",
+        source: "page1",
+        detail: ""
+      });
+    }
+
     const labTokens = Array.isArray(p3.__tokens) ? p3.__tokens.slice() : [];
     const labTokenSet = new Set(labTokens);
 
@@ -397,7 +453,8 @@
       urine,
       lungLab,
       labTokens,
-      labTokenSet
+      labTokenSet,
+      organAbnormal   // <<< เพิ่ม field นี้ให้ brainResult ใช้แสดง "อวัยวะที่ผิดปกติ"
     };
   }
 
@@ -415,11 +472,10 @@
           label: "รูปร่าง: ขอบหยัก/วงกลม/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
           check: (c) => {
-            // ปรับให้ตรงกับตัวเลือกหน้า 1: ขอบหยัก, วงกลมชั้นเดียว, วงกลม 3 ชั้น
             const details = detailFromList(c.shapes, [
               "ขอบหยัก",
-              "วงกลมชั้นเดียว",
-              "วงกลม 3 ชั้น"
+              "วงกลม",
+              "ขอบวงนูนแดงด้านในเรียบ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -429,12 +485,11 @@
           label: "สี: แดง/แดงซีด/ซีด/สีผิวปกติ",
           weight: 1,
           check: (c) => {
-            // ปรับให้เข้ากับหน้า 1: แดง, แดงไหม้, แดงซีด, ซีด
             const details = detailFromList(c.colors, [
               "แดง",
-              "แดงไหม้",
               "แดงซีด",
-              "ซีด"
+              "ซีด",
+              "สีผิวปกติ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -501,9 +556,7 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            details.push(
-              ...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"])
-            );
+            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นนูน", "บวม", "นูนหนา", "ตึง"]));
             if (c.swell) details.push("บวม");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -671,12 +724,7 @@
           label: "รูปร่าง: ปื้นแดง/ปื้นนูน/ตุ่มนูน",
           weight: 1,
           check: (c) => {
-            // ปรับให้ตรงกับหน้า 1: ตุ่มแบนราบ, ปื้นนูน, ตุ่มนูน
-            const details = detailFromList(c.shapes, [
-              "ตุ่มแบนราบ",
-              "ปื้นนูน",
-              "ตุ่มนูน"
-            ]);
+            const details = detailFromList(c.shapes, ["ปื้นแดง", "ปื้นนูน", "ตุ่มนูน"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -694,8 +742,7 @@
           label: "ลักษณะสำคัญ (x2): จุดเล็กแดง",
           weight: 2,
           check: (c) => {
-            // หน้า 1 ใช้คำว่า "จุดเล็ก"
-            const details = detailFromList(c.shapes, ["จุดเล็ก"]);
+            const details = detailFromList(c.shapes, ["จุดเล็กแดง", "จุดเล็ก"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -772,7 +819,7 @@
           label: "รูปร่าง: วงกลม/วงรี",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.shapes, ["วงกลมชั้นเดียว", "วงรี"]);
+            const details = detailFromList(c.shapes, ["วงกลม", "วงรี"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -786,7 +833,7 @@
               "ดำ",
               "ดำ/คล้ำ",
               "คล้ำ",
-              "ม่วง"
+              "ม่วง/คล้ำ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -892,12 +939,7 @@
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
           check: (c) => {
-            // ปรับใช้ตัวเลือกหน้า 1: ตุ่มนูน, ตุ่มแบนราบ, ปื้นนูน
-            const details = detailFromList(c.shapes, [
-              "ตุ่มนูน",
-              "ตุ่มแบนราบ",
-              "ปื้นนูน"
-            ]);
+            const details = detailFromList(c.shapes, ["ผื่นแดง", "ปื้นแดง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1001,10 +1043,9 @@
           label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
           check: (c) => {
-            // ปรับใช้ option หน้า 1: วงกลมชั้นเดียว, วงกลม 3 ชั้น
             const details = detailFromList(c.shapes, [
-              "วงกลมชั้นเดียว",
-              "วงกลม 3 ชั้น"
+              "วงกลมคล้ายเป้าธนู",
+              "เป้าธนูไม่ครบ 3 ชั้น"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1126,11 +1167,10 @@
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง/วงกลมคล้ายเป้าธนู",
           weight: 1,
           check: (c) => {
-            // ใช้ตัวเลือกหน้า 1: ตุ่มแบนราบ, ปื้นนูน, วงกลม 3 ชั้น
             const details = detailFromList(c.shapes, [
-              "ตุ่มแบนราบ",
-              "ปื้นนูน",
-              "วงกลม 3 ชั้น"
+              "ผื่นแดง",
+              "ปื้นแดง",
+              "วงกลมคล้ายเป้าธนู"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1282,12 +1322,7 @@
           label: "รูปร่าง: ผื่นแดง/ปื้นแดง",
           weight: 1,
           check: (c) => {
-            // ปรับใช้: ตุ่มแบนราบ, ปื้นนูน, ตุ่มนูน
-            const details = detailFromList(c.shapes, [
-              "ตุ่มแบนราบ",
-              "ปื้นนูน",
-              "ตุ่มนูน"
-            ]);
+            const details = detailFromList(c.shapes, ["ผื่นแดง", "ปื้นแดง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1444,10 +1479,9 @@
           label: "รูปร่าง: ตุ่มนูน/ขอบวงนูนแดงด้านในเรียบ",
           weight: 1,
           check: (c) => {
-            // หน้า 1 มี "ตุ่มนูน", "ขอบเรียบ"
             const details = detailFromList(c.shapes, [
               "ตุ่มนูน",
-              "ขอบเรียบ"
+              "ขอบวงนูนแดงด้านในเรียบ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1467,7 +1501,8 @@
           weight: 3,
           check: (c) => {
             const details = detailFromList(c.shapes, [
-              "วงกลม 3 ชั้น"
+              "วงกลม 3 ชั้น",
+              "เป้าธนู 3 ชั้น"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1559,11 +1594,11 @@
           label: "รูปร่าง: ขอบเขตชัด/ปื้นแดง/จุดแดงเล็ก",
           weight: 1,
           check: (c) => {
-            // ปรับให้ตรง: ขอบเรียบ, ปื้นนูน, จุดเล็ก
             const details = detailFromList(c.shapes, [
-              "ขอบเรียบ",
-              "ปื้นนูน",
-              "จุดเล็ก"
+              "ขอบเขตชัด",
+              "ปื้นแดง",
+              "จุดแดงเล็ก",
+              "จุดเล็กแดง"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1573,12 +1608,7 @@
           label: "สี: ดำ/คล้ำ/แดง",
           weight: 1,
           check: (c) => {
-            // ให้แมตช์กับชุดสีหน้า 1
-            const details = detailFromList(c.colors, [
-              "ดำ",
-              "เทา",
-              "แดง"
-            ]);
+            const details = detailFromList(c.colors, ["ดำ", "ดำ/คล้ำ", "คล้ำ", "แดง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1659,8 +1689,7 @@
           label: "รูปร่าง: ตึง",
           weight: 1,
           check: (c) => {
-            // เน้นผื่นกว้าง → ใช้ปื้นนูน/ตุ่มนูน พอเป็นตัวแทน
-            const details = detailFromList(c.shapes, ["ปื้นนูน", "ตุ่มนูน"]);
+            const details = detailFromList(c.shapes, ["ตึง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1772,12 +1801,7 @@
           label: "รูปร่าง: ตุ่มนูน/ปื้นแดง",
           weight: 1,
           check: (c) => {
-            // ใช้: ตุ่มนูน, ตุ่มแบนราบ, ปื้นนูน
-            const details = detailFromList(c.shapes, [
-              "ตุ่มนูน",
-              "ตุ่มแบนราบ",
-              "ปื้นนูน"
-            ]);
+            const details = detailFromList(c.shapes, ["ตุ่มนูน", "ปื้นแดง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1802,7 +1826,7 @@
           label: "อาการเพิ่มเติมทางผิวหนัง: นูนหนา/ผื่นแดง",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นนูน"]);
+            const details = detailFromList(c.shapes, ["นูนหนา", "ผื่นแดง", "ปื้นแดง"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1812,7 +1836,7 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (hasAny(c.shapes, ["จุดเล็ก"])) details.push("จุดเล็ก");
+            if (hasAny(c.shapes, ["จุดเล็กแดง"])) details.push("จุดเล็กแดง");
             if (c.scaleCrust) details.push("น้ำเหลือง/สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -2072,8 +2096,7 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            // ปรับใช้ตัวเลือกหน้า 1
-            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ตุ่มแบนราบ", "ปื้นนูน"]));
+            details.push(...detailFromList(c.shapes, ["ตุ่มนูน", "ผื่นแดง"]));
             details.push(...detailFromList(c.colors, ["แดง"]));
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -2494,9 +2517,9 @@
           label: "อาการ (x2): จุดเลือดออก/ปื้น-จ้ำเลือด",
           weight: 2,
           check: (c) => {
-            // หน้า 1: จุดเล็ก, จ้ำเลือด
             const details = detailFromList(c.shapes, [
-              "จุดเล็ก",
+              "จุดเลือดออก",
+              "ปื้น/จ้ำเลือด",
               "จ้ำเลือด"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
@@ -2675,7 +2698,8 @@
       scoresForChart[def.label] = Math.round(percent);
     });
 
-    return { results, scoresForChart };
+    // เพิ่ม organAbnormal จาก ctx ให้ brain.js ใช้แสดง "อวัยวะที่ผิดปกติ" ในหน้า 6
+    return { results, scoresForChart, organAbnormal: ctx.organAbnormal || [] };
   }
 
   function renderResultIntoP6Box(all) {
@@ -2765,7 +2789,7 @@
         box.innerHTML =
           '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่กดบันทึก</div>';
       }
-      const empty = { results: {}, scoresForChart: {} };
+      const empty = { results: {}, scoresForChart: {}, organAbnormal: [] };
       window.brainResult = empty;
       return empty;
     }
@@ -2779,7 +2803,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV5",
+    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV4-ORGANS",
     defs: ADR_DEFS
   };
 })();
