@@ -789,7 +789,6 @@
           check: (c) => {
             const details = detailFromList(c.colors, [
               "ม่วง",
-              "ม่วง/คล้ำ",
               "ดำ/คล้ำ",
               "คล้ำ"
             ]);
@@ -2632,14 +2631,13 @@
       });
 
       const percent = max > 0 ? (raw / max) * 100 : 0;
-      const uniqueDetails = Array.from(new Set(matchedDetails));
       results[def.id] = {
         id: def.id,
         label: def.label,
         raw,
         max,
         percent,
-        matchedMajors: uniqueDetails
+        matchedMajors: matchedDetails
       };
       scoresForChart[def.label] = Math.round(percent);
     });
