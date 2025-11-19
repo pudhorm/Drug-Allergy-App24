@@ -788,7 +788,6 @@
           check: (c) => {
             const details = detailFromList(c.colors, [
               "ม่วง",
-              "ม่วง/คล้ำ",
               "ดำ/คล้ำ",
               "คล้ำ"
             ]);
