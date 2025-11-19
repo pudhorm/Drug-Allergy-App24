@@ -1372,15 +1372,31 @@
             if (Number.isFinite(c.fever) && c.fever > 37.5) {
               details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
             }
+
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
               "lung_fn_abnormal",
               "lung_sound_abnormal"
             ];
-            if (hasLabToken(c, lungTokens)) {
+
+            // รองรับทั้ง token จากหน้า 3 และ flag ที่อาจเก็บใน p3 โดยตรง
+            let lungAbnormal = false;
+            if (c.p3) {
+              if (
+                flag(c.p3.lungFunctionAbnormal) ||
+                flag(c.p3.lungFnAbnormal) ||
+                flag(c.p3.lungAbnormal) ||
+                flag(c.p3.cxrAbnormal) ||
+                flag(c.p3.lungSoundAbnormal)
+              ) {
+                lungAbnormal = true;
+              }
+            }
+            if (lungAbnormal || hasLabToken(c, lungTokens)) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
+
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1765,7 +1781,18 @@
               details.push("ต่อมน้ำเหลืองโต");
             if (c.p3 && flag(c.p3.hepatomegaly)) details.push("ตับโต");
             if (c.p3 && flag(c.p3.splenomegaly)) details.push("ม้ามโต");
-            if (c.swell && hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
+
+            // รองรับทั้งแบบติ้ก "ขาบวม" ในส่วนอวัยวะ และการใช้อาการบวม+ตำแหน่งขา
+            if (
+              (c.p3 &&
+                (flag(c.p3.legEdema) ||
+                  flag(c.p3.legSwelling) ||
+                  flag(c.p3.edemaLeg))) ||
+              (c.swell && hasAny(c.locs, ["ขา"]))
+            ) {
+              details.push("ขาบวม");
+            }
+
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2476,15 +2503,30 @@
             if (c.p3 && flag(c.p3.lungPneumonia)) {
               details.push("ปอดอักเสบ");
             }
+
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
               "lung_fn_abnormal",
               "lung_sound_abnormal"
             ];
-            if (hasLabToken(c, lungTokens)) {
+
+            let lungAbnormal = false;
+            if (c.p3) {
+              if (
+                flag(c.p3.lungFunctionAbnormal) ||
+                flag(c.p3.lungFnAbnormal) ||
+                flag(c.p3.lungAbnormal) ||
+                flag(c.p3.cxrAbnormal) ||
+                flag(c.p3.lungSoundAbnormal)
+              ) {
+                lungAbnormal = true;
+              }
+            }
+            if (lungAbnormal || hasLabToken(c, lungTokens)) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
+
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2798,7 +2840,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-18-21ADR-LABTOKENS-SUBITEMS-REV5-ORGFLATTEN",
+    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV6-ORGFLATTEN-LUNGFX",
     defs: ADR_DEFS
   };
 })();
