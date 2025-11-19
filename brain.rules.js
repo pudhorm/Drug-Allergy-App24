@@ -214,19 +214,37 @@
     const p2 = d.page2 || {};
     const p3 = d.page3 || {};
 
-    // ***** FIX: flatten "ส่วนที่ 2 อวัยวะที่ผิดปกติ" ของหน้า 3 มาที่ p3.xxx *****
-    // ถ้าโครงสร้างเก็บไว้ใน p3.organs / p3.organ / p3.organAbnormal
-    // ให้ copy มาเป็น p3.hepatitis, p3.nephritis ฯลฯ เพื่อให้กฎเดิมอ่านได้
-    const organContainers = [p3.organs, p3.organ, p3.organAbnormal];
-    organContainers.forEach((og) => {
-      if (!og || typeof og !== "object") return;
-      Object.keys(og).forEach((k) => {
-        if (p3[k] === undefined) {
-          p3[k] = og[k];
-        }
+    // ***** FIX สำคัญ: flatten object ย่อยทั้งหมดของหน้า 3 (ยกเว้นกลุ่มแลปหลัก) *****
+    // เพื่อให้ field อย่าง hepatitis, nephritis, renalFailure, lungPneumonia ฯลฯ
+    // ที่เก็บอยู่ใน p3.section2 / p3.organs / p3.part2 ฯลฯ ถูกดึงขึ้นมาเป็น p3.hepatitis เป็นต้น
+    (function flattenP3Organs() {
+      const skipKeys = new Set([
+        "cbc",
+        "lft",
+        "rft",
+        "ua",
+        "urine",
+        "heart",
+        "cardio",
+        "lung",
+        "immuno",
+        "immunology",
+        "chem",
+        "__tokens",
+        "__saved"
+      ]);
+      Object.keys(p3).forEach((containerKey) => {
+        if (skipKeys.has(containerKey)) return;
+        const og = p3[containerKey];
+        if (!og || typeof og !== "object") return;
+        Object.keys(og).forEach((k) => {
+          if (p3[k] === undefined) {
+            p3[k] = og[k];
+          }
+        });
       });
-    });
-    // ***** จบส่วน flatten อวัยวะ *****
+    })();
+    // ***** จบส่วน flatten อวัยวะ / organ abnormal ทั้งหมด *****
 
     // ---------- หน้า 1 ----------
     const shapes = arr(p1.rashShapes || p1.rashShape);
@@ -590,7 +608,10 @@
                 })`
               );
             }
-            if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
+            if (
+              hasLabToken(c, "spo2_lt94") ||
+              (Number.isFinite(c.spo2) && c.spo2 < 94)
+            ) {
               let txt = "SpO₂ < 94%";
               if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
               details.push(txt);
@@ -1276,7 +1297,10 @@
               if (c.protU) txt += ` (${c.protU})`;
               details.push(txt);
             }
-            if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
+            if (
+              hasLabToken(c, "spo2_lt94") ||
+              (Number.isFinite(c.spo2) && c.spo2 < 94)
+            ) {
               let txt = "SpO₂ < 94%";
               if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
               details.push(txt);
@@ -1372,31 +1396,23 @@
             if (Number.isFinite(c.fever) && c.fever > 37.5) {
               details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
             }
-
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
               "lung_fn_abnormal",
               "lung_sound_abnormal"
             ];
-
-            // รองรับทั้ง token จากหน้า 3 และ flag ที่อาจเก็บใน p3 โดยตรง
-            let lungAbnormal = false;
-            if (c.p3) {
-              if (
-                flag(c.p3.lungFunctionAbnormal) ||
-                flag(c.p3.lungFnAbnormal) ||
+            const lungFromToken = hasLabToken(c, lungTokens);
+            const lungFromFields =
+              c.p3 &&
+              (flag(c.p3.lungPneumonia) ||
                 flag(c.p3.lungAbnormal) ||
-                flag(c.p3.cxrAbnormal) ||
-                flag(c.p3.lungSoundAbnormal)
-              ) {
-                lungAbnormal = true;
-              }
-            }
-            if (lungAbnormal || hasLabToken(c, lungTokens)) {
+                flag(c.p3.lungFnAbnormal) ||
+                flag(c.p3.lungSoundAbnormal) ||
+                flag(c.p3.cxrAbnormal));
+            if (lungFromToken || lungFromFields) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
-
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1432,7 +1448,10 @@
               if (c.protU) txt += ` (${c.protU})`;
               details.push(txt);
             }
-            if (hasLabToken(c, "spo2_lt94") || (Number.isFinite(c.spo2) && c.spo2 < 94)) {
+            if (
+              hasLabToken(c, "spo2_lt94") ||
+              (Number.isFinite(c.spo2) && c.spo2 < 94)
+            ) {
               let txt = "SpO₂ < 94%";
               if (Number.isFinite(c.spo2)) txt += ` (${c.spo2}%)`;
               details.push(txt);
@@ -1781,18 +1800,7 @@
               details.push("ต่อมน้ำเหลืองโต");
             if (c.p3 && flag(c.p3.hepatomegaly)) details.push("ตับโต");
             if (c.p3 && flag(c.p3.splenomegaly)) details.push("ม้ามโต");
-
-            // รองรับทั้งแบบติ้ก "ขาบวม" ในส่วนอวัยวะ และการใช้อาการบวม+ตำแหน่งขา
-            if (
-              (c.p3 &&
-                (flag(c.p3.legEdema) ||
-                  flag(c.p3.legSwelling) ||
-                  flag(c.p3.edemaLeg))) ||
-              (c.swell && hasAny(c.locs, ["ขา"]))
-            ) {
-              details.push("ขาบวม");
-            }
-
+            if (c.swell && hasAny(c.locs, ["ขา"])) details.push("ขาบวม");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2503,30 +2511,22 @@
             if (c.p3 && flag(c.p3.lungPneumonia)) {
               details.push("ปอดอักเสบ");
             }
-
             const lungTokens = [
               "lung_abnormal",
               "cxr_abnormal",
               "lung_fn_abnormal",
               "lung_sound_abnormal"
             ];
-
-            let lungAbnormal = false;
-            if (c.p3) {
-              if (
-                flag(c.p3.lungFunctionAbnormal) ||
+            const lungFromToken = hasLabToken(c, lungTokens);
+            const lungFromFields =
+              c.p3 &&
+              (flag(c.p3.lungAbnormal) ||
                 flag(c.p3.lungFnAbnormal) ||
-                flag(c.p3.lungAbnormal) ||
-                flag(c.p3.cxrAbnormal) ||
-                flag(c.p3.lungSoundAbnormal)
-              ) {
-                lungAbnormal = true;
-              }
-            }
-            if (lungAbnormal || hasLabToken(c, lungTokens)) {
+                flag(c.p3.lungSoundAbnormal) ||
+                flag(c.p3.cxrAbnormal));
+            if (lungFromToken || lungFromFields) {
               details.push("Lung function (Abnormal Sound/CXR)");
             }
-
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2840,7 +2840,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV6-ORGFLATTEN-LUNGFX",
+    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-ORGFLATTEN-V2",
     defs: ADR_DEFS
   };
 })();
