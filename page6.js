@@ -1,4 +1,4 @@
-// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 แนวทางรักษา) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
@@ -496,6 +496,36 @@
     `;
   }
 
+  // --------- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ ---------
+  function renderAdrTreatmentFromBrain() {
+    const box = document.getElementById("p6AdrTreatmentBox");
+    const nameEl = document.getElementById("p6AdrTreatmentTitle");
+    if (!box) return;
+
+    const top = getTopAdrFromBrain();
+    const db = window.adrTreatmentDB || {};
+    if (!top) {
+      if (nameEl) nameEl.textContent = "ยังไม่มีผลสรุปจากส่วนที่ 1";
+      box.classList.add("p6-muted");
+      box.textContent =
+        "ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้";
+      return;
+    }
+
+    const entry = db[top.label];
+    if (!entry || !entry.text) {
+      if (nameEl) nameEl.textContent = top.label;
+      box.classList.add("p6-muted");
+      box.textContent =
+        "ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ ADR ชนิดนี้ในระบบ";
+      return;
+    }
+
+    if (nameEl) nameEl.textContent = entry.label || top.label;
+    box.classList.remove("p6-muted");
+    box.textContent = entry.text;
+  }
+
   // --------- RENDER (ครั้งเดียว) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
@@ -633,7 +663,13 @@
             <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">การรักษาเฉพาะ:</div>
-              <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
+              <p class="p6-muted" style="margin:0 0 .35rem;">
+                ดึงจาก “ชนิด ADR ที่ได้คะแนนสูงสุด” ในส่วนที่ 1 และชุดแนวทางการรักษาที่กำหนดไว้ในสมองการแพ้ยา
+              </p>
+              <p id="p6AdrTreatmentTitle" class="p6-treatment-name">ยังไม่มีผลสรุปจากส่วนที่ 1</p>
+              <div id="p6AdrTreatmentBox" class="p6-treatment-box">
+                ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้
+              </div>
             </div>
           </div>
 
@@ -707,6 +743,7 @@
           updateAdrChartFromBrain();
           renderAdrSummaryFromBrain();
           renderAdrDrugListFromBrain();
+          renderAdrTreatmentFromBrain();
         });
       }
 
@@ -729,6 +766,7 @@
     updateAdrChartFromBrain();
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
+    renderAdrTreatmentFromBrain();
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -826,6 +864,24 @@
       .p6-adr-drug-list li{
         margin:2px 0;
       }
+
+      /* ส่วนที่ 3: แนวทางการรักษาเฉพาะ */
+      .p6-treatment-name{
+        margin:.15rem 0 4px;
+        font-size:.9rem;
+        font-weight:800;
+        color:#b45309;
+      }
+      .p6-treatment-box{
+        border-radius:16px;
+        border:1px solid #fbbf24;
+        background:#fefce8;
+        padding:.75rem .9rem;
+        font-size:.85rem;
+        line-height:1.45;
+        color:#374151;
+        white-space:pre-wrap;
+      }
     `;
     const tag = document.createElement("style");
     tag.id = "p6-visual-style";
@@ -843,6 +899,7 @@
     updateAdrChartFromBrain();
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
+    renderAdrTreatmentFromBrain();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
