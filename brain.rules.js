@@ -828,7 +828,7 @@
       ]
     },
 
-    // 5) Fixed drug eruption — จุดแก้: ตัด "ม่วง/คล้ำ" ออกจากเกณฑ์สี (weight 1)
+    // 5) Fixed drug eruption — ปรับตามเกณฑ์: สี = แดง/ดำ-คล้ำ, ลักษณะสำคัญ (x3) = ม่วง/คล้ำ เท่านั้น
     {
       id: "fde",
       label: "Fixed drug eruption",
@@ -847,11 +847,11 @@
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
           check: (c) => {
-            // แก้ตรงนี้: เอา "ม่วง/คล้ำ" ออก เพื่อไม่ให้ชนกับข้อ typical (x3)
+            // ข้อ 2 สี: แดง, ดำ/คล้ำ (น้ำหนักปกติ)
             const details = detailFromList(c.colors, [
               "แดง",
-              "ดำ",
               "ดำ/คล้ำ",
+              "ดำ",
               "คล้ำ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
@@ -859,25 +859,24 @@
         },
         {
           id: "typical",
-          label: "ลักษณะสำคัญ (x3): ม่วง/คล้ำ",
+          label: "ลักษณะสำคัญ (พบมาก) (x3): ม่วง/คล้ำ",
           weight: 3,
           check: (c) => {
+            // ข้อ 3 ลักษณะสำคัญ: ให้คิดคะแนนเฉพาะ ม่วง/คล้ำ (และรองรับคำว่า ม่วง ถ้ามี)
             const details = detailFromList(c.colors, [
-              "ม่วง",
               "ม่วง/คล้ำ",
-              "ดำ/คล้ำ",
-              "คล้ำ"
+              "ม่วง"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
         {
           id: "skin_extra",
-          label: "ผิวหนังหลุดลอกตรงกลาง/เจ็บ/แสบ/ผิวหนังตึง",
+          label: "อาการเพิ่มเติมทางผิวหนัง: ผิวหนังหลุดลอกตรงกลาง/เจ็บ/แสบ/ผิวหนังตึง",
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.peelCenter) details.push("ผิวหนังหลุดลอกตรงกลาง");
+            if (c.peelCenter) details.push("ผิวหนังหลุดลอกตรงกลางผื่น");
             if (c.pain) details.push("เจ็บ");
             if (c.burn) details.push("แสบ");
             if (hasAny(c.shapes, ["ตึง"])) details.push("ผิวหนังตึง");
@@ -901,7 +900,7 @@
         {
           id: "location",
           label:
-            "ตำแหน่ง: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิมกับครั้งก่อน",
+            "ตำแหน่งที่พบ: ริมฝีปาก/หน้า/มือ/เท้า/แขน/ขา/อวัยวะเพศ/ตำแหน่งเดิมกับครั้งก่อน",
           weight: 1,
           check: (c) => {
             const details = detailFromList(c.locs, [
@@ -932,7 +931,7 @@
             if (Number.isFinite(c.fever) && c.fever > 37.5) {
               details.push(`ไข้ Temp > 37.5 °C (${c.fever.toFixed(1)} °C)`);
             }
-            if (c.nauseaVomiting) details.push("คลื่นไส้อาเจียน");
+            if (c.nauseaVomiting) details.push("คลื่นไส้/อาเจียน");
             if (c.myalgia) details.push("ปวดเมื่อยกล้ามเนื้อ");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -942,7 +941,7 @@
           label: "ขอบ: ขอบเรียบ/ขอบเขตชัดเจน",
           weight: 1,
           check: (c) => {
-            const details = detailFromList(c.shapes, ["ขอบเรียบ", "ขอบเขตชัด"]);
+            const details = detailFromList(c.shapes, ["ขอบเรียบ", "ขอบเขตชัดเจน", "ขอบเขตชัด"]);
             return details.length ? { ok: true, details } : { ok: false };
           }
         }
@@ -2847,7 +2846,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV7-fde-color-fix",
+    version: "2025-11-20-21ADR-LABTOKENS-FDE-MUANGx3-NOTBLACK",
     defs: ADR_DEFS
   };
 })();
