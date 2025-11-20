@@ -730,7 +730,8 @@
 
           <div class="p6-footer-btns">
             <button class="p6-btn p6-btn-print" onclick="p6PrintTimeline()">🖨️ Print / PDF</button>
-            <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
+             <button class="p6-btn p6-btn-next" onclick="p7SaveCaseAndGo()">
+             ➡️ บันทึกข้อมูลและไปหน้า 7
           </div>
         </div>
       `;
