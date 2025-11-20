@@ -1,4 +1,4 @@
-// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 กลับมา) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
@@ -114,7 +114,7 @@
     }));
   }
 
-  // ฟังก์ชันเรนเดอร์ Naranjo ให้แสดง “ทุกยา” ทุกครั้งที่มีการอัปเดต
+  // ฟังก์ชันเรนเดอร์ Naranjo ให้แสดง “ทุกยา”
   function renderNaranjoBlock() {
     const host = document.getElementById("p6NaranjoBox");
     if (!host) return;
@@ -151,7 +151,7 @@
     };
   }
 
-  // เรนเดอร์รายการยา/ADR แบบข้อความจากหน้า 5 (ให้อัปเดตทุกครั้ง)
+  // เรนเดอร์รายการยา/ADR แบบข้อความจากหน้า 5
   function renderReadableTimelineLists() {
     const drugBox = document.getElementById("p6DrugListBox");
     const adrBox = document.getElementById("p6AdrListBox");
@@ -194,7 +194,7 @@
     }
   }
 
-  // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
+  // --------- LOCAL BRAIN (fallback) ---------
   function toNumber(v) {
     const n = Number(String(v ?? "").replace(/[, ]+/g, ""));
     return Number.isFinite(n) ? n : NaN;
@@ -298,7 +298,7 @@
   // --------- TIMELINE (วาดโดยไม่ re-render ทั้งหน้า) ---------
   function drawTimeline() {
     const dateRow = document.getElementById("p6DateRow");
-    const drugLane = document.getElementById("p6DrugLane");
+       const drugLane = document.getElementById("p6DrugLane");
     const adrLane = document.getElementById("p6AdrLane");
     const sc = document.getElementById("p6TimelineScroll");
     if (!dateRow || !drugLane || !adrLane) return;
@@ -494,8 +494,7 @@
     body.innerHTML = rowsHtml;
   }
 
-  // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา ---------
-
+  // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา + Treatment ---------
   function getTopAdrFromBrain() {
     const brain = window.brainResult;
     if (!brain || !brain.results) return null;
@@ -564,6 +563,52 @@
       </p>
       <ol class="p6-list p6-adr-drug-list">
         ${listHtml}
+      </ol>
+    `;
+  }
+
+  // ---- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ (ดึงกลับมา + เตรียมต่อสมอง) ----
+  function renderTreatmentFromBrain() {
+    const box = document.getElementById("p6TreatmentBox");
+    if (!box) return;
+
+    const top = getTopAdrFromBrain();
+    if (!top) {
+      box.innerHTML =
+        '<p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>';
+      return;
+    }
+
+    const brain = window.brainResult || {};
+    let plans = null;
+
+    if (Array.isArray(top.plan)) {
+      plans = top.plan;
+    } else if (typeof top.plan === "string" && top.plan.trim()) {
+      plans = [top.plan.trim()];
+    } else if (brain.plansByLabel && brain.plansByLabel[top.label]) {
+      const v = brain.plansByLabel[top.label];
+      if (Array.isArray(v)) plans = v;
+      else if (typeof v === "string" && v.trim()) plans = [v.trim()];
+    }
+
+    if (!plans || !plans.length) {
+      box.innerHTML = `
+        <p class="p6-muted">
+          ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง (ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ
+          <strong>${top.label}</strong>)
+        </p>
+      `;
+      return;
+    }
+
+    box.innerHTML = `
+      <p class="p6-muted" style="margin-bottom:.4rem;">
+        แนวทางการรักษาที่สรุปจาก “สมองการแพ้ยา” สำหรับ
+        <strong>${top.label}</strong>
+      </p>
+      <ol class="p6-list">
+        ${plans.map((t) => `<li>${t}</li>`).join("")}
       </ol>
     `;
   }
@@ -702,10 +747,15 @@
           </div>
 
           <div class="p6-block sec3">
-            <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
+            <div class="p6-head">
+              <div class="p6-emoji">💉</div>
+              <div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div>
+            </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">การรักษาเฉพาะ:</div>
-              <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
+              <div id="p6TreatmentBox">
+                <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
+              </div>
             </div>
           </div>
 
@@ -713,18 +763,18 @@
             <div class="p6-head"><div class="p6-emoji">📊</div><div class="p6-head-title">ส่วนที่ 4: ผลการประเมิน Naranjo และ Timeline</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลประเมิน Naranjo Adverse Drug Reaction Probability Scale</div>
-              <div id="p6NaranjoBox"></div>
+              <div id="p6NaranjoBox">${naranjoBlock()}</div>
             </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">Timeline แสดงความสัมพันธ์ระหว่างยาและอาการ</div>
               <div class="p6-timeline-readable">
                 <div class="p6-sub-sub">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">💊 รายการยา</div>
-                  <div id="p6DrugListBox"><p class="p6-muted">— ไม่มีรายการยา —</p></div>
+                  <div id="p6DrugListBox">${drugList}</div>
                 </div>
                 <div class="p6-sub-sub" style="margin-top:.65rem;">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">🧪 ADR</div>
-                  <div id="p6AdrListBox"><p class="p6-muted">— ไม่มี ADR —</p></div>
+                  <div id="p6AdrListBox">${adrList}</div>
                 </div>
               </div>
               <div class="p6-visual-box">
@@ -781,6 +831,7 @@
           renderAdrDrugListFromBrain();
           renderNaranjoBlock();
           renderReadableTimelineLists();
+          renderTreatmentFromBrain();
         });
       }
 
@@ -791,7 +842,7 @@
       setTimeout(drawTimeline, 0);
     }
 
-    // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
+    // ทุกครั้งที่เรียก renderPage6() หลังจากนี้
     if (typeof window.brainComputeAndRender === "function") {
       try {
         window.brainComputeAndRender();
@@ -805,9 +856,10 @@
     renderAdrDrugListFromBrain();
     renderNaranjoBlock();
     renderReadableTimelineLists();
+    renderTreatmentFromBrain();
     drawTimeline();
 
-    // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
+    // อัปเดตสถานะ core
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   }
@@ -921,6 +973,7 @@
     renderAdrDrugListFromBrain();
     renderNaranjoBlock();
     renderReadableTimelineLists();
+    renderTreatmentFromBrain();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
