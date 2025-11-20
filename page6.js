@@ -421,7 +421,7 @@
         dot.style.background =
           kind === "drug"
             ? "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)"
-            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)`;
+            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
         dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
         dot.style.marginLeft = "4px";
         cell.appendChild(dot);
