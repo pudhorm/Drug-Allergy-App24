@@ -114,12 +114,84 @@
     }));
   }
 
+  // เรนเดอร์ Naranjo ให้แสดงยาทุกตัว (ใช้ใน "ส่วนที่ 4")
+  function renderNaranjoBlock() {
+    const host = document.getElementById("p6NaranjoBox");
+    if (!host) return;
+
+    const list = getNaranjoList();
+    if (!list.length) {
+      host.innerHTML =
+        '<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>';
+      return;
+    }
+
+    host.innerHTML = `
+      <div class="p6-naranjo-list">
+        ${list
+          .map(
+            (item) => `
+          <div class="p6-naranjo-item">
+            <div class="p6-naranjo-name">${item.name}</div>
+            <div class="p6-naranjo-score">${item.total}</div>
+          </div>
+          <p class="p6-muted" style="margin-top:2px;margin-bottom:10px;">สรุป: ${item.interpretation}</p>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
   function getPage5() {
     const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
     return {
       drugs: Array.isArray(p5.drugLines) ? p5.drugLines : [],
       adrs: Array.isArray(p5.adrLines) ? p5.adrLines : [],
     };
+  }
+
+  // เรนเดอร์รายการยา / ADR แบบข้อความจากหน้า 5 (ใช้ใน "ส่วนที่ 4")
+  function renderReadableTimelineLists() {
+    const drugBox = document.getElementById("p6DrugListBox");
+    const adrBox = document.getElementById("p6AdrListBox");
+    if (!drugBox || !adrBox) return;
+
+    const { drugs, adrs } = getPage5();
+
+    if (drugs.length) {
+      drugBox.innerHTML = `<ol class="p6-list">${drugs
+        .map(
+          (d, i) => `<li><strong>${
+            (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
+          }</strong> — ${rangeStr(
+            d.startDate,
+            d.startTime,
+            d.stopDate,
+            d.stopTime
+          )}</li>`
+        )
+        .join("")}</ol>`;
+    } else {
+      drugBox.innerHTML = `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
+    }
+
+    if (adrs.length) {
+      adrBox.innerHTML = `<ol class="p6-list">${adrs
+        .map(
+          (a, i) => `<li><strong>${
+            (a.symptom || "").trim() || "ADR " + (i + 1)
+          }</strong> — ${rangeStr(
+            a.startDate,
+            a.startTime,
+            a.endDate,
+            a.endTime
+          )}</li>`
+        )
+        .join("")}</ol>`;
+    } else {
+      adrBox.innerHTML = `<p class="p6-muted">— ไม่มี ADR —</p>`;
+    }
   }
 
   // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
@@ -349,7 +421,7 @@
         dot.style.background =
           kind === "drug"
             ? "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)"
-            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
+            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)`;
         dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
         dot.style.marginLeft = "4px";
         cell.appendChild(dot);
@@ -423,7 +495,6 @@
   }
 
   // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา ---------
-
   function getTopAdrFromBrain() {
     const brain = window.brainResult;
     if (!brain || !brain.results) return null;
@@ -554,57 +625,6 @@
         </ul>
       `;
 
-      function naranjoBlock() {
-        const list = getNaranjoList();
-        if (!list.length)
-          return `<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>`;
-        return `
-          <div class="p6-naranjo-list">
-            ${list
-              .map(
-                (item) => `
-              <div class="p6-naranjo-item">
-                <div class="p6-naranjo-name">${item.name}</div>
-                <div class="p6-naranjo-score">${item.total}</div>
-              </div>
-              <p class="p6-muted" style="margin-top:2px;margin-bottom:10px;">สรุป: ${item.interpretation}</p>
-            `
-              )
-              .join("")}
-          </div>
-        `;
-      }
-
-      const p5 = getPage5();
-      const drugList = p5.drugs.length
-        ? `<ol class="p6-list">${p5.drugs
-            .map(
-              (d, i) => `<li><strong>${
-                (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
-              }</strong> — ${rangeStr(
-                d.startDate,
-                d.startTime,
-                d.stopDate,
-                d.stopTime
-              )}</li>`
-            )
-            .join("")}</ol>`
-        : `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
-      const adrList = p5.adrs.length
-        ? `<ol class="p6-list">${p5.adrs
-            .map(
-              (a, i) => `<li><strong>${
-                (a.symptom || "").trim() || "ADR " + (i + 1)
-              }</strong> — ${rangeStr(
-                a.startDate,
-                a.startTime,
-                a.endDate,
-                a.endTime
-              )}</li>`
-            )
-            .join("")}</ol>`
-        : `<p class="p6-muted">— ไม่มี ADR —</p>`;
-
       root.innerHTML = `
         <div class="p6-wrapper">
           <div class="p6-block sec1">
@@ -677,18 +697,18 @@
             <div class="p6-head"><div class="p6-emoji">📊</div><div class="p6-head-title">ส่วนที่ 4: ผลการประเมิน Naranjo และ Timeline</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลประเมิน Naranjo Adverse Drug Reaction Probability Scale</div>
-              ${naranjoBlock()}
+              <div id="p6NaranjoBox"></div>
             </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">Timeline แสดงความสัมพันธ์ระหว่างยาและอาการ</div>
               <div class="p6-timeline-readable">
                 <div class="p6-sub-sub">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">💊 รายการยา</div>
-                  ${drugList}
+                  <div id="p6DrugListBox"></div>
                 </div>
                 <div class="p6-sub-sub" style="margin-top:.65rem;">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">🧪 ADR</div>
-                  ${adrList}
+                  <div id="p6AdrListBox"></div>
                 </div>
               </div>
               <div class="p6-visual-box">
@@ -744,6 +764,8 @@
           renderAdrSummaryFromBrain();
           renderAdrDrugListFromBrain();
           renderAdrTreatmentFromBrain();
+          renderNaranjoBlock();
+          renderReadableTimelineLists();
         });
       }
 
@@ -767,6 +789,8 @@
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
     renderAdrTreatmentFromBrain();
+    renderNaranjoBlock();
+    renderReadableTimelineLists();
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -900,6 +924,8 @@
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
     renderAdrTreatmentFromBrain();
+    renderNaranjoBlock();
+    renderReadableTimelineLists();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
