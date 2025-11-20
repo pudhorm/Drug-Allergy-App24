@@ -1,9 +1,9 @@
-// ===================== brain.section2.drugs.js =====================
+// ===================== brain.section2.drugs.js (REPLACE WHOLE FILE) =====================
 // ฐานข้อมูล "ยาที่มีรายงานการเกิดการแพ้" แยกตามชนิด ADR
-// ใช้ร่วมกับหน้า 6 ส่วนที่ 2 โดยจะเลือก ADR ที่มีเปอร์เซ็นต์สูงสุดจาก brainResult
-// แล้วให้ page6.js นำข้อมูลจาก window.adrDrugDB[adrLabel] ไปแสดง
+// ใช้ร่วมกับหน้า 6 ส่วนที่ 2 โดย page6.js จะเลือก ADR ที่มีเปอร์เซ็นต์สูงสุดจาก brainResult
+// แล้วดึงข้อมูลจาก window.adrDrugDB[adrLabel] มาแสดง
 
-(function () {
+;(function () {
   const db = {
     // 1) Urticaria
     "Urticaria": {
@@ -29,7 +29,8 @@
         {
           category: "True allergy",
           group: "NSAIDs (เฉพาะผู้ที่ sensitized จริง)",
-          examples: "เช่น Ibuprofen, Diclofenac, Naproxen (ในผู้ป่วยที่มี IgE/ selective reaction)",
+          examples:
+            "เช่น Ibuprofen, Diclofenac, Naproxen (ในผู้ป่วยที่มี IgE/ selective reaction)",
         },
 
         // Pseudoallergy
@@ -64,7 +65,8 @@
     // 2) Angioedema
     "Angioedema": {
       label: "Angioedema",
-      notes: "บวมลึกของชั้นผิว / mucosa จากยา ทั้ง IgE-mediated และ bradykinin / pseudoallergy",
+      notes:
+        "บวมลึกของชั้นผิว / mucosa จากยา ทั้ง IgE-mediated และ bradykinin / pseudoallergy",
       drugs: [
         // True allergy
         {
@@ -125,7 +127,8 @@
     // 3) Anaphylaxis
     "Anaphylaxis": {
       label: "Anaphylaxis",
-      notes: "ช็อกจากการแพ้ยา ทั้ง IgE-mediated และ pseudoallergy โดยเฉพาะ NSAIDs/contrast/opioids",
+      notes:
+        "ช็อกจากการแพ้ยา ทั้ง IgE-mediated และ pseudoallergy โดยเฉพาะ NSAIDs/contrast/opioids",
       drugs: [
         // True allergy
         {
@@ -167,7 +170,8 @@
         {
           category: "True allergy",
           group: "Monoclonal antibodies",
-          examples: "Rituximab, Cetuximab, Trastuzumab, Infliximab, Omalizumab",
+          examples:
+            "Rituximab, Cetuximab, Trastuzumab, Infliximab, Omalizumab",
         },
         {
           category: "True allergy",
@@ -177,7 +181,8 @@
         {
           category: "True allergy",
           group: "Neuromuscular blocking agents (NMBAs)",
-          examples: "Succinylcholine, Rocuronium, Vecuronium, Atracurium, Cisatracurium",
+          examples:
+            "Succinylcholine, Rocuronium, Vecuronium, Atracurium, Cisatracurium",
         },
         {
           category: "True allergy",
@@ -257,7 +262,8 @@
         {
           category: "Reported culprit drugs",
           group: "Penicillins / β-lactams",
-          examples: "Amoxicillin, Ampicillin, Penicillin; Cephalosporins บางตัว",
+          examples:
+            "Amoxicillin, Ampicillin, Penicillin; Cephalosporins บางตัว",
         },
         {
           category: "Reported culprit drugs",
@@ -316,7 +322,8 @@
     // 5) Maculopapular rash (MP rash)
     "Maculopapular rash": {
       label: "Maculopapular rash",
-      notes: "ผื่นแดงปื้น/นูนกระจายทั้งตัว พบได้บ่อยสุดในการแพ้ยาแบบ exanthematous",
+      notes:
+        "ผื่นแดงปื้น/นูนกระจายทั้งตัว พบได้บ่อยสุดในการแพ้ยาแบบ exanthematous",
       drugs: [
         {
           category: "Reported culprit drugs",
@@ -368,7 +375,8 @@
         {
           category: "Reported culprit drugs",
           group: "NSAIDs",
-          examples: "Ibuprofen, Diclofenac, Naproxen, Piroxicam, Mefenamic acid, Indomethacin",
+          examples:
+            "Ibuprofen, Diclofenac, Naproxen, Piroxicam, Mefenamic acid, Indomethacin",
         },
         {
           category: "Reported culprit drugs",
@@ -806,7 +814,8 @@
         {
           category: "Reported culprit drugs",
           group: "Cephalosporins",
-          examples: "Ceftriaxone (เด่นสุด), Cefotetan, Cefotaxime, Ceftazidime",
+          examples:
+            "Ceftriaxone (เด่นสุด), Cefotetan, Cefotaxime, Ceftazidime",
         },
         {
           category: "Reported culprit drugs",
@@ -836,12 +845,14 @@
     // 16) Pancytopenia
     "Pancytopenia": {
       label: "Pancytopenia",
-      notes: "ยา-เหนี่ยวนำให้เกิดเม็ดเลือดแดง เม็ดเลือดขาว และเกล็ดเลือดต่ำร่วมกัน",
+      notes:
+        "ยา-เหนี่ยวนำให้เกิดเม็ดเลือดแดง เม็ดเลือดขาว และเกล็ดเลือดต่ำร่วมกัน",
       drugs: [
         {
           category: "Reported culprit drugs",
           group: "Antibiotics",
-          examples: "Chloramphenicol, Sulfonamides, β-lactams (Penicillin, Piperacillin, Ceftriaxone), Rifampin",
+          examples:
+            "Chloramphenicol, Sulfonamides, β-lactams (Penicillin, Piperacillin, Ceftriaxone), Rifampin",
         },
         {
           category: "Reported culprit drugs",
@@ -934,7 +945,8 @@
         {
           category: "Reported culprit drugs",
           group: "Antiplatelet / Anticoagulant-related",
-          examples: "GPIIb/IIIa inhibitors (Abciximab, Eptifibatide, Tirofiban), Heparin",
+          examples:
+            "GPIIb/IIIa inhibitors (Abciximab, Eptifibatide, Tirofiban), Heparin",
         },
         {
           category: "Reported culprit drugs",
@@ -991,7 +1003,8 @@
     // 20) Serum sickness
     "Serum sickness": {
       label: "Serum sickness",
-      notes: "immune-complex mediated reaction (serum sickness / serum sickness–like)",
+      notes:
+        "immune-complex mediated reaction (serum sickness / serum sickness–like)",
       drugs: [
         {
           category: "Reported culprit drugs",
@@ -1091,4 +1104,3 @@
   // เปิดให้หน้าอื่นเรียกใช้
   window.adrDrugDB = db;
 })();
-
