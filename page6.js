@@ -1,4 +1,4 @@
-// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 แนวทางรักษา) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
@@ -114,12 +114,20 @@
     }));
   }
 
+  // --------- หน้า 5: รองรับทั้งชื่อ field แบบเดิมและแบบใหม่ ---------
   function getPage5() {
     const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
-    return {
-      drugs: Array.isArray(p5.drugLines) ? p5.drugLines : [],
-      adrs: Array.isArray(p5.adrLines) ? p5.adrLines : [],
-    };
+    const drugs = Array.isArray(p5.drugLines)
+      ? p5.drugLines
+      : Array.isArray(p5.drugs)
+      ? p5.drugs
+      : [];
+    const adrs = Array.isArray(p5.adrLines)
+      ? p5.adrLines
+      : Array.isArray(p5.adrs)
+      ? p5.adrs
+      : [];
+    return { drugs, adrs };
   }
 
   // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
@@ -376,6 +384,53 @@
     if (sc) sc.scrollLeft = sc.scrollWidth;
   }
 
+  // --------- UPDATE TEXT LIST (Timeline อ่านง่าย) จากหน้า 5 ---------
+  function renderTimelineReadable() {
+    const { drugs, adrs } = getPage5();
+    const drugHolder = document.getElementById("p6DrugReadable");
+    const adrHolder = document.getElementById("p6AdrReadable");
+
+    if (drugHolder) {
+      if (drugs.length) {
+        const html = `<ol class="p6-list">${drugs
+          .map(
+            (d, i) => `<li><strong>${
+              (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
+            }</strong> — ${rangeStr(
+              d.startDate,
+              d.startTime,
+              d.stopDate,
+              d.stopTime
+            )}</li>`
+          )
+          .join("")}</ol>`;
+        drugHolder.innerHTML = html;
+      } else {
+        drugHolder.innerHTML = `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
+      }
+    }
+
+    if (adrHolder) {
+      if (adrs.length) {
+        const html = `<ol class="p6-list">${adrs
+          .map(
+            (a, i) => `<li><strong>${
+              (a.symptom || "").trim() || "ADR " + (i + 1)
+            }</strong> — ${rangeStr(
+              a.startDate,
+              a.startTime,
+              a.endDate,
+              a.endTime
+            )}</li>`
+          )
+          .join("")}</ol>`;
+        adrHolder.innerHTML = html;
+      } else {
+        adrHolder.innerHTML = `<p class="p6-muted">— ไม่มี ADR —</p>`;
+      }
+    }
+  }
+
   // --------- ADR CHART (กราฟแนวนอน 21 ADR จาก brainResult) ---------
   function updateAdrChartFromBrain() {
     const body = document.getElementById("p6AdrChartBody");
@@ -423,7 +478,6 @@
   }
 
   // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา ---------
-
   function getTopAdrFromBrain() {
     const brain = window.brainResult;
     if (!brain || !brain.results) return null;
@@ -496,49 +550,13 @@
     `;
   }
 
-  // --------- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ ---------
-  function renderAdrTreatmentFromBrain() {
-    const box = document.getElementById("p6AdrTreatmentBox");
-    const nameEl = document.getElementById("p6AdrTreatmentTitle");
-    if (!box) return;
-
-    const top = getTopAdrFromBrain();
-    const db = window.adrTreatmentDB || {};
-    if (!top) {
-      if (nameEl) nameEl.textContent = "ยังไม่มีผลสรุปจากส่วนที่ 1";
-      box.classList.add("p6-muted");
-      box.textContent =
-        "ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้";
-      return;
-    }
-
-    const entry = db[top.label];
-    if (!entry || !entry.text) {
-      if (nameEl) nameEl.textContent = top.label;
-      box.classList.add("p6-muted");
-      box.textContent =
-        "ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ ADR ชนิดนี้ในระบบ";
-      return;
-    }
-
-    if (nameEl) nameEl.textContent = entry.label || top.label;
-    box.classList.remove("p6-muted");
-    box.textContent = entry.text;
-  }
-
-  // --------- RENDER (ครั้งเดียว) ---------
+  // --------- RENDER (ครั้งเดียว + อัปเดตซ้ำได้) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
     if (!root) return;
 
     if (!window.__p6RenderedOnce) {
       window.__p6RenderedOnce = true;
-
-      const p4 =
-        (window.drugAllergyData && window.drugAllergyData.page4) || {};
-      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
-        .map((d) => d.name)
-        .filter(Boolean);
 
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
@@ -574,36 +592,6 @@
           </div>
         `;
       }
-
-      const p5 = getPage5();
-      const drugList = p5.drugs.length
-        ? `<ol class="p6-list">${p5.drugs
-            .map(
-              (d, i) => `<li><strong>${
-                (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
-              }</strong> — ${rangeStr(
-                d.startDate,
-                d.startTime,
-                d.stopDate,
-                d.stopTime
-              )}</li>`
-            )
-            .join("")}</ol>`
-        : `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
-      const adrList = p5.adrs.length
-        ? `<ol class="p6-list">${p5.adrs
-            .map(
-              (a, i) => `<li><strong>${
-                (a.symptom || "").trim() || "ADR " + (i + 1)
-              }</strong> — ${rangeStr(
-                a.startDate,
-                a.startTime,
-                a.endDate,
-                a.endTime
-              )}</li>`
-            )
-            .join("")}</ol>`
-        : `<p class="p6-muted">— ไม่มี ADR —</p>`;
 
       root.innerHTML = `
         <div class="p6-wrapper">
@@ -663,13 +651,7 @@
             <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">การรักษาเฉพาะ:</div>
-              <p class="p6-muted" style="margin:0 0 .35rem;">
-                ดึงจาก “ชนิด ADR ที่ได้คะแนนสูงสุด” ในส่วนที่ 1 และชุดแนวทางการรักษาที่กำหนดไว้ในสมองการแพ้ยา
-              </p>
-              <p id="p6AdrTreatmentTitle" class="p6-treatment-name">ยังไม่มีผลสรุปจากส่วนที่ 1</p>
-              <div id="p6AdrTreatmentBox" class="p6-treatment-box">
-                ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้
-              </div>
+              <p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>
             </div>
           </div>
 
@@ -684,11 +666,11 @@
               <div class="p6-timeline-readable">
                 <div class="p6-sub-sub">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">💊 รายการยา</div>
-                  ${drugList}
+                  <div id="p6DrugReadable"><p class="p6-muted">— ไม่มีรายการยา —</p></div>
                 </div>
                 <div class="p6-sub-sub" style="margin-top:.65rem;">
                   <div class="p6-sub-title" style="margin-bottom:.35rem;">🧪 ADR</div>
-                  ${adrList}
+                  <div id="p6AdrReadable"><p class="p6-muted">— ไม่มี ADR —</p></div>
                 </div>
               </div>
               <div class="p6-visual-box">
@@ -743,14 +725,16 @@
           updateAdrChartFromBrain();
           renderAdrSummaryFromBrain();
           renderAdrDrugListFromBrain();
-          renderAdrTreatmentFromBrain();
+          renderTimelineReadable();
+          drawTimeline();
         });
       }
 
       // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
 
-      // วาด timeline ครั้งแรก
+      // วาด timeline + text list ครั้งแรก
+      renderTimelineReadable();
       setTimeout(drawTimeline, 0);
     }
 
@@ -766,7 +750,7 @@
     updateAdrChartFromBrain();
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
-    renderAdrTreatmentFromBrain();
+    renderTimelineReadable();
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -864,24 +848,6 @@
       .p6-adr-drug-list li{
         margin:2px 0;
       }
-
-      /* ส่วนที่ 3: แนวทางการรักษาเฉพาะ */
-      .p6-treatment-name{
-        margin:.15rem 0 4px;
-        font-size:.9rem;
-        font-weight:800;
-        color:#b45309;
-      }
-      .p6-treatment-box{
-        border-radius:16px;
-        border:1px solid #fbbf24;
-        background:#fefce8;
-        padding:.75rem .9rem;
-        font-size:.85rem;
-        line-height:1.45;
-        color:#374151;
-        white-space:pre-wrap;
-      }
     `;
     const tag = document.createElement("style");
     tag.id = "p6-visual-style";
@@ -899,7 +865,7 @@
     updateAdrChartFromBrain();
     renderAdrSummaryFromBrain();
     renderAdrDrugListFromBrain();
-    renderAdrTreatmentFromBrain();
+    renderTimelineReadable();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
@@ -910,18 +876,23 @@
 })();
 
 
-// ====== พิมพ์หน้า 6 (เหมือนเดิม) ======
+// ====== พิมพ์หน้า 6 ======
 function p6PrintTimeline() {
   const root = document.getElementById("p6Root");
   const pageSnapshot = root ? root.outerHTML : "";
 
-  const p5 =
-    (window.drugAllergyData && window.drugAllergyData.page5) || {
-      drugLines: [],
-      adrLines: [],
-    };
-  const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
-  const adrs = Array.isArray(p5.adrLines) ? p5.adrLines : [];
+  const rawP5 =
+    (window.drugAllergyData && window.drugAllergyData.page5) || {};
+  const drugs = Array.isArray(rawP5.drugLines)
+    ? rawP5.drugLines
+    : Array.isArray(rawP5.drugs)
+    ? rawP5.drugs
+    : [];
+  const adrs = Array.isArray(rawP5.adrLines)
+    ? rawP5.adrLines
+    : Array.isArray(rawP5.adrs)
+    ? rawP5.adrs
+    : [];
 
   function fmtDateTHLocal(str) {
     if (!str) return "—";
@@ -958,8 +929,8 @@ function p6PrintTimeline() {
           drugs.length
             ? `<ol>
                 ${drugs
-                  .map((d) => {
-                    const name = (d.name || "").trim() || "(ไม่ระบุชื่อยา)";
+                  .map((d, i) => {
+                    const name = (d.name || "").trim() || "ยาตัวที่ " + (i + 1);
                     const sD = fmtDateTHLocal(d.startDate);
                     const sT = fmtTimeLocal(d.startTime);
                     const eD = fmtDateTHLocal(d.stopDate);
@@ -979,9 +950,9 @@ function p6PrintTimeline() {
           adrs.length
             ? `<ol>
                 ${adrs
-                  .map((a) => {
+                  .map((a, i) => {
                     const sym =
-                      (a.symptom || "").trim() || "(ไม่ระบุอาการ)";
+                      (a.symptom || "").trim() || "ADR " + (i + 1);
                     const sD = fmtDateTHLocal(a.startDate);
                     const sT = fmtTimeLocal(a.startTime);
                     const eD = fmtDateTHLocal(a.endDate);
@@ -1006,18 +977,49 @@ function p6PrintTimeline() {
         <title>พิมพ์หน้า 6</title>
         <style>
           * { box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
-          body { margin:0; padding:12px 16px 16px; background:#fff;
-                 -webkit-print-color-adjust: exact !important;
-                 print-color-adjust: exact !important; }
+          body {
+            margin:0;
+            padding:12px 16px 16px;
+            background:#f3f4f6;
+            max-width:1120px;
+            margin-left:auto;
+            margin-right:auto;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           .tabs, .p6-footer-btns, .p6-btn, .p6-btn-group, button { display:none !important; }
           .p6-visual-box { display:none !important; }
-          .p6-print-summary { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; margin:12px 0 14px; background:#fafafa; }
+
+          #p6Root {
+            background:#ffffff;
+            border-radius:16px;
+            border:1px solid #e5e7eb;
+            box-shadow:0 8px 24px rgba(15,23,42,.08);
+            padding:8px 10px 10px;
+            margin-bottom:12px;
+          }
+
+          .p6-print-summary {
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:12px 14px;
+            margin:0 0 14px;
+            background:#ffffff;
+            box-shadow:0 4px 18px rgba(15,23,42,.06);
+          }
           .p6-print-summary h3 { margin:0 0 8px; }
           .p6-print-summary h4 { margin:10px 0 6px; }
           .p6-print-summary ol { margin:0 0 6px 18px; padding:0; }
           .p6-print-summary li { margin:2px 0; }
           .p6-print-summary .muted { color:#6b7280; margin:0; }
-          .p6-visual-box-print { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
+
+          .p6-visual-box-print {
+            background:#ffffff;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            padding:14px;
+            box-shadow:0 4px 18px rgba(15,23,42,.06);
+          }
           #printTimelineScroll { overflow:visible; width:auto; max-width:none; display:inline-block; background:#fff; }
           #printDateRow, #printDrugLane, #printAdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
           .p6-date-cell { border-bottom:1px solid #edf2f7; font-size:11px; font-weight:600; white-space:nowrap; padding-bottom:2px; text-align:left; }
@@ -1027,8 +1029,9 @@ function p6PrintTimeline() {
           .p6-bar { height:34px; border-radius:9999px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; white-space:nowrap; box-shadow:0 8px 22px rgba(15,23,42,.12); font-size:12px; }
           .p6-bar-drug { background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%); }
           .p6-bar-adr  { background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%); }
+
           @page { size:A4 landscape; margin:8mm; }
-          @media print { body { background:#fff; } }
+          @media print { body { background:#ffffff; } }
         </style>
       </head>
       <body>
@@ -1050,9 +1053,9 @@ function p6PrintTimeline() {
         </div>
         <script>
           (function(){
-            const p5 = (window.opener && window.opener.window && window.opener.window.drugAllergyData && window.opener.window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
-            const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
-            const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+            const rawP5 = (window.opener && window.opener.window && window.opener.window.drugAllergyData && window.opener.window.drugAllergyData.page5) || {};
+            const drugs = Array.isArray(rawP5.drugLines) ? rawP5.drugLines : (Array.isArray(rawP5.drugs) ? rawP5.drugs : []);
+            const adrs  = Array.isArray(rawP5.adrLines) ? rawP5.adrLines  : (Array.isArray(rawP5.adrs)  ? rawP5.adrs  : []);
             function parseDate(str){
               if(!str) return null;
               const pure=String(str).trim().split(" ")[0];
