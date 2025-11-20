@@ -1,11 +1,12 @@
-// ===================== page6.js — หน้า 6 (เสถียร + Section 2 ตาม ADR อันดับ 1) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
-  if (window.__p6Bound) return;
+  if (window.__p6Bound) return; // กันโหลดซ้ำ
   window.__p6Bound = true;
 
-  // --------- UTIL: เช็กว่าหน้า 1–3 มีข้อมูลพอหรือยัง ---------
+  // --------- UTIL ---------
+  // ใช้มาตรฐานเดียวกับ brain.js: __saved หรือมีข้อมูลจริง >=1 ฟิลด์ก็นับว่า “พร้อม”
   function __hasRealData(pageObj) {
     if (!pageObj) return false;
     if (pageObj.__saved) return true;
@@ -57,7 +58,7 @@
     return `${start} → ${end}`;
   }
 
-  // เรนเดอร์สถานะหน้า 1–3
+  // เรนเดอร์สถานะหน้า 1–3 (เรียกซ้ำได้)
   function renderCoreStatus() {
     const status = corePagesReady();
     if (status.ok) {
@@ -121,7 +122,7 @@
     };
   }
 
-  // --------- LOCAL BRAIN (fallback ถ้าไม่มี brain.rules.js) ---------
+  // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
   function toNumber(v) {
     const n = Number(String(v ?? "").replace(/[, ]+/g, ""));
     return Number.isFinite(n) ? n : NaN;
@@ -222,95 +223,7 @@
     `;
   }
 
-  // --------- SECTION 2: เลือก ADR เด่นสุดจาก brainResult + ดึงฐานข้อมูลยา ---------
-  // หา ADR ที่เปอร์เซ็นต์สูงสุดจากสมอง
-  function getTopAdrResult() {
-    const brain = window.brainResult;
-    if (!brain || !brain.results) return null;
-    const arr = Object.values(brain.results);
-    if (!arr.length) return null;
-    const sorted = arr
-      .slice()
-      .sort((a, b) => (b.percent || 0) - (a.percent || 0));
-    const top = sorted[0];
-    if (!Number.isFinite(top.percent) || top.percent <= 0) return null;
-    return top; // { label, percent, ... }
-  }
-
-  function renderAdrSection2() {
-    const summaryEl = document.getElementById("p6AdrDrugSummary");
-    const reportEl = document.getElementById("p6AdrDrugReport");
-    if (!summaryEl || !reportEl) return;
-
-    const top = getTopAdrResult();
-    if (!top) {
-      summaryEl.innerHTML =
-        '<p class="p6-muted">ยังไม่พบชนิด ADR ที่เด่นจากส่วนที่ 1</p>';
-      reportEl.innerHTML =
-        '<p class="p6-muted">ยังไม่สามารถดึงรายชื่อยาได้ (ต้องมีชนิด ADR อันดับ 1 ก่อน)</p>';
-      return;
-    }
-
-    // ฐานข้อมูลยาที่สร้างใน brain.section2.drugs.js
-    const db = window.adrDrugDB || {};
-    const entry = db[top.label];
-    if (!entry) {
-      const pctStrMissing = Number.isFinite(top.percent)
-        ? top.percent.toFixed(1).replace(/\.0$/, "")
-        : "—";
-
-      summaryEl.innerHTML = `
-        <div class="p6-adr-drug-box">
-          <div class="p6-adr-drug-adr-name">${top.label}</div>
-          <div class="p6-adr-drug-adr-percent">คะแนนเด่นมากที่สุดที่ 1: ${pctStrMissing}%</div>
-          <p class="p6-muted" style="margin-top:.35rem;">
-            * ยังไม่มีฐานข้อมูลยาสำหรับ ADR ชนิดนี้ในระบบ
-          </p>
-        </div>
-      `;
-      reportEl.innerHTML =
-        '<p class="p6-muted">ยังไม่มีรายชื่อยาที่กำหนดไว้ในฐานข้อมูล</p>';
-      return;
-    }
-
-    const pctStr = Number.isFinite(top.percent)
-      ? top.percent.toFixed(1).replace(/\.0$/, "")
-      : "—";
-
-    // หัวข้อ 1: รายงานการแพ้
-    summaryEl.innerHTML = `
-      <div class="p6-adr-drug-box">
-        <div class="p6-adr-drug-adr-name">${entry.label || top.label}</div>
-        <div class="p6-adr-drug-adr-percent">คะแนนเด่นมากที่สุดที่ 1: ${pctStr}%</div>
-        <p class="p6-muted" style="margin-top:.35rem;">
-          * แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากผลประเมินส่วนที่ 1
-        </p>
-      </div>
-    `;
-
-    // หัวข้อ 2: รายชื่อยา (จาก brain.section2.drugs.js)
-    const sectionsHtml = (entry.sections || [])
-      .map((sec) => {
-        const items = (sec.items || [])
-          .map((it) => `<li>${it}</li>`)
-          .join("");
-        return `
-          <div class="p6-adr-drug-group">
-            <div class="p6-adr-drug-group-title">${sec.title}</div>
-            <ul class="p6-adr-drug-list">
-              ${items}
-            </ul>
-          </div>
-        `;
-      })
-      .join("");
-
-    reportEl.innerHTML = sectionsHtml || `
-      <p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>
-    `;
-  }
-
-  // --------- TIMELINE (เหมือนเดิม) ---------
+  // --------- TIMELINE (วาดโดยไม่ re-render ทั้งหน้า) ---------
   function drawTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
@@ -483,9 +396,7 @@
     }
 
     // เรียงตาม % จากมากไปน้อย แต่แสดงครบทุก ADR
-    const sorted = arr
-      .slice()
-      .sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
     const maxPct = Math.max(
       1,
       ...sorted.map((r) => (Number.isFinite(r.percent) ? r.percent : 0))
@@ -511,13 +422,93 @@
     body.innerHTML = rowsHtml;
   }
 
-  // --------- RENDER (ครั้งเดียว + อัปเดตซ้ำเฉพาะข้อมูล) ---------
+  // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา ---------
+
+  function getTopAdrFromBrain() {
+    const brain = window.brainResult;
+    if (!brain || !brain.results) return null;
+    const arr = Object.values(brain.results);
+    if (!arr.length) return null;
+    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const top = sorted[0];
+    if (!top || !top.label) return null;
+    if (!Number.isFinite(top.percent) || top.percent <= 0) return null;
+    return top;
+  }
+
+  function renderAdrSummaryFromBrain() {
+    const box = document.getElementById("p6AdrSummary");
+    if (!box) return;
+
+    const top = getTopAdrFromBrain();
+    if (!top) {
+      box.innerHTML =
+        '<p class="p6-muted">ยังไม่มีผลสรุปจากส่วนที่ 1 หรือยังไม่ได้คำนวณ</p>';
+      return;
+    }
+
+    const pct = Number.isFinite(top.percent) ? Math.max(0, top.percent) : 0;
+    const pctStr = pct.toFixed(1).replace(/\.0$/, "");
+
+    box.innerHTML = `
+      <p class="p6-adr-top-name">${top.label}</p>
+      <p class="p6-muted">คะแนนเฉลี่ยมากที่สุดลำดับที่ 1: ${pctStr}%</p>
+      <p class="p6-muted">* แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์ผลลัพธ์สูงสุดจากผลประเมินส่วนที่ 1</p>
+    `;
+  }
+
+  function renderAdrDrugListFromBrain() {
+    const holder = document.getElementById("p6AdrDrugList");
+    if (!holder) return;
+
+    const top = getTopAdrFromBrain();
+    if (!top) {
+      holder.innerHTML =
+        '<p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>';
+      return;
+    }
+
+    const db = window.adrDrugDB || {};
+    const entry = db[top.label];
+    if (!entry || !Array.isArray(entry.drugs) || !entry.drugs.length) {
+      holder.innerHTML =
+        '<p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>';
+      return;
+    }
+
+    const listHtml = entry.drugs
+      .map((d) => {
+        const cat = d.category ? `${d.category} — ` : "";
+        const grp = d.group || "";
+        const ex = d.examples ? `<span class="p6-muted">: ${d.examples}</span>` : "";
+        return `<li><strong>${cat}${grp}</strong>${ex}</li>`;
+      })
+      .join("");
+
+    holder.innerHTML = `
+      <p class="p6-muted" style="margin-bottom:.4rem;">
+        แสดงรายชื่อยาที่มีรายงานความสัมพันธ์กับ
+        <strong>${entry.label || top.label}</strong> ตามข้อมูลวรรณกรรม (สรุปแบบย่อ)
+      </p>
+      <ol class="p6-list p6-adr-drug-list">
+        ${listHtml}
+      </ol>
+    `;
+  }
+
+  // --------- RENDER (ครั้งเดียว) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
     if (!root) return;
 
     if (!window.__p6RenderedOnce) {
       window.__p6RenderedOnce = true;
+
+      const p4 =
+        (window.drugAllergyData && window.drugAllergyData.page4) || {};
+      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
+        .map((d) => d.name)
+        .filter(Boolean);
 
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
@@ -599,7 +590,9 @@
 
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
-              <div id="p6BrainHost"></div>
+              <div id="p6BrainHost">
+                <!-- p6BrainBox จาก index.html จะถูกย้ายมาอยู่ตรงนี้ -->
+              </div>
 
               <!-- กล่องกราฟ ADR 21 ชนิด (แนวนอน สีชมพู) -->
               <div class="p6-adr-chart">
@@ -620,16 +613,18 @@
               <div class="p6-emoji">💊</div>
               <div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div>
             </div>
+
             <div class="p6-subcard">
               <div class="p6-sub-title">1) รายงานการแพ้:</div>
-              <div id="p6AdrDrugSummary">
-                <p class="p6-muted">ระบบจะเลือกชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากส่วนที่ 1 แล้วแสดงผลสรุปที่นี่</p>
+              <div id="p6AdrSummary" class="p6-adr-summary-box">
+                <p class="p6-muted">ยังไม่มีผลสรุปจากส่วนที่ 1 หรือยังไม่ได้คำนวณ</p>
               </div>
             </div>
+
             <div class="p6-subcard">
               <div class="p6-sub-title">2) รายชื่อยาที่มีรายงานการเกิดการแพ้ชนิดนี้:</div>
-              <div id="p6AdrDrugReport">
-                <p class="p6-muted">รอผลจากการประมวลผลส่วนที่ 1…</p>
+              <div id="p6AdrDrugList">
+                <p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>
               </div>
             </div>
           </div>
@@ -684,7 +679,7 @@
         </div>
       `;
 
-      // ย้าย p6BrainBox จาก index.html มาไว้ใน host
+      // ย้าย p6BrainBox จาก index.html มาไว้ใน host (ไม่สร้าง id ซ้ำ)
       const externalBox = document.getElementById("p6BrainBox");
       const host = document.getElementById("p6BrainHost");
       if (externalBox && host) {
@@ -696,7 +691,7 @@
         }
       }
 
-      // ปุ่มรีเฟรช
+      // ปุ่มรีเฟรช = คำนวณใหม่
       const btn = document.getElementById("p6BrainRefreshBtn");
       if (btn) {
         btn.addEventListener("click", () => {
@@ -710,17 +705,19 @@
             } catch (e) {}
           }
           updateAdrChartFromBrain();
-          renderAdrSection2();
+          renderAdrSummaryFromBrain();
+          renderAdrDrugListFromBrain();
         });
       }
 
-      // ใส่สไตล์ + วาด timeline ครั้งแรก + section 2 ครั้งแรก
+      // ใส่สไตล์ (ครั้งเดียว)
       injectP6Styles();
+
+      // วาด timeline ครั้งแรก
       setTimeout(drawTimeline, 0);
-      renderAdrSection2();
     }
 
-    // เรียกคำนวณทุกครั้งที่เปิดหน้า 6
+    // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
     if (typeof window.brainComputeAndRender === "function") {
       try {
         window.brainComputeAndRender();
@@ -730,9 +727,11 @@
     }
 
     updateAdrChartFromBrain();
+    renderAdrSummaryFromBrain();
+    renderAdrDrugListFromBrain();
     drawTimeline();
-    renderAdrSection2();
 
+    // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   }
@@ -813,37 +812,19 @@
         color:#be185d;
       }
 
-      /* กล่อง Section 2 */
-      .p6-adr-drug-box{
-        border-radius:16px;
-        border:1px solid rgba(59,130,246,0.35);
-        background:linear-gradient(135deg,#eff6ff,#f5f3ff);
-        padding:10px 12px;
-      }
-      .p6-adr-drug-adr-name{
+      /* ส่วนที่ 2: กล่องสรุป ADR ลำดับ 1 + รายชื่อยา */
+      .p6-adr-top-name{
+        margin:0 0 2px;
         font-weight:800;
-        font-size:13px;
         color:#1d4ed8;
       }
-      .p6-adr-drug-adr-percent{
-        font-size:11px;
-        color:#4b5563;
-      }
-      .p6-adr-drug-group{
-        margin-top:6px;
-        padding-top:4px;
-        border-top:1px dashed rgba(148,163,184,0.6);
-      }
-      .p6-adr-drug-group-title{
-        font-size:12px;
-        font-weight:700;
-        color:#0f766e;
-        margin-bottom:2px;
-      }
       .p6-adr-drug-list{
-        margin:0;
-        padding-left:18px;
-        font-size:11px;
+        margin:.2rem 0 0 1.1rem;
+        padding:0;
+        font-size:.85rem;
+      }
+      .p6-adr-drug-list li{
+        margin:2px 0;
       }
     `;
     const tag = document.createElement("style");
@@ -852,7 +833,7 @@
     document.head.appendChild(tag);
   }
 
-  // --------- AUTO UPDATE จาก event da:update ---------
+  // --------- AUTO UPDATE (ไม่ re-render ทั้งหน้า) ---------
   document.addEventListener("da:update", () => {
     if (typeof window.brainComputeAndRender === "function") {
       window.brainComputeAndRender();
@@ -860,8 +841,9 @@
       computeLocalBrain();
     }
     updateAdrChartFromBrain();
+    renderAdrSummaryFromBrain();
+    renderAdrDrugListFromBrain();
     drawTimeline();
-    renderAdrSection2();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   });
