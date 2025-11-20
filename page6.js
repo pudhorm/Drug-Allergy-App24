@@ -1,13 +1,11 @@
-```js
-// ===================== page6.js — หน้า 6 (เสถียร ไม่กระพริบ/ไม่ค้าง) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ผูก Section 2) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
-  if (window.__p6Bound) return; // กันโหลดซ้ำ
+  if (window.__p6Bound) return;
   window.__p6Bound = true;
 
-  // --------- UTIL ---------
-  // ใช้มาตรฐานเดียวกับ brain.js: __saved หรือมีข้อมูลจริง >=1 ฟิลด์ก็นับว่า “พร้อม”
+  // --------- UTIL: เช็กว่าหน้า 1–3 มีข้อมูลพอหรือยัง ---------
   function __hasRealData(pageObj) {
     if (!pageObj) return false;
     if (pageObj.__saved) return true;
@@ -59,7 +57,7 @@
     return `${start} → ${end}`;
   }
 
-  // เรนเดอร์สถานะหน้า 1–3 (เรียกซ้ำได้)
+  // เรนเดอร์สถานะหน้า 1–3
   function renderCoreStatus() {
     const status = corePagesReady();
     if (status.ok) {
@@ -115,15 +113,6 @@
     }));
   }
 
-  // รายชื่อยาใน Naranjo (ใช้ในส่วนที่ 2)
-  function getAllDrugNames() {
-    const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
-    const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
-    return drugs.map((d, i) =>
-      d.name && d.name.trim() ? d.name.trim() : "ยา " + (i + 1)
-    );
-  }
-
   function getPage5() {
     const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
     return {
@@ -132,7 +121,7 @@
     };
   }
 
-  // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
+  // --------- LOCAL BRAIN (fallback ถ้าไม่มี brain.rules.js) ---------
   function toNumber(v) {
     const n = Number(String(v ?? "").replace(/[, ]+/g, ""));
     return Number.isFinite(n) ? n : NaN;
@@ -233,7 +222,81 @@
     `;
   }
 
-  // --------- TIMELINE (วาดโดยไม่ re-render ทั้งหน้า) ---------
+  // --------- SECTION 2: เลือก ADR เด่นสุดจาก brainResult + ดึงฐานข้อมูลยา ---------
+  // หาชนิด ADR ที่เปอร์เซ็นต์สูงสุดจากสมอง (brainResult)
+  function getTopAdrResult() {
+    const brain = window.brainResult;
+    if (!brain || !brain.results) return null;
+    const arr = Object.values(brain.results);
+    if (!arr.length) return null;
+    const sorted = arr
+      .slice()
+      .sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const top = sorted[0];
+    if (!Number.isFinite(top.percent) || top.percent <= 0) return null;
+    return top; // { label, percent, ... }
+  }
+
+  function renderAdrSection2() {
+    const container = document.getElementById("p6AdrDrugReport");
+    if (!container) return;
+
+    const top = getTopAdrResult();
+    if (!top) {
+      container.innerHTML =
+        '<p class="p6-muted">ยังไม่พบชนิด ADR ที่เด่นจากส่วนที่ 1</p>';
+      return;
+    }
+
+    // ฐานข้อมูลยาที่สร้างใน brain.section2.drugs.js
+    const db = window.adrDrugDB || {};
+    const entry = db[top.label];
+    if (!entry) {
+      container.innerHTML = `
+        <p class="p6-muted">
+          ยังไม่มีฐานข้อมูลยาสำหรับชนิด ADR: <strong>${top.label}</strong>
+        </p>
+      `;
+      return;
+    }
+
+    const pctStr = Number.isFinite(top.percent)
+      ? top.percent.toFixed(1).replace(/\.0$/, "")
+      : "—";
+
+    const sectionsHtml = (entry.sections || [])
+      .map((sec) => {
+        const items = (sec.items || [])
+          .map((it) => `<li>${it}</li>`)
+          .join("");
+        return `
+          <div class="p6-adr-drug-group">
+            <div class="p6-adr-drug-group-title">${sec.title}</div>
+            <ul class="p6-adr-drug-list">
+              ${items}
+            </ul>
+          </div>
+        `;
+      })
+      .join("");
+
+    container.innerHTML = `
+      <div class="p6-adr-drug-box">
+        <div class="p6-adr-drug-header">
+          <div>
+            <div class="p6-adr-drug-adr-name">${entry.label || top.label}</div>
+            <div class="p6-adr-drug-adr-percent">คะแนนเด่นจากส่วนที่ 1: ${pctStr}%</div>
+          </div>
+        </div>
+        ${sectionsHtml}
+        <p class="p6-muted" style="margin-top:.35rem;">
+          * แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากผลประเมินส่วนที่ 1
+        </p>
+      </div>
+    `;
+  }
+
+  // --------- TIMELINE (เหมือนเดิม) ---------
   function drawTimeline() {
     const dateRow = document.getElementById("p6DateRow");
     const drugLane = document.getElementById("p6DrugLane");
@@ -406,7 +469,9 @@
     }
 
     // เรียงตาม % จากมากไปน้อย แต่แสดงครบทุก ADR
-    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const sorted = arr
+      .slice()
+      .sort((a, b) => (b.percent || 0) - (a.percent || 0));
     const maxPct = Math.max(
       1,
       ...sorted.map((r) => (Number.isFinite(r.percent) ? r.percent : 0))
@@ -432,74 +497,7 @@
     body.innerHTML = rowsHtml;
   }
 
-  // --------- ส่วนที่ 2: ใช้ % สูงสุดจาก brainResult ---------
-  function getTopAdrFromBrain() {
-    const brain = window.brainResult;
-    if (!brain || !brain.results) return null;
-    const arr = Object.values(brain.results);
-    if (!arr.length) return null;
-
-    let best = null;
-    for (const r of arr) {
-      const pct = Number.isFinite(r.percent) ? r.percent : 0;
-      if (!r.label && !r.id) continue;
-      if (!best || pct > best.percent) {
-        best = {
-          id: r.id || null,
-          label: r.label || r.id || "",
-          percent: pct,
-        };
-      }
-    }
-    if (!best || best.percent <= 0) return null;
-    return best;
-  }
-
-  function updateSection2FromBrain() {
-    const boxReceived = document.getElementById("p6DrugsReceived");
-    const boxReport = document.getElementById("p6DrugsReport");
-    if (!boxReceived || !boxReport) return;
-
-    const drugNames = getAllDrugNames();
-    const baseDrugText = drugNames.length
-      ? drugNames.join(", ")
-      : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)";
-
-    const topAdr = getTopAdrFromBrain();
-
-    if (!topAdr) {
-      // กรณียังไม่มีผลจากส่วนที่ 1
-      boxReceived.textContent = baseDrugText;
-      boxReport.innerHTML =
-        '<p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p>';
-      return;
-    }
-
-    const pctStr = topAdr.percent
-      ? topAdr.percent.toFixed(1).replace(/\.0$/, "")
-      : "0";
-
-    // ยังคงแสดง "ยาที่ผู้ป่วยได้รับ" ตามจริง + แจ้งว่าในส่วนที่ 2 focus เฉพาะ ADR ที่ % สูงสุด
-    boxReceived.innerHTML = `
-      <p class="p6-muted"> ${
-        baseDrugText || "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
-      }</p>
-    `;
-
-    boxReport.innerHTML = `
-      <p class="p6-muted">
-        แสดงเฉพาะข้อมูลสำหรับ <strong>${topAdr.label}</strong>
-        ซึ่งได้เปอร์เซ็นต์ความเข้าได้สูงที่สุดจากส่วนที่ 1
-        (${pctStr}%)
-      </p>
-      <p class="p6-muted" style="margin-top:.35rem;">
-        ในขั้นต่อไปสามารถเติมรายการยาที่มีรายงานการเกิด <strong>${topAdr.label}</strong>
-        พร้อมแหล่งอ้างอิง เพื่อใช้เป็นฐานข้อมูลประกอบการประเมินในผู้ป่วยรายนี้
-      </p>
-    `;
-  }
-
-  // --------- RENDER (ครั้งเดียว) ---------
+  // --------- RENDER (ครั้งเดียว + อัปเดตซ้ำเฉพาะข้อมูล) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
     if (!root) return;
@@ -509,7 +507,9 @@
 
       const p4 =
         (window.drugAllergyData && window.drugAllergyData.page4) || {};
-      const drugNames = getAllDrugNames();
+      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
+        .map((d) => d.name)
+        .filter(Boolean);
 
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
@@ -610,19 +610,22 @@
           </div>
 
           <div class="p6-block sec2">
-            <div class="p6-head"><div class="p6-emoji">💊</div><div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div></div>
+            <div class="p6-head">
+              <div class="p6-emoji">💊</div>
+              <div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div>
+            </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">ยาที่ผู้ป่วยได้รับ:</div>
-              <div id="p6DrugsReceived" class="p6-muted">${
+              <p id="p6AdrDrugPatientDrugs" class="p6-muted">${
                 drugNames && drugNames.length
                   ? drugNames.join(", ")
                   : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
-              }</div>
+              }</p>
             </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">รายงานการแพ้:</div>
-              <div id="p6DrugsReport" class="p6-muted">
-                รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…
+              <div id="p6AdrDrugReport">
+                <p class="p6-muted">ระบบจะเลือกชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากส่วนที่ 1 แล้วแสดงยาที่มีรายงานสัมพันธ์</p>
               </div>
             </div>
           </div>
@@ -677,7 +680,7 @@
         </div>
       `;
 
-      // ย้าย p6BrainBox จาก index.html มาไว้ใน host (ไม่สร้าง id ซ้ำ)
+      // ย้าย p6BrainBox จาก index.html มาไว้ใน host
       const externalBox = document.getElementById("p6BrainBox");
       const host = document.getElementById("p6BrainHost");
       if (externalBox && host) {
@@ -689,7 +692,7 @@
         }
       }
 
-      // ปุ่มรีเฟรช = คำนวณใหม่
+      // ปุ่มรีเฟรช
       const btn = document.getElementById("p6BrainRefreshBtn");
       if (btn) {
         btn.addEventListener("click", () => {
@@ -703,18 +706,17 @@
             } catch (e) {}
           }
           updateAdrChartFromBrain();
-          updateSection2FromBrain();
+          renderAdrSection2();
         });
       }
 
-      // ใส่สไตล์ (ครั้งเดียว)
+      // ใส่สไตล์ + วาด timeline ครั้งแรก + section 2 ครั้งแรก
       injectP6Styles();
-
-      // วาด timeline ครั้งแรก
       setTimeout(drawTimeline, 0);
+      renderAdrSection2();
     }
 
-    // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
+    // เรียกคำนวณทุกครั้งที่เปิดหน้า 6
     if (typeof window.brainComputeAndRender === "function") {
       try {
         window.brainComputeAndRender();
@@ -724,10 +726,9 @@
     }
 
     updateAdrChartFromBrain();
-    updateSection2FromBrain();
     drawTimeline();
+    renderAdrSection2();
 
-    // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   }
@@ -807,6 +808,39 @@
         font-weight:800;
         color:#be185d;
       }
+
+      /* กล่อง Section 2 */
+      .p6-adr-drug-box{
+        border-radius:16px;
+        border:1px solid rgba(59,130,246,0.35);
+        background:linear-gradient(135deg,#eff6ff,#f5f3ff);
+        padding:10px 12px;
+      }
+      .p6-adr-drug-adr-name{
+        font-weight:800;
+        font-size:13px;
+        color:#1d4ed8;
+      }
+      .p6-adr-drug-adr-percent{
+        font-size:11px;
+        color:#4b5563;
+      }
+      .p6-adr-drug-group{
+        margin-top:6px;
+        padding-top:4px;
+        border-top:1px dashed rgba(148,163,184,0.6);
+      }
+      .p6-adr-drug-group-title{
+        font-size:12px;
+        font-weight:700;
+        color:#0f766e;
+        margin-bottom:2px;
+      }
+      .p6-adr-drug-list{
+        margin:0;
+        padding-left:18px;
+        font-size:11px;
+      }
     `;
     const tag = document.createElement("style");
     tag.id = "p6-visual-style";
@@ -814,7 +848,7 @@
     document.head.appendChild(tag);
   }
 
-  // --------- AUTO UPDATE (ไม่ re-render ทั้งหน้า) ---------
+  // --------- AUTO UPDATE จาก event da:update ---------
   document.addEventListener("da:update", () => {
     if (typeof window.brainComputeAndRender === "function") {
       window.brainComputeAndRender();
@@ -822,8 +856,8 @@
       computeLocalBrain();
     }
     updateAdrChartFromBrain();
-    updateSection2FromBrain();
     drawTimeline();
+    renderAdrSection2();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
   });
@@ -1068,4 +1102,3 @@ if (typeof window.renderPage6 === "function") {
     window.renderPage6();
   } catch (_) {}
 }
-```
