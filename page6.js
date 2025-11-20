@@ -1,511 +1,1147 @@
-// ===================== brain.section3.treatments.js (REPLACE WHOLE FILE) =====================
-// ฐานข้อมูล "แนวทางการรักษาเฉพาะตามชนิดการแพ้" สำหรับหน้า 6 ส่วนที่ 3
-// เก็บเป็นข้อความยาวต่อ 1 ADR (ใช้ข้อความตามที่ผู้ใช้ให้มาแบบไม่ปรับเปลี่ยน)
-// ADR ที่ยังไม่มีรายละเอียดจากผู้ใช้ เติมจากแนวเวชปฏิบัติทางการแพทย์ปัจจุบัน
-
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 แนวทางรักษา) =====================
 (function () {
-  const tx = {
-    // 1) Urticaria
-    "Urticaria": {
-      label: "Urticaria",
-      text: `urticaria
-Acute urticaria
-Treatment
-1) ประเมินทันที
-•	คัดกรอง anaphylaxis ทุกเคส (ความดันตก หายใจลำบาก เสียงแหบ กลืนลำบาก/คอบวม อาเจียนมาก/ปวดท้องบิด)
-•	True allergy และ Pseudoallergy ต้องรักษาแบบเดียวกัน เพราะความรุนแรงเท่าๆกัน
-2) การรักษาหลักเมื่อ ไม่มี anaphylaxis
-•	ให้ H1 antihistamine รุ่นที่ 2 (non-sedating) เป็น “ตัวแรกและให้ทุกวัน” ไม่ใช่เฉพาะเวลามีผื่น
-•	ตัวเลือกที่ใช้บ่อย: cetirizine 10 mg/d, levocetirizine 5 mg/d, loratadine 10 mg/d, fexofenadine 120–180 mg/d
-•	ถ้าอาการยังรบกวนมาก → ชั่วคราว “เพิ่มขนาด” (up-dose) ได้ถึง 2–4 เท่า ของขนาดมาตรฐานในผู้ใหญ่ (เช่น cetirizine 20–40 mg/วัน แบ่งให้) 
-•	จนกว่าคุมอาการอยู่ จากนั้นค่อย ๆ ลดลง 
-•	ใช้เมื่อผื่นมาก/บวมมาก/ทรมานหรือไม่ตอบสนองต่อ antihistamine: prednisolone 0.3–1 mg/kg/d ไม่เกิน 5–10 วัน แล้วหยุด (หลีกเลี่ยงใช้ต่อเนื่อง/ซ้ำบ่อย)
-•	หลีกเลี่ยงตัวกระตุ้น: NSAIDs/แอลกอฮอล์/ความร้อนสูง/แรงกด/ออกแรงมาก; ค้นหาสาเหตุชัดเจน (ยา อาหาร การติดเชื้อ แมลงต่อย)
-หมายเหตุ: แนวทางสากลปัจจุบัน ไม่แนะนำให้ใช้ H2 blocker หรือ first-gen H1 เป็นประจำ (ง่วง/anticholinergic) ยกเว้นกรณีใช้ในผู้ที่คันมากตอนกลางคืน
+  // --------- STATE GUARD ---------
+  if (!window.drugAllergyData) window.drugAllergyData = {};
+  if (window.__p6Bound) return; // กันโหลดซ้ำ
+  window.__p6Bound = true;
 
-Chronic urticaria
-Treatment
-STEP 1 — การรักษาหลัก
-•	H1 antihistamine รุ่นที่ 2 ขนาดมาตรฐานทุกวัน (เช่นข้างต้น)
-•	ประเมินผล 2–4 สัปดาห์
-STEP 2 — เพิ่มขนาด (updosing)
-•	ถ้ายังไม่สงบ → เพิ่มขนาด H1 รุ่นที่ 2 ได้สูงสุด “4 เท่า” ของขนาดมาตรฐาน (ปรับแบบไล่ระดับ)
-•	ตัวอย่างผู้ใหญ่:
-o	cetirizine 20–40 mg/วัน
-o	fexofenadine 240–720 mg/วัน แบ่ง 1–2 ครั้ง
-o	loratadine 20–40 mg/วัน
-o	จากนั้น คงขนาดที่ควบคุมได้ “ไล่ลดทีละขั้น” (taper) เดือนละครึ่งโดส/สัปดาห์ แล้วเฝ้าระวังอาการกลับเป็นซ้ำ
-การ taper ตามบทความปฏิบัติ 2025: เมื่อควบคุมได้ดี น้ำหนักยาเกินมาตรฐาน ให้ลดทีละ 1 เม็ด/เดือน หรือครึ่งโดส/สัปดาห์ 
-STEP 3 — ชีววัตถุ (Biologic)
-•	Omalizumab (anti-IgE) มาตรฐาน 300 mg SC ทุก 4 สัปดาห์ เป็น add-on เมื่อ up-dose H1 แล้วคุมไม่ได้
-o	ผู้ป่วยบางรายอาจต้อง “ปรับสูงสุด” ได้ถึง 600 mg ทุก 2 สัปดาห์ ดูการตอบสนองใน 6 เดือน ก่อนสรุปว่าผลการรักษา
-STEP 4 — ยากดภูมิ (add-on หลัง omalizumab)
-•	Cyclosporine 3–5 mg/kg/day (มักเริ่มราว 3 mg/kg/day) ร่วมกับ H1 รุ่นที่ 2 ใช้เมื่อไม่ตอบสนองต่อ H1 (4×) + omalizumab`,
-    },
+  // --------- UTIL ---------
+  // ใช้มาตรฐานเดียวกับ brain.js: __saved หรือมีข้อมูลจริง >=1 ฟิลด์ก็นับว่า “พร้อม”
+  function __hasRealData(pageObj) {
+    if (!pageObj) return false;
+    if (pageObj.__saved) return true;
+    const keys = Object.keys(pageObj).filter((k) => !k.startsWith("__"));
+    return keys.length > 0;
+  }
 
-    // 2) Angioedema
-    "Angioedema": {
-      label: "Angioedema",
-      text: `Angioedema
-Histamine-mediated Angioedema  (*** เกิด Anaphylaxis)
-Treatment
-1) ประเมินทันที
-•	คัดกรอง anaphylaxis ทุกเคส (ความดันตก หายใจลำบาก เสียงแหบ กลืนลำบาก/คอบวม อาเจียนมาก/ปวดท้องบิด)
-2) First-line: H1 antihistamines เช่น Cetirizine 10 mg วันละครั้ง (ถ้าอาการมาก → เพิ่มได้ถึง 20–40 mg/วัน ชั่วคราว) Chlorpheniramine 10–20 mg ทุก 4–6 ชม. IV / IM ให้ต่อเนื่องจนกว่าบวม/ผื่นยุบทั้งหมด — โดยทั่วไป 3–5 วัน, หากยังมีอาการ → ให้ต่อถึง 7–10 วัน
-แนะนำในกรณีบวมมาก : Corticosteroids ลดการอักเสบ / ป้องกัน recurrence เช่น Prednisolone 0.5–1 mg/kg/day (30–60 mg/day ในผู้ใหญ่) PO 3–5 วัน แล้ว taper
-•	หลีกเลี่ยงยากระตุ้นเพิ่มเติม: NSAIDs, opioids, แอลกอฮอล์
-Bradykinin-mediated Angioedema (*** ไม่เกิด Anaphylaxis)
-Treatment
-•	ห้ามใช้ antihistamine / steroid / adrenaline เดี่ยว ๆ เพราะไม่ตอบสนองใน bradykinin type
-•	non-IgE, non-mast cell reaction → จึงไม่พบ anaphylaxis
-•	Fresh Frozen Plasma (FFP) มี C1 esterase inhibitor และ kininase II ช่วยสลาย bradykinin 2 unit IV infusion ครั้งเดียว (ซ้ำได้ 1 ครั้ง ถ้าไม่ดีขึ้น ภายใน 4–6 ชม.) ประมาณ 10 mL/min ใน 10 นาทีแรก เพื่อสังเกต reaction → ถ้าไม่มีอาการ ค่อยๆ เพิ่มได้ถึง 30–50 mL/min ตามความดันและภาวะหัวใจของผู้ป่วยให้หมดภายใน 30–60 นาทีต่อ 1 unit (โดยทั่วไป 2 unit จะใช้เวลารวม ประมาณ 1–1.5 ชั่วโมง)`,
-    },
+  function corePagesReady() {
+    const d = window.drugAllergyData || {};
+    const p1 = __hasRealData(d.page1);
+    const p2 = __hasRealData(d.page2);
+    const p3 = __hasRealData(d.page3);
+    const missing = [];
+    if (!p1) missing.push("หน้า 1 ผิวหนัง");
+    if (!p2) missing.push("หน้า 2 ระบบอื่นๆ");
+    if (!p3) missing.push("หน้า 3 Lab");
+    return { ok: p1 && p2 && p3, missing };
+  }
 
-    // 3) Anaphylaxis
-    "Anaphylaxis": {
-      label: "Anaphylaxis",
-      text: `Anaphylaxis
-1: Epinephrine (Adrenaline) IM 
-•	ขนาดยา aqueous epinephrine 1:1000 (1 มก./1 มล.) 0.01 มก./กก. หรือ 0.01 มล./กก. ฉีดเข้าชั้นกล้ามเนื้อ
-•	โดยขนาดยาสูงสุดที่ให้ คือ 0.3 มล. ในเด็ก หรือ 0.2–0.5 มล. ในผู้ใหญ่
-•	หากมีน้ำหนักตัวอยู่ในเกณฑ์ปกติหรือคนท้อง ควรพิจารณาให้ขนาด 0.3 มล.
-•	ถ้าผู้ป่วยมีอาการรุนแรงและไม่ตอบสนองต่อการให้ยาครั้งแรก สามารถให้ซ้ำได้อีก 1–2 ครั้งทุก 5–15 นาที
-2.β₂-agonist พ่น/neb (salbutamol) 
-•	ถ้ามีหลอดลมหดเกร็ง/หอบหืดกำเริบร่วม
-•	salbutamol solution (5 มก./1 มล.) 0.03 มล./กก./ครั้ง พ่นผ่าน nebulizer (ขนาดสูงสุดไม่เกิน 5 มก./ครั้ง)
-3.H1-antihistamine (อาการผิวหนังคัน/ลมพิษ): ให้ต่อเนื่อง 3-5 วัน
-•	Diphenhydramine 25–50 mg IV/IM ช่วยเรื่องผื่น/คัน 
-4.H2-blocker (famotidine 20 mg IV/PO) มีฤทธิ์ช่วยลดการขยายตัวของหลอดเลือด ลดอาการปวดศีรษะ และลดความดันโลหิตต่ำ
-•	จึงแนะนำให้ใช้ยาทั้งสองกลุ่มร่วมกัน***
-5.คอร์ติโคสเตียรอยด์ (พิจารณาในรายอาการมาก/บวมทางเดินหายใจ/เสี่ยง biphasic):
-•	Hydrocortisone 100 mg IV แล้วต่อ Prednisolone 40–50 mg PO อีก 2–3 วัน
-6.Glucagon (เฉพาะผู้ใช้ β-blocker และ ไม่ตอบสนองต่อ adrenaline):
-•	1–5 mg IV ช้า ๆ (5 นาที) → ต่อด้วย infusion 5–15 µg/นาที ปรับตามความดัน/ชีพจร; ระวังคลื่นไส้อาเจียน
-7.Crystalloids (NSS หรือ Ringer’s lactate) 10–20 มล./กก. IV loading ภายใน 5–10 นาที
-8.Dopamine 2–20 มคก./กก./นาที IV drip
-9.Atropine (ยาที่ใช้ในผู้ป่วยที่ได้รับ β-blocker) 0.5 มก./ครั้ง IV ในผู้ใหญ่ ให้ซ้ำได้ทุก 3–5 นาที (ขนาดสูงสุดรวมไม่เกิน 3 มก. ในผู้ใหญ่)`,
-    },
+  function fmtDateTH(str) {
+    if (!str) return "—";
+    const pure = String(str).trim().split(" ")[0];
+    let d;
+    if (pure.includes("-")) {
+      const [y, m, dd] = pure.split("-").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    } else if (pure.includes("/")) {
+      const [dd, m, y] = pure.split("/").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    }
+    return d
+      ? d.toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : str;
+  }
 
-    // 4) Fixed drug eruption
-    "Fixed drug eruption": {
-      label: "Fixed drug eruption",
-      text: `Fixed drug eruption
-กรณีอาการไม่รุนแรง / ไม่มีพุพอง / ไม่หลายตำแหน่ง
-•	Topical corticosteroid เช่น Betamethasone valerate 0.1% cream หรือ Mometasone furoate 0.1% cream
-ทาบาง ๆ วันละ 1–2 ครั้ง บริเวณผื่นแดง / คัน / แสบ 7–10 วัน หรือจนแผลแห้งและรอยเข้มเริ่มจาง
-•	Cetirizine 10 mg 1 เม็ด วันละ 1 ครั้ง PO 7–14 วัน (ลดอาการคัน)
-กรณีรุนแรง / หลายตำแหน่ง มีตุ่มพอง / แผลถลอกคล้าย SJS
-•	Prednisolone 0.5–1 mg/kg/day (ปกติ 30–60 mg/วัน สำหรับผู้ใหญ่) PO วันละครั้ง เช้า 
-5–7 วัน → ลดขนาดลงภายใน 1–2 สัปดาห์
-•	Methylprednisolone IV (กรณีรุนแรงมาก / รับประทานไม่ได้) 1 mg/kg/day (ปกติ 40–60 mg/วัน) IV OD 3–5 วัน แล้วเปลี่ยนเป็น prednisolone PO taper`,
-    },
+  function fmtTime(str) {
+    if (!str) return "";
+    const t = String(str).slice(0, 5);
+    return t + " น.";
+  }
 
-    // 5) Maculopapular rash
-    "Maculopapular rash": {
-      label: "Maculopapular rash",
-      text: `MP rash
-1.หยุดยาที่สงสัยทันที 
-•	เป็นการรักษาที่สำคัญที่สุด
-•	ผื่นจะเริ่มดีขึ้นภายใน 48–72 ชม. และหายภายใน 1–2 สัปดาห์
-2.ประเมินความรุนแรงและสัญญาณเตือนของ SCARs (Severe Cutaneous Adverse Reactions)
-ถ้าผู้ป่วยมี ≥ 1 ข้อต่อไปนี้ → ต้องประเมิน SCARs ทันที
-•	ไข้ ≥38°C
-•	Eosinophil ≥700 /µL
-•	LFT >2X ULN หรือ Cr >1.5X baseline
-•	เจ็บผิว หรือเยื่อบุพอง
-•	ใบหน้า–ตาบวม
-3.H1-antihistamine บรรเทาคัน ให้ 7–14 วัน หรือจนกว่าผื่นหาย
-▪ Cetirizine 10 mg วันละครั้ง 
-▪ Loratadine 10 mg วันละครั้ง 
-▪ Hydroxyzine 25 mg วันละ 1–2 ครั้ง (ถ้าคันมาก)
-4.1 Topical corticosteroid (Mild – moderate; ผื่นและอาการคันไม่มาก)
-เพื่อลดอักเสบ / แดง / คัน ให้ 7–10 วัน
-▪ Betamethasone valerate 0.1% cream วันละ 1–2 ครั้ง 
-▪ Mometasone furoate 0.1% cream วันละครั้ง 
-▪ Hydrocortisone 1% (ใช้บริเวณหน้า/อวัยวะเพศ)
-4.2 systemic corticosteroid (Severe: ผื่นทั่วร่างกายและมีอาการคันมาก)
-•	Prednisolone 0.5–1 mg/kg/day (ปกติ 30–60 mg/วัน) PO เช้า ใช้ 3–5 วัน แล้ว taper ลงภายใน 1–2 สัปดาห์ ถ้าผื่นดีขึ้น
-5.ยาลดไข้
-•	Paracetamol 500 mg ทุก 6 ชม. (สูงสุด 4 g/วัน)`,
-    },
+  function rangeStr(sD, sT, eD, eT) {
+    const start = `${fmtDateTH(sD)}${sT ? " " + fmtTime(sT) : ""}`;
+    const end = eD ? `${fmtDateTH(eD)}${eT ? " " + fmtTime(eT) : ""}` : "ปัจจุบัน";
+    return `${start} → ${end}`;
+  }
 
-    // 6) AGEP
-    "AGEP": {
-      label: "AGEP",
-      text: `AGEP
-Treatment
-1.หยุดยาที่สงสัยทันที 
-2.ยาลดไข้
-•	Paracetamol 500 mg ทุก 6 ชม. (สูงสุด 4 g/วัน)
-3.ให้ สารน้ำและอิเล็กโทรไลต์ หากมีการสูญเสียของเหลวจากผิวหนังหรือมีไข้สูง
-4.ใช้ oral antihistamines เพื่อบรรเทาคันให้ 7–14 วัน หรือจนผื่นหาย
-•	Cetirizine 10 mg วันละครั้ง PO หลังอาหารเย็น 
-•	Loratadine 10 mg วันละครั้ง PO หลังอาหาร 
-Hydroxyzine 25 mg วันละ 2–3 ครั้ง (สูงสุด 100 mg/วัน) PO ถ้าคันมาก
-5.ใช้ emollients / moisturisers เพื่อบำรุงผิวที่ลอกและลดการระคายเคือง
-6.ใช้ topical corticosteroids (Mild – moderate symptom)
-•	Medium potency Betamethasone valerate 0.1%, Mometasone 0.1%, Triamcinolone 0.1%
-ทาบาง ๆ วันละ 1–2 ครั้ง 7–14 วัน
-•	Low potency (ใบหน้า/รอยพับ) Hydrocortisone 1% cream วันละ 2 ครั้ง 7 วัน
-7. พิจารณาเริ่ม systemic corticosteroid → ถ้ามี ≥ 1 ใน 4 เกณฑ์ ข้างต้น (ไม่ใช่ first-line สำหรับ AGEP ทุกราย)
-1) พิจารณาเฉพาะรายที่มี organ involvement (ตับ/ไต/ปอด/หัวใจ) 
-2) ผื่นลอก, ตุ่มหนองทั่วตัวมาก, ผื่นแดงทั่วตัว > 50 % BSA 
-3) อ่อนเพลียมาก รับประทานไม่ได้, WBC > 12,000 /µL, ไข้สูง > 38.5 °C นาน > 3 วัน 
-4) ผื่นหรือตุ่มหนองเพิ่มขึ้นต่อเนื่อง (ไม่ดีขึ้นหลังหยุดยา 48–72 ชม.)
-•	Prednisolone 0.5 mg/kg/day PO 3–5 วัน → taper ลงใน 7 วันเมื่อผื่นดีขึ้น`,
-    },
+  // เรนเดอร์สถานะหน้า 1–3 (เรียกซ้ำได้)
+  function renderCoreStatus() {
+    const status = corePagesReady();
+    if (status.ok) {
+      return `<p class="p6-muted" style="margin-top:.35rem;">
+        ระบบจะประเมินจากข้อมูลที่กดบันทึกครบหน้า 1–3 แล้วสรุปว่า<strong>เข้ากับชนิดย่อยใด</strong>โดยอัตโนมัติ
+      </p>`;
+    }
+    return `<div class="p6-empty">ยังขาดข้อมูลจาก: ${status.missing.join(
+      ", "
+    )}</div>
+            <p class="p6-muted" style="margin-top:.35rem;">กรุณากด <strong>บันทึก</strong> ให้ครบทั้ง 3 หน้า</p>`;
+  }
 
-    // 7) Exfoliative dermatitis
-    "Exfoliative dermatitis": {
-      label: "Exfoliative dermatitis",
-      text: `Exfoliative dermatitis
-1.หยุดยาที่สงสัยทันที 
-2.การดูแลทั่วไป (Supportive care)
-•	Hydration & Electrolyte balance ให้ IV fluid (0.9 % NaCl หรือ 5% Dextrose ½ NSS) + ตรวจ electrolyte รายวัน
-•	Temperature control ห้องอุ่น (≈ 30 °C) ป้องกัน hypothermia
-•	Nutrition เพิ่มพลังงาน 30–35 kcal/kg/day และ protein 1.5 g/kg/day
-•	Infection prevention ดูแลความสะอาด เปลี่ยนผ้าปูบ่อย → ถ้าสงสัยติดเชื้อให้ culture ก่อน antibiotic
-•	Pruritus ใช้ oral antihistamine เช่น Cetirizine 10 mg HS หรือ Hydroxyzine 25 mg q8h prn
-3.ยาทาภายนอก (Topical therapy)
-•	Topical steroids: Hydrocortisone 1%, Betamethasone 0.05–0.1%, Mometasone 0.1% 
-ทาวันละ 1–2 ครั้ง ทั่วบริเวณแดง แต่หลีกเลี่ยงบริเวณบาง
-•	Emollients: Paraffin cream, Petrolatum, Ceramide lotion ทาบาง ๆ ทุก 4–6 ชม. โดยเฉพาะหลังอาบน้ำ
-4.ยา Systemic therapy 
-ใช้ในรายที่มี อาการรุนแรงหรือ organ involvement (เช่น ตับ/ไต/หัวใจ/ปอด) หรือมี BSA > 90 % / มี leukocytosis เด่น / ไม่ดีขึ้น > 72 ชม. หลังหยุดยา
-•	Prednisolone (PO) 0.5–1 mg/kg/day (30–60 mg/day ผู้ใหญ่) ให้จนผื่นดีขึ้น → ค่อย taper ลง ใน 2–3 สัปดาห์
-•	Methylprednisolone (IV) 1 mg/kg/day (หรือ 40–60 mg IV OD)
-•	Dexamethasone (IV/IM) ขนาดมาตรฐาน: 4–8 mg IV หรือ IM วันละครั้ง (สูงสุด 16 mg/วัน)
-ระยะเวลา: 3–5 วัน → taper หรือเปลี่ยนเป็น prednisolone 0.5 mg/kg/day
-5.Cyclosporine 2–3 mg/kg/day (บางกรณี resistant case) ใช้ในผู้ป่วย refractory ต่อ steroid`,
-    },
+  // --------- NARANJO ---------
+  const NARANJO_QUEST = [
+    { idx: 0, yes: +1, no: 0, dk: 0 },
+    { idx: 1, yes: +2, no: -1, dk: 0 },
+    { idx: 2, yes: +1, no: 0, dk: 0 },
+    { idx: 3, yes: +2, no: -1, dk: 0 },
+    { idx: 4, yes: -1, no: +2, dk: 0 },
+    { idx: 5, yes: -1, no: +1, dk: 0 },
+    { idx: 6, yes: +1, no: 0, dk: 0 },
+    { idx: 7, yes: +1, no: 0, dk: 0 },
+    { idx: 8, yes: +1, no: 0, dk: 0 },
+    { idx: 9, yes: +1, no: 0, dk: 0 },
+  ];
 
-    // 8) Photosensitivity drug eruption
-    "Photosensitivity drug eruption": {
-      label: "Photosensitivity drug eruption",
-      text: `Photosensitivity drug eruption
-1.หยุดยาที่สงสัยทันที 
-2.หลีกเลี่ยงแสงแดดโดยเด็ดขาด ใช้ครีมกันแดด (Broad-spectrum) SPF ≥ 50 ทาซ้ำทุก 2–3 ชม.
-3.ยาแก้คัน (Antihistamine) รับประทานวันละ 1 ครั้ง 7–14 วัน หรือตามอาการคัน
-- Cetirizine 10 mg/day
-- Hydroxyzine 25 mg q8h (ง่วงนอน)
-4.ยาทาภายนอก (Topical therapy)
-- Medium potency เช่น Betamethasone valerate 0.1%, Mometasone furoate 0.1%, Triamcinolone acetonide 0.1%
-ทาบาง ๆ วันละ 1–2 ครั้ง บริเวณผื่น 5–10 วัน
-- Low potency steroid (ใบหน้า/คอ) Hydrocortisone 1% cream วันละ 2 ครั้ง 5–7 วัน
-5.Emollient / Moisturizer
-- Petroleum jelly, Ceramide-based lotion, Aloe vera gel ทาทั่วบริเวณผื่นหลังอาบน้ำ ต่อเนื่องจนผิวกลับสู่ปกติ (2–3 สัปดาห์)
-6. ยาสเตียรอยด์ชนิดรับประทาน (Systemic corticosteroid) ใช้เฉพาะกรณี photoallergic reaction ที่ลุกลาม, คันมาก
-- Prednisolone (PO) 0.5 mg/kg/day 5–7 วัน taper ลงภายใน 1–2 สัปดาห์`,
-    },
+  function narScore(drug) {
+    if (!drug || !drug.answers) return 0;
+    let t = 0;
+    for (const q of NARANJO_QUEST) {
+      const picked = drug.answers[q.idx];
+      if (!picked) continue;
+      t += q[picked] ?? 0;
+    }
+    return t;
+  }
 
-    // 9) Bullous Drug Eruption
-    "Bullous Drug Eruption": {
-      label: "Bullous Drug Eruption",
-      text: `Bullous Drug Eruption
-Treatment
-1.หยุดยาที่สงสัยทันที 
-2. ยาทาภายนอก (Topical therapy)
-•	Topical corticosteroids : Betamethasone valerate 0.1%, Mometasone 0.1% ทาบาง ๆ วันละ 1–2 ครั้ง 7–10 วัน ลดอักเสบ
-Low-potency steroid (ใบหน้า/คอ): Hydrocortisone 1% cream วันละ 2 ครั้ง 5–7 วัน ใช้เฉพาะบริเวณบาง
-•	Moisturizer / Emollient Paraffin, Petroleum jelly, Ceramide lotion ทาวันละหลายครั้ง ใช้ต่อเนื่องจนหาย
-3.ยา Systemic therapy
-•	Prednisolone (PO) 0.5–1 mg/kg/day (30–60 mg/วัน ผู้ใหญ่) 5–7 วัน → taper ภายใน 2 สัปดาห์ ใช้เมื่อผื่นกว้างหรือมีหลายตำแหน่ง
-4.Antibiotic (ถ้ามีติดเชื้อ) 
-•	Dicloxacillin 500 mg PO q6h × 7 วัน เฉพาะเมื่อมีหนอง/แดง ร้อน/ไข้ WBC ขึ้นสูง
-5.Antiseptic compress
-•	NSS / Potassium permanganate 0.01% 10–15 นาที วันละ 2–3 ครั้ง ลดการติดเชื้อทุติยภูมิ`,
-    },
+  function narInterp(score) {
+    if (score >= 9) return "แน่นอน (Definite)";
+    if (score >= 5) return "น่าจะเป็น (Probable)";
+    if (score >= 1) return "อาจเป็นไปได้ (Possible)";
+    return "ไม่น่าจะเป็น (Doubtful)";
+  }
 
-    // 10) Erythema multiforme
-    "Erythema multiforme": {
-      label: "Erythema multiforme",
-      text: `Erythema multiforme 
-1.หยุดยาที่สงสัยทันที 
-2.ประเมินภาวะรุนแรง
-•	แยกจาก SJS/TEN
-•	ถ้ามี mucosal involvement หลายจุด → พิจารณาเป็น EM major
-3.Supportive care
-•	คัน/อักเสบเล็กน้อย > ยาแก้แพ้: Cetirizine 10 mg PO OD หรือ Chlorpheniramine 4 mg PO q6h
-•	ผื่นไม่รุนแรง > ยาทาสเตียรอยด์: Hydrocortisone 1% cream หรือ Triamcinolone 0.1% cream วันละ 2–3 ครั้ง
-•	มี mucosal ulcer (ปาก) > น้ำยาบ้วนปากผสมยาชา: Lidocaine viscous 2% 5 mL swish & spit q4h PRN
-•	ปวด > Analgesic: Paracetamol 500–1000 mg PO q6h PRN (ไม่เกิน 4 g/day)
-•	ให้การดูแลรักษาผู้ป่วยตามอาการ โดยเฉพาะอย่างยิ่งทางด้านโภชนาการและสารน้ำ เพราะผู้ป่วยมักจะมีแผลเจ็บในปากทำให้ทานอาหารได้น้อย
-4. Local treatment 
-•	Antibiotic eye ointment ป้ายตา หรือใช้ corticosteroid eyedrops
-•	ใช้ Vaselin หรือ Glycerin borax ป้ายริมฝีปาก และควรให้ Oral hygiene care
-•	บริเวณอวัยวะเพศ ควรทำความสะอาดให้ดี เพราะอาจเป็นต้นเหตุการติดเชื้อทางปัสสาวะ และอาจมีท่อปัสสาวะตีบตันภายหลังได้
-•	แผลที่ผิวหนัง ควรทำความสะอาดโดยการประคบ (wet dressing) ด้วย Burow’s solution หรือ normal saline หรือน้ำต้มสุก
-5. Systemic treatment
-•	Prednisolone 30–60 mg/วัน (0.5 mg/kg/day ) และควรลดลงจนหยุดได้ภายใน 2–4 สัปดาห์`,
-    },
+  function getNaranjoList() {
+    const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
+    const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
+    return drugs.map((d, i) => ({
+      name: d.name && d.name.trim() ? d.name.trim() : `ยา ${i + 1}`,
+      total: narScore(d),
+      interpretation: narInterp(narScore(d)),
+    }));
+  }
 
-    // 11) Eczematous drug eruption
-    "Eczematous drug eruption": {
-      label: "Eczematous drug eruption",
-      text: `Eczematous drug eruption
-1.หยุดยาที่สงสัยทันที 
-2.การดูแลทั่วไป (Supportive care)
-•	Emollient: ทาบ่อยๆ ทุก 2–4 ชม. โดยเฉพาะหลังอาบน้ำ (เลือก petrolatum-based หรือ urea 5–10% หากผิวแห้งมาก)
-•	หลีกเลี่ยงสารระคายเคือง: สบู่แรง น้ำหอม ผงซักฟอก; อาบน้ำอุ่นสั้นๆ
-•	Compress/soak เมื่อมี exudative eczema
-- Burow’s solution (aluminium acetate 1:40) ประคบ 15–20 นาที วันละ 2–3 ครั้ง × 3–5 วัน
-- หรือ potassium permanganate 1:10,000 แช่/ประคบวันละ 1–2 ครั้ง × 3–5 วัน
-3.ยาทาสเตียรอยด์ (topical corticosteroids)
-•	ใบหน้า/รอยพับ/อวัยวะเพศ (ผิวบาง): Hydrocortisone 1% cream/ointment หรือ Desonide 0.05% วันละ 2 ครั้ง 5–7 วัน, จากนั้นลดความถี่/หยุดเมื่อดีขึ้น
-•	ลำตัว–แขนขา (ผิวหนาปานกลาง): Triamcinolone acetonide 0.1% วันละ 2 ครั้ง × 7–14 วัน
-•	ฝ่ามือ/ฝ่าเท้า หรือผื่นหนา: Clobetasol propionate 0.05% วันละ 1–2 ครั้ง × 1–2 สัปดาห์ (หลีกเลี่ยงในใบหน้า/รอยพับ)
-•	เมื่อสงบแล้ว ใช้ “weekend therapy” (ทาเสาร์-อาทิตย์สัปดาห์ละ 2 วัน) อีก 2–4 สัปดาห์ เพื่อลดการกำเริบ
-4.ยา systemic therapy (เมื่อผื่นกว้าง, exudative มาก, หรือทาอย่างเดียวเอาไม่อยู่)
-•	Prednisolone 0.5 mg/kg/day PO (เช่น 30–40 mg/วันในผู้ใหญ่) × 5–7 วัน, แล้ว taper ลดลงภายใน 1–2 สัปดาห์
-•	Antihistamines (คุมคัน/นอนหลับดีขึ้น): กลางวัน: Cetirizine 10 mg PO OD หรือ Loratadine 10 mg PO OD
-กลางคืน (ง่วง): Chlorpheniramine 4 mg PO q6h PRN หรือ Hydroxyzine 25 mg PO nocte
-5. การติดเชื้อ (เฉพาะเมื่อมีหลักฐานคลินิก)
-•	Dicloxacillin 500 mg PO q6h × 5–7 วัน`,
-    },
+  function getPage5() {
+    const p5 = (window.drugAllergyData && window.drugAllergyData.page5) || {};
+    return {
+      drugs: Array.isArray(p5.drugLines) ? p5.drugLines : [],
+      adrs: Array.isArray(p5.adrLines) ? p5.adrLines : [],
+    };
+  }
 
-    // 12) DRESS
-    "DRESS": {
-      label: "DRESS",
-      text: `DRESS
-1.หยุดยาที่สงสัยทันที 
-2.การดูแลทั่วไป (Supportive care)
-•	ไข้ ปวดเมื่อย: ยาลดไข้ (หลีกเลี่ยง NSAIDs) Paracetamol 500–1000 mg PO q6h PRN
-•	ผื่น คัน: Cetirizine 10 mg OD หรือ Chlorpheniramine 4 mg q6h 
-3.1 Systemic Corticosteroid — ยาหลักของการรักษา DRESS
-•	Mild (เฉพาะผิวหนัง): Prednisolone 0.5–1 mg/kg/day PO 2–4 สัปดาห์ แล้ว taper ลดลง 6–8 สัปดาห์
-•	Moderate–Severe (มี visceral involvement): Prednisolone 1 mg/kg/day PO (เช่น 40–60 mg/day ในผู้ใหญ่) อย่างน้อย 4 สัปดาห์ แล้ว taper ช้าใน 8–12 สัปดาห์
-*** ห้ามหยุดยาทันที — ต้อง taper ลงช้าๆ 5–10 mg/สัปดาห์
-3.2 IVIG (Intravenous Immunoglobulin) ใช้ในกรณีที่:
-•	ไม่ตอบสนองต่อ corticosteroid ภายใน 3–5 วัน
-•	มี myocarditis, hepatitis, encephalitis หรือ ตับวาย/หัวใจล้มเหลวรุนแรง (ให้ร่วมกับสเตรียรอยด์ชนิดรับประทาน)
-ขนาดยา: 0.4 g/kg/day × 5 วัน (รวม 2 g/kg ต่อคอร์ส)
-3.3 Immunosuppressive Agents (ใช้ในรายดื้อ steroid / relapsing DRESS)
-•	Cyclosporine 2–3 mg/kg/day PO 2–4 สัปดาห์ (ใช้ร่วมกับ steroid ลดการอักเสบเร็ว)`,
-    },
+  // --------- LOCAL BRAIN (fallback เฉยๆ – ถ้ามี brainComputeAndRender จะไม่ใช้ส่วนนี้) ---------
+  function toNumber(v) {
+    const n = Number(String(v ?? "").replace(/[, ]+/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
 
-    // 13) SJS
-    "SJS": {
-      label: "SJS",
-      text: `SJS
-1.หยุดยาที่สงสัยทันที 
-2.การดูแลทั่วไป (Supportive care)
-•	สารน้ำ/อิเล็กโทรไลต์: เริ่มที่ 1.5–2.0 mL/kg/%BSA ผิวหนังที่ลอก/วัน หรือ 2–3 L/วัน (ผู้ใหญ่ทั่วไป)
-ประเมินตามเป้าหมาย: Urine output ≥0.5–1 mL/kg/h, HR 
-ชนิดสารน้ำ: Ringer’s lactate หรือ 0.45% NaCl + 5% Dextrose เป็นหลัก
-hypoalbuminemia (
-•	โภชนาการ: พลังงาน 30–35 kcal/kg/day, โปรตีน 1.5–2 g/kg/day
-กลืนลำบาก → NG feeding ภายใน 24–48 ชม.
-•	ดูแลแผลผิวหนัง (แนว burn unit): ทำแผลวันละ 1–2 ครั้ง ด้วย 0.9% NSS หรือ 0.05% Chlorhexidine compress
-ปิดแผลด้วย non-adhesive dressing (Jelonet®/paraffin gauze)
-•	ยาทาเฉพาะที่เมื่อมีเชื้อแบคทีเรียเฉพาะจุด:
-- Mupirocin 2% ointment บาง ๆ BID
-- Fusidic acid 2% cream BID
-•	ควบคุมปวด/ไข้
-- Paracetamol 500–1000 mg PO q6h PRN (สูงสุด 4 g/day)
-- ปวดมาก: Morphine 0.05–0.1 mg/kg IV q4h PRN หรือ Fentanyl 25–50 µg IV q1–2h PRN
-3.การดูแลเยื่อบุ (Mucosal Care)
-•	ตา (จำเป็นต้อง consult จักษุทันที)
-o	Artificial tears q1–2h กลางวัน + lubricating ointment ก่อนนอน
-o	Antibiotic ointment (เช่น chloramphenicol 1% HS) เมื่อมี risk infection
-•	ช่องปาก/ริมฝีปาก: บ้วน 0.9% NSS / benzydamine วันละ 4–6 ครั้ง, ทา petrolatum กันแตก
-•	อวัยวะเพศ/ทวารหนัก: petrolatum หรือ hydrocortisone 1% บางๆ BID
-4) การป้องกันและรักษาการติดเชื้อ
-•	งดยาปฏิชีวนะแบบ prophylaxis หากไม่มีหลักฐานติดเชื้อ
-•	ส่ง wound swab/culture, เลือด/ปัสสาวะ เมื่อมีไข้, CRP↑, WBC↑, หนอง/กลิ่นแผล
-•	Empiric (เมื่อสงสัย sepsis/แผลติดเชื้อจริง):
-o	ตัวอย่าง: Piperacillin-tazobactam 4.5 g IV q6–8h หรือ Cefepime 2 g IV q8–12h ± Vancomycin
-o	ปรับตาม culture & sensitivity
-5) การรักษาเฉพาะ (Specific Immunomodulatory Therapy)
-เริ่มให้ เร็วที่สุดภายใน 48–72 ชม.แรก หลังวินิจฉัย/เริ่มลอกผิว โดยเฉพาะราย SJS-TEN overlap/TEN หรือ SJS ที่มี mucosa หลายตำแหน่ง/อวัยวะภายในเกี่ยวข้อง
-5.1 Cyclosporine (แนะนำมากที่สุดใน moderate–severe SJS/TEN)
-•	ขนาด: 2–3 mg/kg/day PO แบ่ง BID
-•	ระยะเวลา: 7–10 วัน → taper จนครบ 3–4 สัปดาห์
-5.2 Corticosteroids
-•	SJS (BSA <10%): Prednisolone 0.5–1 mg/kg/day PO 3–7 วัน → taper จบใน 1–2 สัปดาห์
-•	SJS–TEN overlap/TEN:
-o	IV Methylprednisolone 1–2 mg/kg/day หรือ pulse 500–1000 mg/day × 3 วัน,
-o	แล้ว เปลี่ยนเป็น Prednisolone 1 mg/kg/day PO → taper รวมคอร์ส 3–4 สัปดาห์
-5.3 IVIG (เมื่อไม่ตอบสนอง/ overlap/TEN กว้าง)
-•	ขนาด: 0.4 g/kg/day × 5 วัน (รวม 2 g/kg/คอร์ส`,
-    },
+  function computeLocalBrain() {
+    const outEl = document.getElementById("p6BrainBox");
+    if (!outEl) return;
 
-    // 14) TEN
-    "TEN": {
-      label: "TEN",
-      text: `TEN
-1.หยุดยาที่สงสัยทันที 
-2.การดูแลทั่วไป (Supportive care)
-•	สารน้ำและไต (Fluid & Renal Support): ใช้ Crystalloid solution เช่น 0.9% Normal Saline หรือ Ringer’s lactate
-ตั้งเป้า Urine output ผู้ใหญ่: ≥ 0.5–1 mL/kg/hr, เด็ก: ≥ 1–1.5 mL/kg/hr
-•	แผลและผิวหนัง (Wound / Skin Care) ล้างแผล ด้วย 0.9% Normal saline หรือ Chlorhexidine 0.05% (เจือจาง)
-•	การติดเชื้อ (Infection Control): ไม่ให้ antibiotic prophylaxis ให้เมื่อมีหลักฐานติดเชื้อเท่านั้น เช่น มีไข้, neutrophilia, wound culture positive
-•	ป้องกันลิ่มเลือด (Thrombosis Prophylaxis) ให้ Enoxaparin 40 mg SC once daily
-•	โภชนาการ พลังงาน 25–30 kcal/kg/day, โปรตีน 1.5–2 g/kg/day
-•	ควบคุมปวด:
-•	Mild → Paracetamol 500–1000 mg PO q6h PRN (≤ 4 g/day)
-•	Severe → Morphine 2–4 mg IV q3–4h PRN หรือ Fentanyl 25–50 µg IV q1–2h PRN
-•	ควบคุมอุณหภูมิห้อง: 28–30 °C เพื่อป้องกัน hypothermia
-•	การดูแลตา (Eye Care — ภายใน 24 ชม.)
-•	Artificial tears (preservative-free) → Carboxymethylcellulose 0.5% หรือ Hypromellose 0.3% หยอด q1–2h
-•	Topical antibiotic/steroid (เฉพาะตามจักษุสั่ง) → Tobramycin-dexamethasone ointment วันละ 2–3 ครั้ง ช่วงสั้น
-•	ช่องปาก: Chlorhexidine 0.12% mouthwash วันละ 2–3 ครั้ง
-•	อวัยวะเพศ/ทวาร: ทา Vaseline® หรือ Liquid paraffin วันละ 2–3 ครั้ง
-3.Cyclosporine (CsA) – แนะนำบ่อย
-•	ขนาด: 3–5 mg/kg/วัน แบ่งวันละ 2 ครั้ง
-4.Systemic Corticosteroids (ให้เร็ว ระยะสั้น) ตัวเลือกที่ใช้จริง 2 แบบ
-1.	Pulse methylprednisolone 500–1,000 mg IV วันละครั้ง × 3 วัน, จากนั้น prednisone 0.5–1 mg/kg/วัน แล้ว taper เร็วใน 1–2 สัปดาห์เมื่อโรคหยุดลุกลาม
-2.	Prednisone/Prednisolone 1–2 mg/kg/วัน ระยะสั้น 3–5 วัน แล้ว taper เร็วตามอาการ (ใช้เมื่อไม่สามารถ pulse)
-เมื่อไร “ไม่ให้ pulse” หรือควรหลีกเลี่ยง
-1.	มีภาวะติดเชื้อ (sepsis / bacteremia / pneumonia) → การกดภูมิรุนแรงจะทำให้เชื้อแพร่กระจายเร็ว
-2.	อยู่ในระยะ late phase (ผิวหนังเริ่มหลุดลอกมากแล้ว >30–40% BSA) → ประโยชน์ลดลง เพราะการทำลายผิวหนังเกิดไปแล้ว
-5.IVIG (พิจารณาให้ร่วมสเตียรอยด์)
-•	ขนาดรวม (total dose): 2 g/kg แบ่งให้ 0.4 g/kg/วัน × 5 วัน หรือ 1 g/kg/วัน × 2 วัน (2–3 วันก็ใช้) ภายใน 3–6 วันแรกของการนอน รพ.`,
-    },
+    const ready = corePagesReady();
+    if (!ready.ok) {
+      outEl.innerHTML =
+        '<div class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</div>';
+      return;
+    }
 
-    // 15) Hemolytic anemia (เพิ่มจาก guideline)
-    "Hemolytic anemia": {
-      label: "Hemolytic anemia",
-      text: `Hemolytic anemia (Drug-induced)
-1.หยุดยาที่สงสัยทันที 
-•	เป็นการรักษาหลักของ drug-induced immune hemolytic anemia ส่วนใหญ่จะดีขึ้นภายใน 1–2 สัปดาห์หลังหยุดยา
-2.ประเมินความรุนแรง
-•	ตรวจ CBC, reticulocyte, LDH, indirect bilirubin, haptoglobin, Coombs test
-•	ติดตามสัญญาณชีพ, ปริมาณปัสสาวะ, อาการเหนื่อยหรืออกเจ็บ
-3.Supportive care
-•	ให้ Packed RBC transfusion เมื่อมีอาการจากภาวะซีด หรือ Hb < 7–8 g/dL (ปรับตาม guideline รพ.)
-•	ให้กรดโฟลิกเสริมในราย hemolysis เรื้อรัง
-4.Immunosuppressive therapy (กรณี immune-mediated / hemolysis รุนแรง)
-•	Prednisolone 1 mg/kg/day PO (หรือเทียบเท่า IV) 1–2 สัปดาห์ แล้ว taper ตามการตอบสนอง
-•	พิจารณา IVIG 0.4 g/kg/day × 5 วัน ในรายไม่ตอบสนองต่อ steroid หรือ hemolysis รุนแรงมาก
-5.ส่งต่อ/ปรึกษาอายุรแพทย์โลหิตวิทยา
-•	กรณี hemolysis รุนแรง, สงสัยภาวะอื่นร่วม (เช่น TTP, HUS) หรือสงสัยต้องใช้ rituximab/การรักษาเฉพาะทาง`,
-    },
+    const d = window.drugAllergyData || {};
+    const p1 = d.page1 || {};
+    const p2 = d.page2 || {};
+    const p3 = d.page3 || {};
 
-    // 16) Pancytopenia (เพิ่มจาก guideline)
-    "Pancytopenia": {
-      label: "Pancytopenia",
-      text: `Pancytopenia (Drug-induced bone marrow suppression)
-1.หยุดยาที่สงสัยทันที และค้นหาสาเหตุอื่นร่วม (เช่น การติดเชื้อไวรัส, โรคไขกระดูก)
-2.ประเมินความรุนแรง
-•	CBC, smear, reticulocyte, ค่าไต/ตับ, coagulation profile
-•	พิจารณาตรวจ bone marrow หาก pancytopenia ไม่ดีขึ้นหลังหยุดยา หรือสงสัยสาเหตุอื่น
-3.Supportive care
-•	Transfusion: 
-  - Packed RBC เมื่อมีอาการซีดหรือ Hb < 7–8 g/dL
-  - Platelet transfusion เมื่อ PLT < 10,000/µL หรือ < 20,000/µL ร่วมกับไข้/หัตถการ หรือมีเลือดออก
-•	หลีกเลี่ยงยาที่มีผลต่อเกล็ดเลือดเพิ่ม (NSAIDs, antiplatelet) หากไม่จำเป็น
-4.การจัดการภาวะ Neutropenia ใน Pancytopenia
-•	ถ้ามี neutrophil < 500/µL หรือมีไข้ร่วม → ให้ broad-spectrum IV antibiotics ทันที ตามแนวทาง febrile neutropenia
-•	พิจารณา G-CSF (Filgrastim 5 µg/kg/day SC) ในรายที่มี neutropenia รุนแรงร่วมกับการติดเชื้อหรือเสี่ยงสูง
-5.ติดตามใกล้ชิด/ส่งต่อ Hematology
-•	ถ้าภาวะ pancytopenia ไม่ดีขึ้นภายใน 1–2 สัปดาห์หลังหยุดยา หรือสงสัย aplastic anemia / MDS`,
-    },
+    const scores = Object.create(null);
+    const add = (k, w) => {
+      scores[k] = (scores[k] || 0) + (w || 1);
+    };
 
-    // 17) Neutropenia (เพิ่มจาก guideline)
-    "Neutropenia": {
-      label: "Neutropenia",
-      text: `Neutropenia (Drug-induced)
-1.หยุดยาที่สงสัยทันที 
-2.จำแนกระดับความรุนแรง
-•	Mild: ANC 1,000–1,500/µL
-•	Moderate: ANC 500–1,000/µL
-•	Severe: ANC < 500/µL (เสี่ยงติดเชื้อสูง)
-3.Febrile neutropenia (ANC < 500/µL + ไข้)
-•	ให้ broad-spectrum IV antibiotics ทันที โดยไม่รอผลเพาะเชื้อ (เช่น piperacillin-tazobactam, cefepime หรือ carbapenem ตาม guideline รพ.)
-•	ให้สารน้ำและดูแลระบบไหลเวียน/หายใจตามความจำเป็น
-4.G-CSF (Granulocyte colony-stimulating factor)
-•	พิจารณาให้ Filgrastim 5 µg/kg/day SC/IV วันละครั้ง จนกว่า ANC > 1,000–2,000/µL ในรายที่ neutropenia รุนแรงหรือมีการติดเชื้อ
-5.หลีกเลี่ยงแหล่งติดเชื้อ
-•	แนะนำ strict hand hygiene, หลีกเลี่ยงอาหารดิบ/สุก ๆ ดิบ ๆ, หลีกเลี่ยงคนป่วยติดเชื้อทางเดินหายใจ
-6.ติดตาม CBC ซ้ำ
-•	ทุก 2–3 วัน หรือถี่กว่านั้นในราย severe neutropenia จนกว่าเม็ดเลือดจะฟื้นตัว`,
-    },
+    // Urticaria
+    if (p1.itch?.has) add("Urticaria", 3);
+    if ((p1.rashShapes || []).includes("ปื้นนูน")) add("Urticaria", 2);
 
-    // 18) Thrombocytopenia (เพิ่มจาก guideline)
-    "Thrombocytopenia": {
-      label: "Thrombocytopenia",
-      text: `Thrombocytopenia (Drug-induced)
-1.หยุดยาที่สงสัยทันที 
-•	โดยเฉพาะ heparin, quinine, sulfonamides, linezolid, rifampin ฯลฯ ตามที่สงสัย
-2.ประเมินความเสี่ยงเลือดออก
-•	ซักประวัติเลือดออกผิดปกติ (จ้ำเลือด, เลือดกำเดา, เลือดออกเหงือก, ปัสสาวะ/อุจจาระเป็นเลือด)
-•	ตรวจ PLT ซ้ำยืนยัน และประเมินค่า PT/INR, aPTT
-3.Supportive care
-•	หลีกเลี่ยง IM injection และยาที่มีผลต่อเกล็ดเลือด (aspirin, NSAIDs, clopidogrel ฯลฯ)
-•	Platelet transfusion:
-  - PLT < 10,000/µL แม้ไม่มีเลือดออก
-  - PLT < 20,000–30,000/µL ร่วมกับไข้/ติดเชื้อ หรือมีเลือดออกเล็กน้อย
-  - เลือดออกรุนแรง/ต้องผ่าตัด → transfuse ตาม guideline
-4.กรณีสงสัย immune thrombocytopenia จากยา (DITP)
-•	Prednisolone 1 mg/kg/day PO 1–2 สัปดาห์ แล้ว taper ตามการตอบสนอง
-•	พิจารณา IVIG 1 g/kg/day × 1–2 วัน ในรายเลือดออกรุนแรงหรือ PLT ต่ำมาก
-5.กรณี Heparin-induced thrombocytopenia (HIT)
-•	หยุด heparin ทุกชนิดทันที
-•	เปลี่ยนเป็น non-heparin anticoagulant (เช่น fondaparinux หรือ DOAC ตามข้อบ่งชี้)
-•	หลีกเลี่ยง platelet transfusion หากไม่มีเลือดออกรุนแรง เพราะเสี่ยงลิ่มเลือดเพิ่ม`,
-    },
+    // Anaphylaxis (หยาบ ๆ)
+    if (
+      p2.resp?.dyspnea ||
+      p2.resp?.wheeze ||
+      p2.resp?.tachypnea ||
+      p2.cv?.hypotension ||
+      p2.cv?.shock
+    )
+      add("Anaphylaxis", 4);
 
-    // 19) Nephritis (เพิ่มจาก guideline)
-    "Nephritis": {
-      label: "Nephritis",
-      text: `Nephritis (Drug-induced acute interstitial nephritis / nephrotoxicity)
-1.หยุดยาที่สงสัยทันที 
-•	เช่น β-lactams, sulfonamides, rifampin, NSAIDs, PPIs, allopurinol ฯลฯ
-2.ประเมินความรุนแรงของไตวาย
-•	ตรวจ BUN, Creatinine, eGFR, electrolytes, ปริมาณปัสสาวะ
-•	ประเมิน volume status (ขาดน้ำ / น้ำเกิน)
-3.Supportive care
-•	ให้สารน้ำให้เหมาะสม หลีกเลี่ยงทั้ง volume overload และ dehydration
-•	หลีกเลี่ยง nephrotoxic drugs อื่น ๆ (เช่น NSAIDs, aminoglycosides, radiocontrast เพิ่มเติม)
-•	ควบคุมความดันโลหิต และภาวะเกลือแร่ผิดปกติ (เช่น hyperkalemia, metabolic acidosis)
-4.Corticosteroid (พิจารณาใน AIN จากภูมิคุ้มกัน หลัง exclude sepsis)
-•	Prednisolone 0.5–1 mg/kg/day PO (หรือเทียบเท่า IV) นาน 1–2 สัปดาห์ แล้ว taper ใน 4–6 สัปดาห์ ตาม renal response
-•	ประโยชน์ชัดเจนเมื่อเริ่มภายใน 1–2 สัปดาห์หลังเริ่มมี AIN
-5.Indication สำหรับ Nephrologist / Dialysis
-•	Cr เพิ่มเร็ว, oliguria/anuria, hyperkalemia ดื้อยา, volume overload, หรือ uremic symptoms (pericarditis, encephalopathy)
-•	พิจารณา hemodialysis ตามข้อบ่งชี้มาตรฐาน`,
-    },
+    // Angioedema
+    if (p1.swelling?.has) add("Angioedema", 3);
 
-    // 20) Serum sickness (เพิ่มจาก guideline)
-    "Serum sickness": {
-      label: "Serum sickness",
-      text: `Serum sickness / Serum sickness–like reaction
-1.หยุดยาหรือสารก่อปฏิกิริยาทันที 
-•	เช่น cefaclor, penicillin, sulfonamides, biologics, antisera ฯลฯ
-2.ประเมินระบบสำคัญ
-•	ฟังหัวใจ ปอด ประเมินข้อบวม ผื่นลักษณะ vasculitis/urticaria, ต่อมน้ำเหลือง, ตับ/ม้ามโต
-3.การรักษาตามอาการ (Symptomatic treatment)
-•	ผื่น/คัน: ให้ H1 antihistamine (เช่น cetirizine 10 mg/day หรือ chlorpheniramine 4 mg q6h)
-•	ปวดข้อ/ปวดกล้ามเนื้อ: พิจารณา paracetamol 500–1000 mg q6h PRN (หลีกเลี่ยง NSAIDs ในผู้ป่วยที่สงสัยแพ้ NSAIDs)
-4.Corticosteroid (ใช้เมื่อมีอาการปานกลาง–รุนแรง)
-•	Prednisolone 0.5–1 mg/kg/day PO ประมาณ 5–7 วัน → taper ลงใน 1–2 สัปดาห์ เมื่อผื่น/ข้อบวมดีขึ้น
-5.กรณีรุนแรงมาก / organ involvement (ไต, หัวใจ, ระบบประสาท)
-•	พิจารณาให้ methylprednisolone IV dose สูงระยะสั้น (เช่น 0.5–1 mg/kg/day หรือ pulse ตามดุลยพินิจเฉพาะราย)
-•	พิจารณา IVIG หรือ plasmapheresis ในรายที่ไม่ตอบสนองต่อ steroid หรือมีภาวะ immune-complex รุนแรง (ตามดุลยพินิจแพทย์เฉพาะทาง)`,
-    },
+    // Maculopapular rash
+    if (
+      (p1.rashShapes || []).length &&
+      (p1.rashColors || []).includes("แดง")
+    )
+      add("Maculopapular rash", 2);
 
-    // 21) Vasculitis (เพิ่มจาก guideline)
-    "Vasculitis": {
-      label: "Vasculitis",
-      text: `Vasculitis (Drug-induced leukocytoclastic / immune-complex vasculitis)
-1.หยุดยาที่สงสัยทันที 
-•	เช่น β-lactams, sulfonamides, fluoroquinolones, allopurinol, PTU/methimazole, hydralazine, biologics ฯลฯ
-2.ประเมินว่าจำกัดเฉพาะผิวหนัง หรือมี organ involvement
-•	ซักประวัติ/ตรวจร่างกายหา hematuria/proteinuria, ไอหอบ/มีเลือดออกทางเดินหายใจ, ปวดท้อง, neuropathy
-•	ตรวจ UA, Cr, LFT, ESR/CRP; พิจารณา ANCA/ANA ตามข้อบ่งชี้
-3.กรณีจำกัดเฉพาะผิวหนัง (skin-limited)
-•	พักยกขาสูง/ถุงน่องรัดแก้บวมขา
-•	ยาแก้คันและปวด: cetirizine หรือ loratadine วันละครั้ง + paracetamol PRN
-•	ทา topical corticosteroid potency ปานกลาง (เช่น triamcinolone 0.1%) วันละ 1–2 ครั้ง บริเวณผื่นนูน/คัน
-4.กรณีมีอาการปานกลาง–รุนแรง หรือมี organ involvement
-•	Prednisolone 0.5–1 mg/kg/day PO 2–4 สัปดาห์ แล้ว taper ตามอาการและค่าตรวจทางห้องปฏิบัติการ
-•	พิจารณาเสริม immunosuppressive agent (เช่น azathioprine, methotrexate หรือ cyclophosphamide) ในรายที่รุนแรงมากหรือมี systemic vasculitis ตามดุลยพินิจแพทย์เฉพาะทาง
-5.ติดตามระยะยาว
-•	ตรวจ UA, Cr, ความดันโลหิต และประเมินผื่นซ้ำทุก 1–3 เดือน จนกว่าจะสงบ`,
-    },
-  };
+    // AGEP
+    if (p1.pustule?.has) add("AGEP", 3);
 
-  // เปิดให้หน้าอื่นเรียกใช้
-  window.adrTreatmentDB = tx;
+    // SJS/TEN
+    if (p1.skinDetach?.gt30) add("TEN", 5);
+    if (p1.skinDetach?.lt10 || p1.skinDetach?.center) add("SJS", 3);
+
+    // Photosensitivity
+    if (
+      (p1.rashColors || []).includes("แดงไหม้") &&
+      (p1.locations || []).includes("หน้า")
+    )
+      add("Photosensitivity drug eruption", 2);
+
+    // DRESS (หยาบ ๆ)
+    const aec = toNumber(p3?.cbc?.aec?.value ?? p3?.cbc?.eos?.value);
+    const eosPct = toNumber(p3?.cbc?.eos?.value);
+    const alt = toNumber(p3?.lft?.alt?.value);
+    const ast = toNumber(p3?.lft?.ast?.value);
+    if (
+      (Number.isFinite(aec) && aec >= 1500) ||
+      (Number.isFinite(eosPct) && eosPct >= 10)
+    )
+      add("DRESS", 2);
+    if (
+      (Number.isFinite(alt) && alt > 100) ||
+      (Number.isFinite(ast) && ast > 100)
+    )
+      add("DRESS", 1);
+
+    const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    if (!ranked.length) {
+      outEl.innerHTML =
+        '<div class="p6-muted">ยังไม่มีสัญญาณเด่นพอจากข้อมูลที่กรอก</div>';
+      return;
+    }
+
+    const leader = ranked[0][0];
+    outEl.innerHTML = `
+      <div>
+        <div style="font-weight:700;margin-bottom:.25rem;">ผลเด่น: <strong>${leader}</strong></div>
+        <ol class="p6-list" style="margin-top:.35rem;">
+          ${ranked
+            .map(([k], i) => `<li>${i + 1}) ${k}</li>`)
+            .join("")}
+        </ol>
+      </div>
+    `;
+  }
+
+  // --------- TIMELINE (วาดโดยไม่ re-render ทั้งหน้า) ---------
+  function drawTimeline() {
+    const dateRow = document.getElementById("p6DateRow");
+    const drugLane = document.getElementById("p6DrugLane");
+    const adrLane = document.getElementById("p6AdrLane");
+    const sc = document.getElementById("p6TimelineScroll");
+    if (!dateRow || !drugLane || !adrLane) return;
+
+    const { drugs, adrs } = getPage5();
+    dateRow.innerHTML = "";
+    drugLane.innerHTML = "";
+    adrLane.innerHTML = "";
+
+    if (!drugs.length && !adrs.length) return;
+
+    const MS_DAY = 86400000;
+    const DAY_W = 120;
+
+    function parseDate(str) {
+      if (!str) return null;
+      const pure = String(str).trim().split(" ")[0];
+      if (pure.includes("-")) {
+        const [y, m, d] = pure.split("-").map(Number);
+        if (y && m && d) return new Date(y, m - 1, d);
+      }
+      if (pure.includes("/")) {
+        const [d, m, y] = pure.split("/").map(Number);
+        if (y && m && d) return new Date(y, m - 1, d);
+      }
+      return null;
+    }
+
+    const today = new Date();
+    const today0 = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    let minDate = null;
+    drugs.forEach((d) => {
+      const s = parseDate(d.startDate);
+      if (s && (!minDate || s < minDate)) minDate = s;
+    });
+    adrs.forEach((a) => {
+      const s = parseDate(a.startDate);
+      if (s && (!minDate || s < minDate)) minDate = s;
+    });
+    if (!minDate) minDate = today0;
+
+    const maxDate = today0;
+    const totalDays = Math.floor((maxDate - minDate) / MS_DAY) + 1;
+
+    dateRow.style.display = "grid";
+    dateRow.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(
+        minDate.getFullYear(),
+        minDate.getMonth(),
+        minDate.getDate() + i
+      );
+      const cell = document.createElement("div");
+      cell.className = "p6-date-cell";
+      cell.textContent = d.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+      });
+      dateRow.appendChild(cell);
+    }
+
+    const ROW_H = 46;
+
+    function prepLane(el, rows) {
+      el.style.display = "grid";
+      el.style.gridTemplateColumns = `repeat(${totalDays}, ${DAY_W}px)`;
+      el.style.gridAutoRows = ROW_H + "px";
+      el.style.rowGap = "6px";
+      el.style.height = Math.max(rows, 1) * (ROW_H + 6) + "px";
+      el.innerHTML = "";
+    }
+
+    prepLane(drugLane, drugs.length);
+    prepLane(adrLane, adrs.length);
+
+    const dayIndex = (d) => Math.floor((d - minDate) / MS_DAY);
+
+    function addBar(obj, idx, lane, kind) {
+      const sD = parseDate(obj.startDate);
+      if (!sD) return;
+      let eD;
+      if (kind === "drug" ? obj.stopDate : obj.endDate) {
+        const raw = parseDate(kind === "drug" ? obj.stopDate : obj.endDate);
+        eD = raw
+          ? new Date(raw.getFullYear(), raw.getMonth(), raw.getDate() - 1)
+          : maxDate;
+      } else eD = maxDate;
+
+      if (eD < sD) eD = sD;
+      if (eD > maxDate) eD = maxDate;
+
+      const same =
+        (kind === "drug" ? obj.stopDate : obj.endDate) &&
+        dayIndex(parseDate(obj.startDate)) ===
+          dayIndex(
+            parseDate(kind === "drug" ? obj.stopDate : obj.endDate)
+          );
+
+      if (same) {
+        const cell = document.createElement("div");
+        cell.style.gridColumn = `${dayIndex(sD) + 1} / ${dayIndex(sD) + 2}`;
+        cell.style.gridRow = `${idx + 1}`;
+        cell.style.display = "flex";
+        cell.style.alignItems = "center";
+
+        const dot = document.createElement("div");
+        dot.title =
+          (kind === "drug"
+            ? (obj.name || "").trim()
+            : (obj.symptom || "").trim()) ||
+          `${kind === "drug" ? "ยา" : "ADR"} ${idx + 1}`;
+        dot.style.width = "16px";
+        dot.style.height = "16px";
+        dot.style.borderRadius = "9999px";
+        dot.style.background =
+          kind === "drug"
+            ? "linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)"
+            : "linear-gradient(90deg,#f43f5e 0%,#f97316 100%)";
+        dot.style.boxShadow = "0 8px 22px rgba(15,23,42,.12)";
+        dot.style.marginLeft = "4px";
+        cell.appendChild(dot);
+        lane.appendChild(cell);
+        return;
+      }
+
+      const bar = document.createElement("div");
+      bar.className = `p6-bar ${
+        kind === "drug" ? "p6-bar-drug" : "p6-bar-adr"
+      }`;
+      bar.textContent =
+        kind === "drug"
+          ? (obj.name && obj.name.trim()) || `ยา ${idx + 1}`
+          : (obj.symptom && obj.symptom.trim()) || `ADR ${idx + 1}`;
+      bar.style.gridColumn = `${dayIndex(sD) + 1} / ${dayIndex(eD) + 2}`;
+      bar.style.gridRow = `${idx + 1}`;
+      lane.appendChild(bar);
+    }
+
+    drugs.forEach((d, i) => addBar(d, i, drugLane, "drug"));
+    adrs.forEach((a, i) => addBar(a, i, adrLane, "adr"));
+
+    if (sc) sc.scrollLeft = sc.scrollWidth;
+  }
+
+  // --------- ADR CHART (กราฟแนวนอน 21 ADR จาก brainResult) ---------
+  function updateAdrChartFromBrain() {
+    const body = document.getElementById("p6AdrChartBody");
+    if (!body) return;
+
+    const brain = window.brainResult;
+    if (!brain || !brain.results || !Object.keys(brain.results).length) {
+      body.innerHTML =
+        '<p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</p>';
+      return;
+    }
+
+    const arr = Object.values(brain.results);
+    if (!arr.length) {
+      body.innerHTML =
+        '<p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ</p>';
+      return;
+    }
+
+    // เรียงตาม % จากมากไปน้อย แต่แสดงครบทุก ADR
+    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const maxPct = Math.max(
+      1,
+      ...sorted.map((r) => (Number.isFinite(r.percent) ? r.percent : 0))
+    );
+
+    const rowsHtml = sorted
+      .map((r) => {
+        const pct = Number.isFinite(r.percent) ? Math.max(0, r.percent) : 0;
+        const pctStr = pct.toFixed(1).replace(/\.0$/, "");
+        const width = (pct / maxPct) * 100;
+        return `
+          <div class="p6-adr-chart-row">
+            <div class="p6-adr-chart-label">${r.label}</div>
+            <div class="p6-adr-chart-bar-track">
+              <div class="p6-adr-chart-bar-fill" style="width:${width}%;"></div>
+            </div>
+            <div class="p6-adr-chart-pct">${pctStr}%</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    body.innerHTML = rowsHtml;
+  }
+
+  // --------- ส่วนช่วยสำหรับ “ADR ที่ได้คะแนนสูงสุด” + รายชื่อยา ---------
+
+  function getTopAdrFromBrain() {
+    const brain = window.brainResult;
+    if (!brain || !brain.results) return null;
+    const arr = Object.values(brain.results);
+    if (!arr.length) return null;
+    const sorted = arr.slice().sort((a, b) => (b.percent || 0) - (a.percent || 0));
+    const top = sorted[0];
+    if (!top || !top.label) return null;
+    if (!Number.isFinite(top.percent) || top.percent <= 0) return null;
+    return top;
+  }
+
+  function renderAdrSummaryFromBrain() {
+    const box = document.getElementById("p6AdrSummary");
+    if (!box) return;
+
+    const top = getTopAdrFromBrain();
+    if (!top) {
+      box.innerHTML =
+        '<p class="p6-muted">ยังไม่มีผลสรุปจากส่วนที่ 1 หรือยังไม่ได้คำนวณ</p>';
+      return;
+    }
+
+    const pct = Number.isFinite(top.percent) ? Math.max(0, top.percent) : 0;
+    const pctStr = pct.toFixed(1).replace(/\.0$/, "");
+
+    box.innerHTML = `
+      <p class="p6-adr-top-name">${top.label}</p>
+      <p class="p6-muted">คะแนนเฉลี่ยมากที่สุดลำดับที่ 1: ${pctStr}%</p>
+      <p class="p6-muted">* แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์ผลลัพธ์สูงสุดจากผลประเมินส่วนที่ 1</p>
+    `;
+  }
+
+  function renderAdrDrugListFromBrain() {
+    const holder = document.getElementById("p6AdrDrugList");
+    if (!holder) return;
+
+    const top = getTopAdrFromBrain();
+    if (!top) {
+      holder.innerHTML =
+        '<p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>';
+      return;
+    }
+
+    const db = window.adrDrugDB || {};
+    const entry = db[top.label];
+    if (!entry || !Array.isArray(entry.drugs) || !entry.drugs.length) {
+      holder.innerHTML =
+        '<p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>';
+      return;
+    }
+
+    const listHtml = entry.drugs
+      .map((d) => {
+        const cat = d.category ? `${d.category} — ` : "";
+        const grp = d.group || "";
+        const ex = d.examples ? `<span class="p6-muted">: ${d.examples}</span>` : "";
+        return `<li><strong>${cat}${grp}</strong>${ex}</li>`;
+      })
+      .join("");
+
+    holder.innerHTML = `
+      <p class="p6-muted" style="margin-bottom:.4rem;">
+        แสดงรายชื่อยาที่มีรายงานความสัมพันธ์กับ
+        <strong>${entry.label || top.label}</strong> ตามข้อมูลวรรณกรรม (สรุปแบบย่อ)
+      </p>
+      <ol class="p6-list p6-adr-drug-list">
+        ${listHtml}
+      </ol>
+    `;
+  }
+
+  // --------- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ ---------
+  function renderAdrTreatmentFromBrain() {
+    const box = document.getElementById("p6AdrTreatmentBox");
+    const nameEl = document.getElementById("p6AdrTreatmentTitle");
+    if (!box) return;
+
+    const top = getTopAdrFromBrain();
+    const db = window.adrTreatmentDB || {};
+    if (!top) {
+      if (nameEl) nameEl.textContent = "ยังไม่มีผลสรุปจากส่วนที่ 1";
+      box.classList.add("p6-muted");
+      box.textContent =
+        "ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้";
+      return;
+    }
+
+    const entry = db[top.label];
+    if (!entry || !entry.text) {
+      if (nameEl) nameEl.textContent = top.label;
+      box.classList.add("p6-muted");
+      box.textContent =
+        "ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ ADR ชนิดนี้ในระบบ";
+      return;
+    }
+
+    if (nameEl) nameEl.textContent = entry.label || top.label;
+    box.classList.remove("p6-muted");
+    box.textContent = entry.text;
+  }
+
+  // --------- RENDER (ครั้งเดียว) ---------
+  function renderPage6() {
+    const root = document.getElementById("p6Root");
+    if (!root) return;
+
+    if (!window.__p6RenderedOnce) {
+      window.__p6RenderedOnce = true;
+
+      const p4 =
+        (window.drugAllergyData && window.drugAllergyData.page4) || {};
+      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
+        .map((d) => d.name)
+        .filter(Boolean);
+
+      const subtypesList = `
+        <ul class="p6-muted" style="margin-top:.35rem;">
+          <li>Urticaria</li><li>Anaphylaxis</li><li>Angioedema</li>
+          <li>Maculopapular rash</li><li>Fixed drug eruption</li><li>AGEP</li>
+          <li>SJS</li><li>TEN</li><li>DRESS</li><li>Erythema multiforme</li>
+          <li>Photosensitivity drug eruption</li><li>Exfoliative dermatitis</li>
+          <li>Eczematous drug eruption</li><li>Bullous Drug Eruption</li>
+          <li>Serum sickness</li><li>Vasculitis</li>
+          <li>Hemolytic anemia</li>
+          <li>Pancytopenia / Neutropenia / Thrombocytopenia</li>
+          <li>Nephritis</li>
+        </ul>
+      `;
+
+      function naranjoBlock() {
+        const list = getNaranjoList();
+        if (!list.length)
+          return `<div class="p6-empty">ยังไม่มีข้อมูล Naranjo (กรุณากดบันทึกในหน้า 4)</div>`;
+        return `
+          <div class="p6-naranjo-list">
+            ${list
+              .map(
+                (item) => `
+              <div class="p6-naranjo-item">
+                <div class="p6-naranjo-name">${item.name}</div>
+                <div class="p6-naranjo-score">${item.total}</div>
+              </div>
+              <p class="p6-muted" style="margin-top:2px;margin-bottom:10px;">สรุป: ${item.interpretation}</p>
+            `
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      const p5 = getPage5();
+      const drugList = p5.drugs.length
+        ? `<ol class="p6-list">${p5.drugs
+            .map(
+              (d, i) => `<li><strong>${
+                (d.name || "").trim() || "ยาตัวที่ " + (i + 1)
+              }</strong> — ${rangeStr(
+                d.startDate,
+                d.startTime,
+                d.stopDate,
+                d.stopTime
+              )}</li>`
+            )
+            .join("")}</ol>`
+        : `<p class="p6-muted">— ไม่มีรายการยา —</p>`;
+      const adrList = p5.adrs.length
+        ? `<ol class="p6-list">${p5.adrs
+            .map(
+              (a, i) => `<li><strong>${
+                (a.symptom || "").trim() || "ADR " + (i + 1)
+              }</strong> — ${rangeStr(
+                a.startDate,
+                a.startTime,
+                a.endDate,
+                a.endTime
+              )}</li>`
+            )
+            .join("")}</ol>`
+        : `<p class="p6-muted">— ไม่มี ADR —</p>`;
+
+      root.innerHTML = `
+        <div class="p6-wrapper">
+          <div class="p6-block sec1">
+            <div class="p6-head">
+              <div class="p6-emoji">🤖</div>
+              <div class="p6-head-title">ส่วนที่ 1: Type of ADR (Non-immunologic &amp; Immunologic)</div>
+            </div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">อาการ/อาการแสดงทางคลินิกของการแพ้ยา</div>
+              ${subtypesList}
+              <div id="p6CoreStatus">${renderCoreStatus()}</div>
+            </div>
+
+            <div class="p6-subcard">
+              <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
+              <div id="p6BrainHost">
+                <!-- p6BrainBox จาก index.html จะถูกย้ายมาอยู่ตรงนี้ -->
+              </div>
+
+              <!-- กล่องกราฟ ADR 21 ชนิด (แนวนอน สีชมพู) -->
+              <div class="p6-adr-chart">
+                <div class="p6-adr-chart-title">กราฟเปอร์เซ็นต์การเข้าได้กับ ADR ทั้ง 21 ชนิด</div>
+                <div id="p6AdrChartBody" class="p6-adr-chart-body">
+                  <p class="p6-muted">ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3</p>
+                </div>
+              </div>
+
+              <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+                <button id="p6BrainRefreshBtn" class="p6-btn p6-btn-outline">🔄 รีเฟรชผลประเมิน</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p6-block sec2">
+            <div class="p6-head">
+              <div class="p6-emoji">💊</div>
+              <div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div>
+            </div>
+
+            <div class="p6-subcard">
+              <div class="p6-sub-title">1) รายงานการแพ้:</div>
+              <div id="p6AdrSummary" class="p6-adr-summary-box">
+                <p class="p6-muted">ยังไม่มีผลสรุปจากส่วนที่ 1 หรือยังไม่ได้คำนวณ</p>
+              </div>
+            </div>
+
+            <div class="p6-subcard">
+              <div class="p6-sub-title">2) รายชื่อยาที่มีรายงานการเกิดการแพ้ชนิดนี้:</div>
+              <div id="p6AdrDrugList">
+                <p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p6-block sec3">
+            <div class="p6-head"><div class="p6-emoji">💉</div><div class="p6-head-title">ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้</div></div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">การรักษาเฉพาะ:</div>
+              <p class="p6-muted" style="margin:0 0 .35rem;">
+                ดึงจาก “ชนิด ADR ที่ได้คะแนนสูงสุด” ในส่วนที่ 1 และชุดแนวทางการรักษาที่กำหนดไว้ในสมองการแพ้ยา
+              </p>
+              <p id="p6AdrTreatmentTitle" class="p6-treatment-name">ยังไม่มีผลสรุปจากส่วนที่ 1</p>
+              <div id="p6AdrTreatmentBox" class="p6-treatment-box">
+                ยังไม่มีผลการประเมินจากส่วนที่ 1 จึงไม่สามารถแสดงแนวทางการรักษาเฉพาะชนิดได้
+              </div>
+            </div>
+          </div>
+
+          <div class="p6-block sec4">
+            <div class="p6-head"><div class="p6-emoji">📊</div><div class="p6-head-title">ส่วนที่ 4: ผลการประเมิน Naranjo และ Timeline</div></div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">ผลประเมิน Naranjo Adverse Drug Reaction Probability Scale</div>
+              ${naranjoBlock()}
+            </div>
+            <div class="p6-subcard">
+              <div class="p6-sub-title">Timeline แสดงความสัมพันธ์ระหว่างยาและอาการ</div>
+              <div class="p6-timeline-readable">
+                <div class="p6-sub-sub">
+                  <div class="p6-sub-title" style="margin-bottom:.35rem;">💊 รายการยา</div>
+                  ${drugList}
+                </div>
+                <div class="p6-sub-sub" style="margin-top:.65rem;">
+                  <div class="p6-sub-title" style="margin-bottom:.35rem;">🧪 ADR</div>
+                  ${adrList}
+                </div>
+              </div>
+              <div class="p6-visual-box">
+                <h4 class="p6-visual-title">Visual Timeline</h4>
+                <div id="p6TimelineScroll" class="p6-timeline-scroll">
+                  <div id="p6DateRow"></div>
+                  <div class="p6-lane">
+                    <div class="p6-lane-label">ยา</div>
+                    <div id="p6DrugLane"></div>
+                  </div>
+                  <div class="p6-lane">
+                    <div class="p6-lane-label p6-lane-adr">ADR</div>
+                    <div id="p6AdrLane"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p6-footer-btns">
+            <button class="p6-btn p6-btn-print" onclick="p6PrintTimeline()">🖨️ Print / PDF</button>
+            <button class="p6-btn p6-btn-next" onclick="alert('ยังไม่ได้สร้างหน้า 7 — เดี๋ยวเราต่อให้ตอนใส่สมอง')">➡️ บันทึกข้อมูลและไปหน้า 7</button>
+          </div>
+        </div>
+      `;
+
+      // ย้าย p6BrainBox จาก index.html มาไว้ใน host (ไม่สร้าง id ซ้ำ)
+      const externalBox = document.getElementById("p6BrainBox");
+      const host = document.getElementById("p6BrainHost");
+      if (externalBox && host) {
+        host.appendChild(externalBox);
+        if (!externalBox.innerHTML.trim()) {
+          externalBox.classList.add("p6-muted");
+          externalBox.textContent =
+            "ยังไม่มีข้อมูลเพียงพอจากหน้า 1–3 หรือยังไม่คำนวณ";
+        }
+      }
+
+      // ปุ่มรีเฟรช = คำนวณใหม่
+      const btn = document.getElementById("p6BrainRefreshBtn");
+      if (btn) {
+        btn.addEventListener("click", () => {
+          if (typeof window.brainComputeAndRender === "function") {
+            try {
+              window.brainComputeAndRender();
+            } catch (e) {}
+          } else {
+            try {
+              computeLocalBrain();
+            } catch (e) {}
+          }
+          updateAdrChartFromBrain();
+          renderAdrSummaryFromBrain();
+          renderAdrDrugListFromBrain();
+          renderAdrTreatmentFromBrain();
+        });
+      }
+
+      // ใส่สไตล์ (ครั้งเดียว)
+      injectP6Styles();
+
+      // วาด timeline ครั้งแรก
+      setTimeout(drawTimeline, 0);
+    }
+
+    // ทุกครั้งที่เรียก renderPage6() หลังจากนี้ ให้คำนวณเฉพาะผล + redraw timeline เฉพาะกล่อง
+    if (typeof window.brainComputeAndRender === "function") {
+      try {
+        window.brainComputeAndRender();
+      } catch (e) {}
+    } else {
+      computeLocalBrain();
+    }
+
+    updateAdrChartFromBrain();
+    renderAdrSummaryFromBrain();
+    renderAdrDrugListFromBrain();
+    renderAdrTreatmentFromBrain();
+    drawTimeline();
+
+    // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
+    const holder = document.getElementById("p6CoreStatus");
+    if (holder) holder.innerHTML = renderCoreStatus();
+  }
+
+  // --------- STYLES ---------
+  function injectP6Styles() {
+    if (document.getElementById("p6-visual-style")) return;
+    const css = `
+      .p6-visual-box{background:#fff;border:1px solid #edf2f7;border-radius:16px;padding:14px;margin-top:10px;}
+      .p6-visual-title{margin:0 0 8px;font-size:1.05rem;font-weight:700;color:#111827;}
+      .p6-timeline-scroll{overflow:auto;padding-bottom:6px}
+      .p6-date-cell{border-bottom:1px solid #edf2f7;font-size:12px;font-weight:600;white-space:nowrap;padding-bottom:2px;text-align:left}
+      .p6-lane{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+      .p6-lane-label{width:38px;flex:0 0 38px;font-weight:700;color:#06705d;padding-top:10px}
+      .p6-lane-label.p6-lane-adr{color:#c53030}
+      .p6-bar{height:34px;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;white-space:nowrap;box-shadow:0 8px 22px rgba(15,23,42,.12);font-size:12px}
+      .p6-bar-drug{background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%)}
+      .p6-bar-adr{background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%)}
+      .p6-naranjo-item{display:flex;justify-content:space-between;align-items:center;background:#E8FFF0;border:1px solid #A7F3D0;border-radius:12px;padding:.6rem .8rem;margin:.35rem 0;}
+      .p6-naranjo-name{font-weight:800;color:#064E3B;}
+      .p6-naranjo-score{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;border-radius:10px;padding:.15rem .6rem;font-weight:800;min-width:2.2rem;text-align:center;}
+
+      /* กราฟ ADR 21 ชนิด (แนวนอน สีชมพู) */
+      .p6-adr-chart{
+        margin-top:.6rem;
+        border-radius:18px;
+        border:1px solid rgba(236,72,153,.65);
+        background:linear-gradient(135deg,rgba(255,241,246,0.98),rgba(251,207,232,0.95));
+        padding:10px 12px;
+        box-shadow:0 10px 30px rgba(236,72,153,0.18);
+      }
+      .p6-adr-chart-title{
+        margin:0 0 6px;
+        font-size:13px;
+        font-weight:700;
+        color:#9d174d;
+      }
+      .p6-adr-chart-body{
+        max-height:260px;
+        overflow:auto;
+        padding-right:4px;
+      }
+      .p6-adr-chart-row{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin:3px 0;
+      }
+      .p6-adr-chart-label{
+        flex:0 0 160px;
+        font-size:11px;
+        font-weight:600;
+        color:#6b21a8;
+      }
+      .p6-adr-chart-bar-track{
+        flex:1 1 auto;
+        height:18px;
+        border-radius:999px;
+        background:rgba(255,255,255,0.92);
+        border:1px solid rgba(248,113,113,0.45);
+        overflow:hidden;
+        position:relative;
+      }
+      .p6-adr-chart-bar-fill{
+        position:absolute;
+        left:0;
+        top:0;
+        bottom:0;
+        border-radius:999px;
+        background:linear-gradient(90deg,#ec4899 0%,#f97316 100%);
+        box-shadow:0 4px 10px rgba(244,114,182,0.55);
+      }
+      .p6-adr-chart-pct{
+        flex:0 0 50px;
+        text-align:right;
+        font-size:11px;
+        font-weight:800;
+        color:#be185d;
+      }
+
+      /* ส่วนที่ 2: กล่องสรุป ADR ลำดับ 1 + รายชื่อยา */
+      .p6-adr-top-name{
+        margin:0 0 2px;
+        font-weight:800;
+        color:#1d4ed8;
+      }
+      .p6-adr-drug-list{
+        margin:.2rem 0 0 1.1rem;
+        padding:0;
+        font-size:.85rem;
+      }
+      .p6-adr-drug-list li{
+        margin:2px 0;
+      }
+
+      /* ส่วนที่ 3: แนวทางการรักษาเฉพาะ */
+      .p6-treatment-name{
+        margin:.15rem 0 4px;
+        font-size:.9rem;
+        font-weight:800;
+        color:#b45309;
+      }
+      .p6-treatment-box{
+        border-radius:16px;
+        border:1px solid #fbbf24;
+        background:#fefce8;
+        padding:.75rem .9rem;
+        font-size:.85rem;
+        line-height:1.45;
+        color:#374151;
+        white-space:pre-wrap;
+      }
+    `;
+    const tag = document.createElement("style");
+    tag.id = "p6-visual-style";
+    tag.textContent = css;
+    document.head.appendChild(tag);
+  }
+
+  // --------- AUTO UPDATE (ไม่ re-render ทั้งหน้า) ---------
+  document.addEventListener("da:update", () => {
+    if (typeof window.brainComputeAndRender === "function") {
+      window.brainComputeAndRender();
+    } else {
+      computeLocalBrain();
+    }
+    updateAdrChartFromBrain();
+    renderAdrSummaryFromBrain();
+    renderAdrDrugListFromBrain();
+    renderAdrTreatmentFromBrain();
+    drawTimeline();
+    const holder = document.getElementById("p6CoreStatus");
+    if (holder) holder.innerHTML = renderCoreStatus();
+  });
+
+  // --------- EXPORT ---------
+  window.renderPage6 = renderPage6;
 })();
 
+
+// ====== พิมพ์หน้า 6 (เหมือนเดิม) ======
+function p6PrintTimeline() {
+  const root = document.getElementById("p6Root");
+  const pageSnapshot = root ? root.outerHTML : "";
+
+  const p5 =
+    (window.drugAllergyData && window.drugAllergyData.page5) || {
+      drugLines: [],
+      adrLines: [],
+    };
+  const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
+  const adrs = Array.isArray(p5.adrLines) ? p5.adrLines : [];
+
+  function fmtDateTHLocal(str) {
+    if (!str) return "—";
+    const pure = String(str).trim().split(" ")[0];
+    let d;
+    if (pure.includes("-")) {
+      const [y, m, dd] = pure.split("-").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    } else if (pure.includes("/")) {
+      const [dd, m, y] = pure.split("/").map(Number);
+      if (y && m && dd) d = new Date(y, m - 1, dd);
+    }
+    return d
+      ? d.toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : str;
+  }
+
+  function fmtTimeLocal(str) {
+    if (!str) return "";
+    const t = String(str).slice(0, 5);
+    return t + " น.";
+  }
+
+  const summaryHTML = `
+    <section class="p6-print-summary">
+      <h3>🗂️ สรุปข้อมูลที่กรอก</h3>
+      <div class="sec">
+        <h4>💊 รายการยา</h4>
+        ${
+          drugs.length
+            ? `<ol>
+                ${drugs
+                  .map((d) => {
+                    const name = (d.name || "").trim() || "(ไม่ระบุชื่อยา)";
+                    const sD = fmtDateTHLocal(d.startDate);
+                    const sT = fmtTimeLocal(d.startTime);
+                    const eD = fmtDateTHLocal(d.stopDate);
+                    const eT = fmtTimeLocal(d.stopTime);
+                    return `<li><strong>${name}</strong> — เริ่ม ${sD}${
+                      sT ? " " + sT : ""
+                    } · หยุด ${eD}${eT ? " " + eT : ""}</li>`;
+                  })
+                  .join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มีรายการยา —</p>`
+        }
+      </div>
+      <div class="sec">
+        <h4>🧪 ADR</h4>
+        ${
+          adrs.length
+            ? `<ol>
+                ${adrs
+                  .map((a) => {
+                    const sym =
+                      (a.symptom || "").trim() || "(ไม่ระบุอาการ)";
+                    const sD = fmtDateTHLocal(a.startDate);
+                    const sT = fmtTimeLocal(a.startTime);
+                    const eD = fmtDateTHLocal(a.endDate);
+                    const eT = fmtTimeLocal(a.endTime);
+                    return `<li><strong>${sym}</strong> — เริ่ม ${sD}${
+                      sT ? " " + sT : ""
+                    } · หาย ${eD}${eT ? " " + eT : ""}</li>`;
+                  })
+                  .join("")}
+               </ol>`
+            : `<p class="muted">— ไม่มี ADR —</p>`
+        }
+      </div>
+    </section>
+  `;
+
+  const win = window.open("", "_blank", "width=1200,height=800");
+  win.document.write(`
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>พิมพ์หน้า 6</title>
+        <style>
+          * { box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+          body { margin:0; padding:12px 16px 16px; background:#fff;
+                 -webkit-print-color-adjust: exact !important;
+                 print-color-adjust: exact !important; }
+          .tabs, .p6-footer-btns, .p6-btn, .p6-btn-group, button { display:none !important; }
+          .p6-visual-box { display:none !important; }
+          .p6-print-summary { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; margin:12px 0 14px; background:#fafafa; }
+          .p6-print-summary h3 { margin:0 0 8px; }
+          .p6-print-summary h4 { margin:10px 0 6px; }
+          .p6-print-summary ol { margin:0 0 6px 18px; padding:0; }
+          .p6-print-summary li { margin:2px 0; }
+          .p6-print-summary .muted { color:#6b7280; margin:0; }
+          .p6-visual-box-print { background:#fff; border:1px solid #edf2f7; border-radius:16px; padding:14px; }
+          #printTimelineScroll { overflow:visible; width:auto; max-width:none; display:inline-block; background:#fff; }
+          #printDateRow, #printDrugLane, #printAdrLane { display:grid; grid-auto-rows:40px; row-gap:6px; }
+          .p6-date-cell { border-bottom:1px solid #edf2f7; font-size:11px; font-weight:600; white-space:nowrap; padding-bottom:2px; text-align:left; }
+          .p6-lane { display:flex; gap:10px; align-items:flex-start; margin-top:6px; }
+          .p6-lane-label { width:38px; flex:0 0 38px; font-weight:700; color:#06705d; padding-top:10px; }
+          .p6-lane-adr { color:#c53030 !important; }
+          .p6-bar { height:34px; border-radius:9999px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; white-space:nowrap; box-shadow:0 8px 22px rgba(15,23,42,.12); font-size:12px; }
+          .p6-bar-drug { background:linear-gradient(90deg,#1679ff 0%,#25c4ff 100%); }
+          .p6-bar-adr  { background:linear-gradient(90deg,#f43f5e 0%,#f97316 100%); }
+          @page { size:A4 landscape; margin:8mm; }
+          @media print { body { background:#fff; } }
+        </style>
+      </head>
+      <body>
+        ${pageSnapshot}
+        ${summaryHTML}
+        <div class="p6-visual-box-print">
+          <h4 style="margin:0 0 8px;font-size:1.05rem;font-weight:700;color:#111827;">Visual Timeline</h4>
+          <div id="printTimelineScroll">
+            <div id="printDateRow"></div>
+            <div class="p6-lane">
+              <div class="p6-lane-label">ยา</div>
+              <div id="printDrugLane"></div>
+            </div>
+            <div class="p6-lane">
+              <div class="p6-lane-label p6-lane-adr">ADR</div>
+              <div id="printAdrLane"></div>
+            </div>
+          </div>
+        </div>
+        <script>
+          (function(){
+            const p5 = (window.opener && window.opener.window && window.opener.window.drugAllergyData && window.opener.window.drugAllergyData.page5) || { drugLines: [], adrLines: [] };
+            const drugs = Array.isArray(p5.drugLines) ? p5.drugLines : [];
+            const adrs  = Array.isArray(p5.adrLines)  ? p5.adrLines  : [];
+            function parseDate(str){
+              if(!str) return null;
+              const pure=String(str).trim().split(" ")[0];
+              if(pure.includes("-")){ const [y,m,d]=pure.split("-").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+              if(pure.includes("/")){ const [d,m,y]=pure.split("/").map(Number); if(y&&m&&d) return new Date(y,m-1,d); }
+              return null;
+            }
+            const dateRow = document.getElementById("printDateRow");
+            const drugLane = document.getElementById("printDrugLane");
+            const adrLane  = document.getElementById("printAdrLane");
+            const box      = document.getElementById("printTimelineScroll");
+            const MS_DAY = 86400000;
+            const today = new Date(); const today0=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+            let minDate = null;
+            drugs.forEach(d=>{ const s=parseDate(d.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+            adrs.forEach(a=>{ const s=parseDate(a.startDate); if(s && (!minDate || s<minDate)) minDate=s; });
+            if(!minDate) minDate = today0;
+            const maxDate = today0;
+            const totalDays = Math.floor((maxDate - minDate)/MS_DAY) + 1;
+            const PRINT_DAY_W = 45;
+            dateRow.style.display="grid";
+            dateRow.style.gridTemplateColumns="repeat("+totalDays+", "+PRINT_DAY_W+"px)";
+            for(let i=0;i<totalDays;i++){
+              const d = new Date(minDate.getFullYear(),minDate.getMonth(),minDate.getDate()+i);
+              const cell=document.createElement("div");
+              cell.className="p6-date-cell";
+              cell.textContent = d.toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+              dateRow.appendChild(cell);
+            }
+            const ROW_H=40;
+            function prepLane(el,rows){
+              el.innerHTML="";
+              el.style.display="grid";
+              el.style.gridTemplateColumns="repeat("+totalDays+", "+PRINT_DAY_W+"px)";
+              el.style.gridAutoRows=ROW_H+"px";
+              el.style.rowGap="6px";
+              el.style.height=(Math.max(rows,1)*(ROW_H+6))+"px";
+            }
+            prepLane(drugLane, drugs.length);
+            prepLane(adrLane,  adrs.length);
+            const dayIndexOf = (date) => Math.floor((date - minDate)/MS_DAY);
+            drugs.forEach((d,idx)=>{
+              const s=parseDate(d.startDate); if(!s) return;
+              let e; if (d.stopDate){ const _e=parseDate(d.stopDate); e = _e? new Date(_e.getFullYear(),_e.getMonth(),_e.getDate()-1): maxDate; } else e=maxDate;
+              if (e<s) e=s; if (e>maxDate) e=maxDate;
+              const bar=document.createElement("div");
+              bar.className="p6-bar p6-bar-drug";
+              bar.textContent = (d.name && String(d.name).trim()) ? String(d.name).trim() : "ยา "+(idx+1);
+              bar.style.gridColumn = (dayIndexOf(s)+1) + " / " + (dayIndexOf(e)+2);
+              bar.style.gridRow = (idx+1);
+              drugLane.appendChild(bar);
+            });
+            adrs.forEach((a,idx)=>{
+              const s=parseDate(a.startDate); if(!s) return;
+              let e; if (a.endDate){ const _e=parseDate(a.endDate); e = _e? new Date(_e.getFullYear(),_e.getMonth(),_e.getDate()-1): maxDate; } else e=maxDate;
+              if (e<s) e=s; if (e>maxDate) e=maxDate;
+              const bar=document.createElement("div");
+              bar.className="p6-bar p6-bar-adr";
+              bar.textContent = (a.symptom && String(a.symptom).trim()) ? String(a.symptom).trim() : "ADR "+(idx+1);
+              bar.style.gridColumn = (dayIndexOf(s)+1) + " / " + (dayIndexOf(e)+2);
+              bar.style.gridRow = (idx+1);
+              adrLane.appendChild(bar);
+            });
+            const cells = Array.from(dateRow.children);
+            const lastIdx = cells.length - 1;
+            cells.forEach(function (cell, i) {
+              if (i === 0 || i === lastIdx) return;
+              if (i % 4 !== 0) cell.textContent = "";
+            });
+            const maxWidth = Math.min(1120, window.innerWidth - 80);
+            const totalWidth = totalDays * PRINT_DAY_W + 60;
+            if (totalWidth > maxWidth) {
+              const scale = maxWidth / totalWidth;
+              box.style.transform = "scale(" + scale.toFixed(3) + ")";
+              box.style.transformOrigin = "top left";
+            }
+            window.print();
+            setTimeout(function(){ window.close(); }, 500);
+          })();
+        </script>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+// ===== public API =====
+if (typeof window.renderPage6 === "function") {
+  try {
+    window.renderPage6();
+  } catch (_) {}
+}
