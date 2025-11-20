@@ -1,4 +1,4 @@
-// ===================== page6.js — หน้า 6 (เสถียร + ผูก Section 2) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + Section 2 ตาม ADR อันดับ 1) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
@@ -223,7 +223,7 @@
   }
 
   // --------- SECTION 2: เลือก ADR เด่นสุดจาก brainResult + ดึงฐานข้อมูลยา ---------
-  // หาชนิด ADR ที่เปอร์เซ็นต์สูงสุดจากสมอง (brainResult)
+  // หา ADR ที่เปอร์เซ็นต์สูงสุดจากสมอง
   function getTopAdrResult() {
     const brain = window.brainResult;
     if (!brain || !brain.results) return null;
@@ -238,13 +238,16 @@
   }
 
   function renderAdrSection2() {
-    const container = document.getElementById("p6AdrDrugReport");
-    if (!container) return;
+    const summaryEl = document.getElementById("p6AdrDrugSummary");
+    const reportEl = document.getElementById("p6AdrDrugReport");
+    if (!summaryEl || !reportEl) return;
 
     const top = getTopAdrResult();
     if (!top) {
-      container.innerHTML =
+      summaryEl.innerHTML =
         '<p class="p6-muted">ยังไม่พบชนิด ADR ที่เด่นจากส่วนที่ 1</p>';
+      reportEl.innerHTML =
+        '<p class="p6-muted">ยังไม่สามารถดึงรายชื่อยาได้ (ต้องมีชนิด ADR อันดับ 1 ก่อน)</p>';
       return;
     }
 
@@ -252,11 +255,21 @@
     const db = window.adrDrugDB || {};
     const entry = db[top.label];
     if (!entry) {
-      container.innerHTML = `
-        <p class="p6-muted">
-          ยังไม่มีฐานข้อมูลยาสำหรับชนิด ADR: <strong>${top.label}</strong>
-        </p>
+      const pctStrMissing = Number.isFinite(top.percent)
+        ? top.percent.toFixed(1).replace(/\.0$/, "")
+        : "—";
+
+      summaryEl.innerHTML = `
+        <div class="p6-adr-drug-box">
+          <div class="p6-adr-drug-adr-name">${top.label}</div>
+          <div class="p6-adr-drug-adr-percent">คะแนนเด่นมากที่สุดที่ 1: ${pctStrMissing}%</div>
+          <p class="p6-muted" style="margin-top:.35rem;">
+            * ยังไม่มีฐานข้อมูลยาสำหรับ ADR ชนิดนี้ในระบบ
+          </p>
+        </div>
       `;
+      reportEl.innerHTML =
+        '<p class="p6-muted">ยังไม่มีรายชื่อยาที่กำหนดไว้ในฐานข้อมูล</p>';
       return;
     }
 
@@ -264,6 +277,18 @@
       ? top.percent.toFixed(1).replace(/\.0$/, "")
       : "—";
 
+    // หัวข้อ 1: รายงานการแพ้
+    summaryEl.innerHTML = `
+      <div class="p6-adr-drug-box">
+        <div class="p6-adr-drug-adr-name">${entry.label || top.label}</div>
+        <div class="p6-adr-drug-adr-percent">คะแนนเด่นมากที่สุดที่ 1: ${pctStr}%</div>
+        <p class="p6-muted" style="margin-top:.35rem;">
+          * แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากผลประเมินส่วนที่ 1
+        </p>
+      </div>
+    `;
+
+    // หัวข้อ 2: รายชื่อยา (จาก brain.section2.drugs.js)
     const sectionsHtml = (entry.sections || [])
       .map((sec) => {
         const items = (sec.items || [])
@@ -280,19 +305,8 @@
       })
       .join("");
 
-    container.innerHTML = `
-      <div class="p6-adr-drug-box">
-        <div class="p6-adr-drug-header">
-          <div>
-            <div class="p6-adr-drug-adr-name">${entry.label || top.label}</div>
-            <div class="p6-adr-drug-adr-percent">คะแนนเด่นจากส่วนที่ 1: ${pctStr}%</div>
-          </div>
-        </div>
-        ${sectionsHtml}
-        <p class="p6-muted" style="margin-top:.35rem;">
-          * แสดงเฉพาะชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากผลประเมินส่วนที่ 1
-        </p>
-      </div>
+    reportEl.innerHTML = sectionsHtml || `
+      <p class="p6-muted">ยังไม่มีการกำหนดรายชื่อยาสำหรับ ADR ชนิดนี้</p>
     `;
   }
 
@@ -505,12 +519,6 @@
     if (!window.__p6RenderedOnce) {
       window.__p6RenderedOnce = true;
 
-      const p4 =
-        (window.drugAllergyData && window.drugAllergyData.page4) || {};
-      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
-        .map((d) => d.name)
-        .filter(Boolean);
-
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
           <li>Urticaria</li><li>Anaphylaxis</li><li>Angioedema</li>
@@ -591,9 +599,7 @@
 
             <div class="p6-subcard">
               <div class="p6-sub-title">ผลการประเมินเบื้องต้น</div>
-              <div id="p6BrainHost">
-                <!-- p6BrainBox จาก index.html จะถูกย้ายมาอยู่ตรงนี้ -->
-              </div>
+              <div id="p6BrainHost"></div>
 
               <!-- กล่องกราฟ ADR 21 ชนิด (แนวนอน สีชมพู) -->
               <div class="p6-adr-chart">
@@ -615,17 +621,15 @@
               <div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div>
             </div>
             <div class="p6-subcard">
-              <div class="p6-sub-title">ยาที่ผู้ป่วยได้รับ:</div>
-              <p id="p6AdrDrugPatientDrugs" class="p6-muted">${
-                drugNames && drugNames.length
-                  ? drugNames.join(", ")
-                  : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
-              }</p>
+              <div class="p6-sub-title">1) รายงานการแพ้:</div>
+              <div id="p6AdrDrugSummary">
+                <p class="p6-muted">ระบบจะเลือกชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากส่วนที่ 1 แล้วแสดงผลสรุปที่นี่</p>
+              </div>
             </div>
             <div class="p6-subcard">
-              <div class="p6-sub-title">รายงานการแพ้:</div>
+              <div class="p6-sub-title">2) รายชื่อยาที่มีรายงานการเกิดการแพ้ชนิดนี้:</div>
               <div id="p6AdrDrugReport">
-                <p class="p6-muted">ระบบจะเลือกชนิด ADR ที่มีเปอร์เซ็นต์สูงสุดจากส่วนที่ 1 แล้วแสดงยาที่มีรายงานสัมพันธ์</p>
+                <p class="p6-muted">รอผลจากการประมวลผลส่วนที่ 1…</p>
               </div>
             </div>
           </div>
