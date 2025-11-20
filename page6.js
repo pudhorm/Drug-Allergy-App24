@@ -1,3 +1,4 @@
+```js
 // ===================== page6.js — หน้า 6 (เสถียร ไม่กระพริบ/ไม่ค้าง) =====================
 (function () {
   // --------- STATE GUARD ---------
@@ -112,6 +113,15 @@
       total: narScore(d),
       interpretation: narInterp(narScore(d)),
     }));
+  }
+
+  // รายชื่อยาใน Naranjo (ใช้ในส่วนที่ 2)
+  function getAllDrugNames() {
+    const p4 = (window.drugAllergyData && window.drugAllergyData.page4) || {};
+    const drugs = Array.isArray(p4.drugs) ? p4.drugs : [];
+    return drugs.map((d, i) =>
+      d.name && d.name.trim() ? d.name.trim() : "ยา " + (i + 1)
+    );
   }
 
   function getPage5() {
@@ -422,6 +432,73 @@
     body.innerHTML = rowsHtml;
   }
 
+  // --------- ส่วนที่ 2: ใช้ % สูงสุดจาก brainResult ---------
+  function getTopAdrFromBrain() {
+    const brain = window.brainResult;
+    if (!brain || !brain.results) return null;
+    const arr = Object.values(brain.results);
+    if (!arr.length) return null;
+
+    let best = null;
+    for (const r of arr) {
+      const pct = Number.isFinite(r.percent) ? r.percent : 0;
+      if (!r.label && !r.id) continue;
+      if (!best || pct > best.percent) {
+        best = {
+          id: r.id || null,
+          label: r.label || r.id || "",
+          percent: pct,
+        };
+      }
+    }
+    if (!best || best.percent <= 0) return null;
+    return best;
+  }
+
+  function updateSection2FromBrain() {
+    const boxReceived = document.getElementById("p6DrugsReceived");
+    const boxReport = document.getElementById("p6DrugsReport");
+    if (!boxReceived || !boxReport) return;
+
+    const drugNames = getAllDrugNames();
+    const baseDrugText = drugNames.length
+      ? drugNames.join(", ")
+      : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)";
+
+    const topAdr = getTopAdrFromBrain();
+
+    if (!topAdr) {
+      // กรณียังไม่มีผลจากส่วนที่ 1
+      boxReceived.textContent = baseDrugText;
+      boxReport.innerHTML =
+        '<p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p>';
+      return;
+    }
+
+    const pctStr = topAdr.percent
+      ? topAdr.percent.toFixed(1).replace(/\.0$/, "")
+      : "0";
+
+    // ยังคงแสดง "ยาที่ผู้ป่วยได้รับ" ตามจริง + แจ้งว่าในส่วนที่ 2 focus เฉพาะ ADR ที่ % สูงสุด
+    boxReceived.innerHTML = `
+      <p class="p6-muted"> ${
+        baseDrugText || "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
+      }</p>
+    `;
+
+    boxReport.innerHTML = `
+      <p class="p6-muted">
+        แสดงเฉพาะข้อมูลสำหรับ <strong>${topAdr.label}</strong>
+        ซึ่งได้เปอร์เซ็นต์ความเข้าได้สูงที่สุดจากส่วนที่ 1
+        (${pctStr}%)
+      </p>
+      <p class="p6-muted" style="margin-top:.35rem;">
+        ในขั้นต่อไปสามารถเติมรายการยาที่มีรายงานการเกิด <strong>${topAdr.label}</strong>
+        พร้อมแหล่งอ้างอิง เพื่อใช้เป็นฐานข้อมูลประกอบการประเมินในผู้ป่วยรายนี้
+      </p>
+    `;
+  }
+
   // --------- RENDER (ครั้งเดียว) ---------
   function renderPage6() {
     const root = document.getElementById("p6Root");
@@ -432,9 +509,7 @@
 
       const p4 =
         (window.drugAllergyData && window.drugAllergyData.page4) || {};
-      const drugNames = (Array.isArray(p4.drugs) ? p4.drugs : [])
-        .map((d) => d.name)
-        .filter(Boolean);
+      const drugNames = getAllDrugNames();
 
       const subtypesList = `
         <ul class="p6-muted" style="margin-top:.35rem;">
@@ -538,15 +613,17 @@
             <div class="p6-head"><div class="p6-emoji">💊</div><div class="p6-head-title">ส่วนที่ 2: ยาที่มีรายงานการเกิดการแพ้ยาดังกล่าว</div></div>
             <div class="p6-subcard">
               <div class="p6-sub-title">ยาที่ผู้ป่วยได้รับ:</div>
-              <p class="p6-muted">${
+              <div id="p6DrugsReceived" class="p6-muted">${
                 drugNames && drugNames.length
                   ? drugNames.join(", ")
                   : "ยังไม่มีข้อมูลยา (รอข้อมูลจากหน้า 4 / 5 หรือระบบ timeline)"
-              }</p>
+              }</div>
             </div>
             <div class="p6-subcard">
               <div class="p6-sub-title">รายงานการแพ้:</div>
-              <p class="p6-muted">รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…</p>
+              <div id="p6DrugsReport" class="p6-muted">
+                รอข้อมูลและการวิเคราะห์ภายหลังกำหนดกฎการประเมิน…
+              </div>
             </div>
           </div>
 
@@ -626,6 +703,7 @@
             } catch (e) {}
           }
           updateAdrChartFromBrain();
+          updateSection2FromBrain();
         });
       }
 
@@ -646,6 +724,7 @@
     }
 
     updateAdrChartFromBrain();
+    updateSection2FromBrain();
     drawTimeline();
 
     // อัปเดตสถานะ core (กันกรณีถูกเรียก render ใหม่)
@@ -743,6 +822,7 @@
       computeLocalBrain();
     }
     updateAdrChartFromBrain();
+    updateSection2FromBrain();
     drawTimeline();
     const holder = document.getElementById("p6CoreStatus");
     if (holder) holder.innerHTML = renderCoreStatus();
@@ -988,3 +1068,4 @@ if (typeof window.renderPage6 === "function") {
     window.renderPage6();
   } catch (_) {}
 }
+```
