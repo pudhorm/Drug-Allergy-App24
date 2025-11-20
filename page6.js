@@ -1,4 +1,4 @@
-// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 กลับมา) =====================
+// ===================== page6.js — หน้า 6 (เสถียร + ส่วนที่ 2 ดึงรายชื่อยา + ส่วนที่ 3 ใช้ brain.section3.treatments.js) =====================
 (function () {
   // --------- STATE GUARD ---------
   if (!window.drugAllergyData) window.drugAllergyData = {};
@@ -567,7 +567,7 @@
     `;
   }
 
-  // ---- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ (ดึงกลับมา + เตรียมต่อสมอง) ----
+  // ---- ส่วนที่ 3: แนวทางการรักษาเฉพาะตามชนิดการแพ้ (ใช้ brain.section3.treatments.js) ----
   function renderTreatmentFromBrain() {
     const box = document.getElementById("p6TreatmentBox");
     if (!box) return;
@@ -575,37 +575,68 @@
     const top = getTopAdrFromBrain();
     if (!top) {
       box.innerHTML =
-        '<p class="p6-muted">ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง</p>';
+        '<p class="p6-muted">ยังไม่มีผลสรุปจากส่วนที่ 1 หรือยังไม่ได้คำนวณ</p>';
       return;
     }
 
-    const brain = window.brainResult || {};
+    // แหล่งข้อมูลหลัก: brain.section3.treatments.js
+    const db =
+      window.adrTreatmentDB ||
+      window.brainSection3Treatments ||
+      window.brainSection3 ||
+      null;
+
+    let entry = null;
     let plans = null;
 
-    if (Array.isArray(top.plan)) {
-      plans = top.plan;
-    } else if (typeof top.plan === "string" && top.plan.trim()) {
-      plans = [top.plan.trim()];
-    } else if (brain.plansByLabel && brain.plansByLabel[top.label]) {
-      const v = brain.plansByLabel[top.label];
-      if (Array.isArray(v)) plans = v;
-      else if (typeof v === "string" && v.trim()) plans = [v.trim()];
+    if (db && db[top.label]) {
+      entry = db[top.label];
+      const v =
+        entry.lines ||
+        entry.treatments ||
+        entry.plan ||
+        entry.plans ||
+        entry.items;
+      if (Array.isArray(v)) {
+        plans = v;
+      } else if (typeof v === "string" && v.trim()) {
+        plans = v
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+
+    // fallback: ใช้ plan ที่มาจาก window.brainResult (ถ้ามี)
+    if (!plans || !plans.length) {
+      const brain = window.brainResult || {};
+      if (Array.isArray(top.plan)) {
+        plans = top.plan;
+      } else if (typeof top.plan === "string" && top.plan.trim()) {
+        plans = [top.plan.trim()];
+      } else if (brain.plansByLabel && brain.plansByLabel[top.label]) {
+        const v = brain.plansByLabel[top.label];
+        if (Array.isArray(v)) plans = v;
+        else if (typeof v === "string" && v.trim()) plans = [v.trim()];
+      }
     }
 
     if (!plans || !plans.length) {
       box.innerHTML = `
         <p class="p6-muted">
-          ส่วนนี้จะดึงจาก “สมองการแพ้ยา” ภายหลัง (ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ
-          <strong>${top.label}</strong>)
+          ยังไม่ได้กำหนดแนวทางการรักษาเฉพาะสำหรับ
+          <strong>${top.label}</strong>
         </p>
       `;
       return;
     }
 
+    const labelText = (entry && entry.label) || top.label;
+
     box.innerHTML = `
       <p class="p6-muted" style="margin-bottom:.4rem;">
-        แนวทางการรักษาที่สรุปจาก “สมองการแพ้ยา” สำหรับ
-        <strong>${top.label}</strong>
+        แนวทางการรักษาที่สรุปจากข้อมูลใน brain.section3.treatments.js สำหรับ
+        <strong>${labelText}</strong>
       </p>
       <ol class="p6-list">
         ${plans.map((t) => `<li>${t}</li>`).join("")}
