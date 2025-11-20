@@ -24,7 +24,6 @@
     return Array.isArray(v) ? v : [v];
   }
 
-  // ดึงเฉพาะค่าจาก list ที่อยู่ใน allowed (ใช้ทำรายละเอียดข้อย่อยที่ติ้กจริง)
   function detailFromList(list, allowed) {
     const src = arr(list);
     const result = [];
@@ -39,7 +38,6 @@
     return src.some((x) => targets.includes(x));
   }
 
-  // ใช้กับช่องติ้ก / object ที่มี gate
   function flag(v) {
     if (!v) return false;
     if (v === true) return true;
@@ -69,7 +67,6 @@
     return !!v;
   }
 
-  // numeric field ที่มี gate (ใช้กับข้อมูลจากหน้า 2 / หน้า 3 แบบเก่า)
   function nField(x) {
     if (x == null) return NaN;
     if (typeof x === "object") {
@@ -205,7 +202,7 @@
     return keys.some((k) => set.has(k));
   }
 
-  // ดึง "อวัยวะที่ผิดปกติ" จากหน้า 2 เท่านั้น (ไม่ผูกกับ Lab / หน้า 3)
+  // ดึง "อวัยวะที่ผิดปกติ" จากหน้า 2 เท่านั้น
   function extractOrganFlagsFromPage2(p2) {
     const result = {
       organLiver: false,
@@ -230,42 +227,28 @@
       if (!flag(val)) return;
       const name = norm(key);
 
-      // ต่อมน้ำเหลือง
       if (/ต่อมน้ำเหลือง|lymph/.test(name)) {
         result.organLymph = true;
       }
-      // ตับอักเสบ / ตับ
       if (/ตับอักเสบ|ตับโต?/.test(name) || /hepat|liver/.test(name)) {
         result.organLiver = true;
-        if (/ตับโต|hepatomegaly/.test(name)) {
-          result.organHepatomegaly = true;
-        }
+        if (/ตับโต|hepatomegaly/.test(name)) result.organHepatomegaly = true;
       }
-      // ไตอักเสบ
       if (/ไตอักเสบ/.test(name) || /nephritis/.test(name)) {
         result.organKidney = true;
       }
-      // ไตวาย
       if (/ไตวาย/.test(name) || /renal\s*fail/.test(name)) {
         result.organRenalFailure = true;
       }
-      // ปอดอักเสบ
       if (/ปอด/.test(name) || /pneum|lung/.test(name)) {
         result.organLung = true;
       }
-      // กล้ามเนื้อหัวใจอักเสบ
       if (/กล้ามเนื้อหัวใจ|myocard/.test(name)) {
         result.organMyocarditis = true;
       }
-      // ต่อมไทรอยด์อักเสบ
       if (/ไทรอยด์/.test(name) || /thyroid/.test(name)) {
         result.organThyroiditis = true;
       }
-      // ตับโต
-      if (/ตับโต|hepatomegaly/.test(name)) {
-        result.organHepatomegaly = true;
-      }
-      // ม้ามโต
       if (/ม้ามโต|splenomegaly/.test(name)) {
         result.organSplenomegaly = true;
       }
@@ -352,7 +335,7 @@
     const conjunctivitis = flag(eye.conjunctivitis);
     const cornealUlcer = flag(eye.cornealUlcer);
 
-    // ---------- หน้า 3 (Lab ใหม่: ใช้ token จาก checkbox เป็นหลัก) ----------
+    // ---------- หน้า 3 ----------
     const cbc = p3.cbc || {};
     const lft = p3.lft || {};
     const rft = p3.rft || {};
@@ -393,7 +376,6 @@
     const ekgAbnormal = flag(cardioLab.ekgAbnormal || cardioLab.ekg);
     const troponin = nField(cardioLab.troponin);
 
-    // ----- อวัยวะที่ผิดปกติ: ใช้เฉพาะจากหน้า 2 -----
     const organFlags = extractOrganFlagsFromPage2(p2);
     const {
       organLiver,
@@ -407,7 +389,6 @@
       organSplenomegaly
     } = organFlags;
 
-    // ----- Lab tokens -----
     const labTokens = Array.isArray(p3.__tokens) ? p3.__tokens.slice() : [];
     const labTokenSet = new Set(labTokens);
 
@@ -482,7 +463,6 @@
       lungLab,
       labTokens,
       labTokenSet,
-      // flags อวัยวะที่ผิดปกติ (จากหน้า 2 เท่านั้น)
       organLiver,
       organKidney,
       organRenalFailure,
@@ -753,7 +733,7 @@
       ]
     },
 
-    // 4) Maculopapular rash (MP rash) — 8 ข้อ
+    // 4) Maculopapular rash (MP rash)
     {
       id: "mpr",
       label: "Maculopapular rash",
@@ -848,7 +828,7 @@
       ]
     },
 
-    // 5) Fixed drug eruption — 9 ข้อ
+    // 5) Fixed drug eruption — จุดแก้: ตัด "ม่วง/คล้ำ" ออกจากเกณฑ์สี (weight 1)
     {
       id: "fde",
       label: "Fixed drug eruption",
@@ -867,12 +847,12 @@
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
           check: (c) => {
+            // แก้ตรงนี้: เอา "ม่วง/คล้ำ" ออก เพื่อไม่ให้ชนกับข้อ typical (x3)
             const details = detailFromList(c.colors, [
               "แดง",
               "ดำ",
               "ดำ/คล้ำ",
-              "คล้ำ",
-              "ม่วง/คล้ำ"
+              "คล้ำ"
             ]);
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1073,7 +1053,7 @@
       ]
     },
 
-    // 7) SJS — 10 ข้อ
+    // 7) SJS
     {
       id: "sjs",
       label: "SJS",
@@ -1131,7 +1111,7 @@
         },
         {
           id: "crust",
-          label: "อาการที่พบ: สะเก็ด",
+          label: "อาการที่พบน้อย: สะเก็ด",
           weight: 1,
           check: (c) =>
             c.scaleCrust ? { ok: true, details: ["สะเก็ด"] } : { ok: false }
@@ -1197,7 +1177,7 @@
       ]
     },
 
-    // 8) TEN — 10 ข้อ
+    // 8) TEN
     {
       id: "ten",
       label: "TEN",
@@ -1352,7 +1332,7 @@
       ]
     },
 
-    // 9) DRESS — 9 ข้อ
+    // 9) DRESS
     {
       id: "dress",
       label: "DRESS",
@@ -1509,13 +1489,7 @@
       ]
     },
 
-    // 10) EM ...
-    // (!!! ส่วน EM, Photosensitivity, Exfoliative, Eczematous, Bullous,
-    //     Serum sickness, Vasculitis, Hemolytic anemia, Pancytopenia,
-    //     Neutropenia, Thrombocytopenia, Nephritis
-    //     คงไว้เหมือนไฟล์เดิมทุกบรรทัด — ไม่ตัดออก ไม่แก้เกณฑ์ !!!)
-    // *** เพื่อลดข้อความซ้ำ ยังคงโครงเหมือนที่คุณส่งมาเดิมทุกจุด ***
-
+    // 10) EM
     {
       id: "em",
       label: "Erythema multiforme",
@@ -1630,10 +1604,7 @@
       ]
     },
 
-    // (ที่เหลือเก็บตามเวอร์ชันที่คุณส่งมาเดิม: photo, exf, eczema, bullous,
-    //  serum_sickness, vasculitis, hemolytic_anemia, pancytopenia,
-    //  neutropenia, thrombocytopenia, nephritis)
-    // -------------- Photosensitivity --------------
+    // 11) Photosensitivity
     {
       id: "photo",
       label: "Photosensitivity drug eruption",
@@ -2055,12 +2026,8 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.organLymph) {
-              details.push("ต่อมน้ำเหลืองโต");
-            }
-            if (c.organKidney) {
-              details.push("ไตอักเสบ");
-            }
+            if (c.organLymph) details.push("ต่อมน้ำเหลืองโต");
+            if (c.organKidney) details.push("ไตอักเสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2492,7 +2459,7 @@
       ]
     },
 
-    // 19) Neutropenia — 4 ข้อหลัก
+    // 19) Neutropenia
     {
       id: "neutropenia",
       label: "Neutropenia",
@@ -2556,7 +2523,7 @@
       ]
     },
 
-    // 20) Thrombocytopenia — 4 ข้อ
+    // 20) Thrombocytopenia
     {
       id: "thrombocytopenia",
       label: "Thrombocytopenia",
@@ -2607,7 +2574,7 @@
       ]
     },
 
-    // 21) Nephritis — 5 ข้อ
+    // 21) Nephritis
     {
       id: "nephritis",
       label: "Nephritis",
@@ -2736,7 +2703,6 @@
 
           if (details && details.length) {
             if (w > 1) {
-              // ข้อที่มีน้ำหนัก x2/x3/x4 → แสดงเป็น "ข้อความย่อย (x3)" แยกทีละรายการ
               details.forEach((d) => {
                 const base = String(d || "").trim();
                 if (!base) return;
@@ -2747,7 +2713,6 @@
                 }
               });
             } else {
-              // น้ำหนักปกติ → แสดงเฉพาะรายละเอียดข้อย่อยที่ติ๊กจริง
               details.forEach((d) => {
                 const base = String(d || "").trim();
                 if (!base) return;
@@ -2758,7 +2723,6 @@
               });
             }
           } else if (m.label) {
-            // ไม่มีรายละเอียดข้อย่อย → แสดง label (เติม (xN) ถ้าวัดน้ำหนัก)
             let labelText = m.label;
             if (w > 1 && !/\(x\d+\)/.test(labelText)) {
               labelText += ` (x${w})`;
@@ -2850,9 +2814,6 @@
     document.head.appendChild(el);
   }
 
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
   function brainComputeAndRender() {
     injectStylesOnce();
 
@@ -2886,7 +2847,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV6-orgP2-only",
+    version: "2025-11-19-21ADR-LABTOKENS-SUBITEMS-REV7-fde-color-fix",
     defs: ADR_DEFS
   };
 })();
