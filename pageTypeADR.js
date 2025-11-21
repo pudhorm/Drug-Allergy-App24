@@ -351,7 +351,7 @@
       '}',
       '.pType-sec2-img-placeholder{',
         'width:100%;',
-        'height:240px;',          /* ✅ ขยายรูปให้ใหญ่เกือบเต็มแถว */
+        'height:240px;',
         'border-radius:16px;',
         'border:1px dashed rgba(148,163,184,0.7);',
         'background:linear-gradient(135deg,#ede9fe,#fdf2ff);',
@@ -428,7 +428,10 @@
         adrRow("Serum sickness", true, false),
         adrRow("Vasculitis", true, false),
         adrRow("Hemolytic anemia", true, false),
-        adrRow("Pancytopenia / Neutropenia / Thrombocytopenia", true, false),
+        // ✅ แยกเป็น 3 ADR คนละแถว
+        adrRow("Pancytopenia", true, false),
+        adrRow("Neutropenia", true, false),
+        adrRow("Thrombocytopenia", true, false),
         adrRow("Nephritis", true, false)
       ,'</div>'
     ].join("");
