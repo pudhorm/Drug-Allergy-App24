@@ -1,10 +1,11 @@
-// ====================== pageTypeADR.js (SAFE, no template literals) ======================
+// ====================== pageTypeADR.js ======================
 (function () {
   // สร้าง renderer ให้ router เรียกใช้
   window.renderPageTypeADR = function () {
     var root = document.getElementById("pageTypeADR");
     if (!root) return;
 
+    // ---------- ส่วนที่ 1: Rawlins & Thompson ----------
     root.innerHTML = [
       '<div class="pType-wrapper">',
         '<h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>',
@@ -80,7 +81,7 @@
       '<ul>' +
         '<li>พบได้น้อย / เกี่ยวกับขนาดสะสมระยะยาว</li>' +
         '<li>อาการค่อยเป็นค่อยไป</li>' +
-       '<li>เช่น retinopathy จาก chloroquin,  ONJ จากยา bisphosphonates</li>' +
+        '<li>เช่น retinopathy จาก chloroquin,  ONJ จากยา bisphosphonates</li>' +
       '</ul>'
     );
 
@@ -126,15 +127,17 @@
         var left = r.left + window.scrollX + r.width / 2 - pw / 2;
         var top  = r.top  + window.scrollY - ph - 12;
 
-        left = Math.max(8 + window.scrollX,
-                Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - 8));
+        left = Math.max(
+          8 + window.scrollX,
+          Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - 8)
+        );
 
         pop.style.left = left + "px";
         pop.style.top  = top  + "px";
 
         var arrow = pop.querySelector(".pType-pop-arrow");
         if (arrow) {
-          var ax = r.left + window.scrollX + r.width / 2 - left - 8; // 8 = ครึ่งกว้างลูกศร
+          var ax = r.left + window.scrollX + r.width / 2 - left - 8;
           arrow.style.left = Math.max(12, Math.min(ax, pw - 12)) + "px";
           arrow.style.top  = (ph - 1) + "px";
         }
@@ -176,7 +179,6 @@
     }
 
     function showToast(kind, msg) {
-      // หา toast อีกครั้งเผื่อผู้ใช้ย้าย DOM
       var t = document.getElementById("pTypeToast") || toast;
       if (!t) { alert(msg); return; } // fallback
       t.classList.remove("success","danger","show");
@@ -186,7 +188,7 @@
       setTimeout(function(){ t.classList.remove("show"); }, 2200);
     }
 
-    // Logic ของปุ่มยืนยันตามที่กำหนด
+    // Logic ของปุ่มยืนยัน
     confirmBtn.addEventListener("click", function () {
       var chosen = getChosen();
       var hasB = chosen.indexOf("B") !== -1;
@@ -197,30 +199,9 @@
       } else if (!chosen.length) {
         showToast("danger","โปรดเลือกอย่างน้อย 1 ประเภทก่อน");
       } else {
-        showToast("danger",⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
+        showToast("danger","⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
       }
     });
-  };
-
-  // HTML การ์ด
-  function cardHTML(code, title, themeClass) {
-    return [
-      '<div class="pType-card ' + themeClass + '" data-code="' + code + '">',
-        '<div class="pType-head">',
-          '<div class="pType-name">' + title + '</div>',
-          '<button type="button" class="pType-badge" aria-label="รายละเอียด Type ' + code + '">Type ' + code + '</button>',
-        '</div>',
-        '<div class="pType-body">',
-          '<div class="pType-option">',
-            '<input id="pType-' + code + '" type="checkbox" value="' + code + '" />',
-            '<label for="pType-' + code + '">เลือก Type ' + code + '</label>',
-          '</div>',
-        '</div>',
-      '</div>'
-    ].join("");
-  }
-})();
-
 
     // ---------- ส่วนที่ 2: Immunologic type & Non-immunologic type ----------
     buildTypeSection2(root);
@@ -244,7 +225,7 @@
     ].join("");
   }
 
-  // ================== ส่วนที่ 2 (ใหม่) ==================
+  // ================== ส่วนที่ 2 ==================
 
   function ensureSection2Styles() {
     if (document.getElementById("pType-sec2-style")) return;
@@ -308,7 +289,6 @@
         'gap:18px;',
       '}',
 
-      /* 1 ADR ต่อ 1 แถว */
       '.pType-sec2-card{',
         'background:#ffffff;',
         'border-radius:18px;',
@@ -401,23 +381,13 @@
   function buildTypeSection2(root) {
     ensureSection2Styles();
 
-    // ห่อทุกอย่างของส่วนที่ 1 ไว้ แล้วต่อด้วยส่วนที่ 2
-    var wrapper = document.createElement("div");
-    wrapper.innerHTML = root.innerHTML;
-    root.innerHTML = "";
-    while (wrapper.firstChild) {
-      root.appendChild(wrapper.firstChild);
-    }
-
-    // ---------- สร้าง DOM ของส่วนที่ 2 ----------
     var sec = document.createElement("section");
     sec.className = "pType-sec2";
 
     var html = [
       '<h3 class="pType-sec2-title">🧬 ส่วนที่ 2: Immunologic type &amp; Non-immunologic type</h3>',
       '<p class="pType-sec2-sub">',
-        'จำแนกชนิดของ ADR ตามกลไกการเกิด โดยแสดงตัวอย่างภาพประกอบ 2 รูปต่อ 1 ADR ',
-        '(รูปภาพสามารถเพิ่ม/แก้ไขในภายหลังได้)',
+        'แสดงตัวอย่างภาพประกอบ 2 รูปต่อ 1 ADR (สามารถเพิ่ม/แก้ไขรูปภาพในภายหลังได้)',
       '</p>',
       '<div class="pType-sec2-badges">',
         '<span class="pType-tag-immune">',
@@ -448,12 +418,11 @@
         adrRow("Serum sickness", true, false),
         adrRow("Vasculitis", true, false),
         adrRow("Hemolytic anemia", true, false),
-        // ✅ แยกเป็น 3 ADR คนละแถว
         adrRow("Pancytopenia", true, false),
         adrRow("Neutropenia", true, false),
         adrRow("Thrombocytopenia", true, false),
-        adrRow("Nephritis", true, false)
-      ,'</div>'
+        adrRow("Nephritis", true, false),
+      '</div>'
     ].join("");
 
     sec.innerHTML = html;
@@ -463,13 +432,14 @@
   // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่)
   function adrRow(label, isImmune, isMixed) {
     var typeClass = isMixed ? "pType-sec2-type-mixed" : "pType-sec2-type-immune";
+    var dotClass  = isMixed ? "pType-dot-mixed" : "pType-dot-immune";
     var typeText  = isMixed ? "Immunologic & Non-immunologic type" : "Immunologic type";
     return [
       '<article class="pType-sec2-card">',
         '<div class="pType-sec2-header">',
           '<div class="pType-sec2-name">', label, '</div>',
           '<div class="pType-sec2-type ', typeClass, '">',
-            '<span class="pType-tag-dot ', (isMixed ? 'pType-dot-mixed' : 'pType-dot-immune'), '"></span>',
+            '<span class="pType-tag-dot ', dotClass, '"></span>',
             '<span>', typeText, '</span>',
           '</div>',
         '</div>',
