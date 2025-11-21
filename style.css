@@ -1555,15 +1555,19 @@ body {
   border-top:10px solid #fff;
   filter: drop-shadow(0 -1px 0 rgba(148,163,184,.35));
 }
-/* ปุ่ม หน้า 7 รายงานเคส สีเหลือง */
-nav.tabs button.tab-report {
-  background: #fef3c7;        /* เหลืองอ่อน */
-  color: #92400e;             /* น้ำตาลทอง ๆ */
+/* ปุ่ม "หน้า 7 รายงานเคส" โทนเหลืองพาสเทล */
+nav.tabs button[data-target="page7"] {
+  background: linear-gradient(135deg, #fefce8 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  box-shadow: 0 10px 25px rgba(250, 204, 21, 0.28);
 }
 
-/* ตอนปุ่มหน้า 7 ถูกเลือกเป็น active ให้เหลืองเข้ม/สดขึ้น */
-nav.tabs button.tab-report.active {
-  background: linear-gradient(135deg, #fde047, #f97316);
-  color: #7c2d12;
+/* ตอน active ให้สีเด่นขึ้นเล็กน้อย แต่ยังเป็นพาสเทล */
+nav.tabs button[data-target="page7"].active {
+  background: linear-gradient(135deg, #fffbeb 0%, #facc15 100%);
+  color: #78350f;
+  border-color: #fbbf24;
 }
+
 
