@@ -1,11 +1,10 @@
-// ====================== pageTypeADR.js (ส่วนที่ 1 เดิม + ส่วนที่ 2 รูป 21 ADR) ======================
+// ====================== pageTypeADR.js (SAFE, no template literals) ======================
 (function () {
   // สร้าง renderer ให้ router เรียกใช้
   window.renderPageTypeADR = function () {
     var root = document.getElementById("pageTypeADR");
     if (!root) return;
 
-    // ---------- ส่วนที่ 1: Rawlins & Thompson (เดิม) ----------
     root.innerHTML = [
       '<div class="pType-wrapper">',
         '<h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>',
@@ -198,9 +197,30 @@
       } else if (!chosen.length) {
         showToast("danger","โปรดเลือกอย่างน้อย 1 ประเภทก่อน");
       } else {
-        showToast("danger","⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
+        showToast("danger",⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
       }
     });
+  };
+
+  // HTML การ์ด
+  function cardHTML(code, title, themeClass) {
+    return [
+      '<div class="pType-card ' + themeClass + '" data-code="' + code + '">',
+        '<div class="pType-head">',
+          '<div class="pType-name">' + title + '</div>',
+          '<button type="button" class="pType-badge" aria-label="รายละเอียด Type ' + code + '">Type ' + code + '</button>',
+        '</div>',
+        '<div class="pType-body">',
+          '<div class="pType-option">',
+            '<input id="pType-' + code + '" type="checkbox" value="' + code + '" />',
+            '<label for="pType-' + code + '">เลือก Type ' + code + '</label>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join("");
+  }
+})();
+
 
     // ---------- ส่วนที่ 2: Immunologic type & Non-immunologic type ----------
     buildTypeSection2(root);
