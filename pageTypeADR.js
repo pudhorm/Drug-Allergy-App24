@@ -1,10 +1,11 @@
-// ====================== pageTypeADR.js (SAFE, no template literals) ======================
+// ====================== pageTypeADR.js (ส่วนที่ 1 เดิม + ส่วนที่ 2 รูป 21 ADR) ======================
 (function () {
   // สร้าง renderer ให้ router เรียกใช้
   window.renderPageTypeADR = function () {
     var root = document.getElementById("pageTypeADR");
     if (!root) return;
 
+    // ---------- ส่วนที่ 1: Rawlins & Thompson (เดิม) ----------
     root.innerHTML = [
       '<div class="pType-wrapper">',
         '<h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>',
@@ -200,9 +201,12 @@
         showToast("danger","⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
       }
     });
+
+    // ---------- ส่วนที่ 2: Immunologic type & Non-immunologic type ----------
+    buildTypeSection2(root);
   };
 
-  // HTML การ์ด
+  // HTML การ์ด ส่วนที่ 1
   function cardHTML(code, title, themeClass) {
     return [
       '<div class="pType-card ' + themeClass + '" data-code="' + code + '">',
@@ -219,139 +223,249 @@
       '</div>'
     ].join("");
   }
-})();
 
-// ============ ส่วนขยาย: เพิ่ม "ส่วนที่ 2 Immunologic type & Non-immunologic type" โดยไม่แตะส่วนที่ 1 ============
-(function () {
-  if (!window.renderPageTypeADR) return;
+  // ================== ส่วนที่ 2 (ใหม่) ==================
 
-  var originalRender = window.renderPageTypeADR;
-
-  // ข้อมูล 21 ADR (3 ตัวแรกเป็นทั้ง Immunologic & Non-immunologic)
-  var PTYPE_ADR_ITEMS = [
-    { key: "urticaria",    label: "Urticaria",                                        both: true },
-    { key: "anaphylaxis",  label: "Anaphylaxis",                                      both: true },
-    { key: "angioedema",   label: "Angioedema",                                       both: true },
-    { key: "mp_rash",      label: "Maculopapular rash",                               both: false },
-    { key: "fde",          label: "Fixed drug eruption",                              both: false },
-    { key: "agep",         label: "Acute generalized exanthematous pustulosis (AGEP)",both: false },
-    { key: "sjs",          label: "Stevens–Johnson syndrome (SJS)",                   both: false },
-    { key: "ten",          label: "Toxic epidermal necrolysis (TEN)",                 both: false },
-    { key: "dress",        label: "DRESS (Drug Reaction with Eosinophilia and Systemic Symptoms)", both: false },
-    { key: "em",           label: "Erythema multiforme",                              both: false },
-    { key: "photo",        label: "Photosensitivity drug eruption",                   both: false },
-    { key: "exfol",        label: "Exfoliative dermatitis",                           both: false },
-    { key: "eczema",       label: "Eczematous drug eruption",                         both: false },
-    { key: "bullous",      label: "Bullous drug eruption",                            both: false },
-    { key: "serum_sick",   label: "Serum sickness / Serum sickness–like reaction",    both: false },
-    { key: "vasculitis",   label: "Vasculitis",                                       both: false },
-    { key: "hemolytic",    label: "Hemolytic anemia",                                 both: false },
-    { key: "pancytopenia", label: "Pancytopenia / Neutropenia / Thrombocytopenia",    both: false },
-    { key: "nephritis",    label: "Nephritis / Drug-induced nephritis",               both: false },
-    { key: "drug_fever",   label: "Drug fever",                                       both: false },
-    { key: "dili",         label: "Drug-induced liver injury (DILI)",                 both: false }
-  ];
-
-  function injectSection2Styles() {
+  function ensureSection2Styles() {
     if (document.getElementById("pType-sec2-style")) return;
     var css = [
-      ".pType-sec2{margin-top:26px;padding:16px 14px 18px;border-radius:20px;",
-      "background:linear-gradient(135deg,#f5f3ff,#eef2ff);",
-      "border:1px solid rgba(167,139,250,0.55);box-shadow:0 14px 40px rgba(129,140,248,0.28);}",
-      ".pType-sec2-title{margin:0 0 4px;font-size:1.02rem;font-weight:800;color:#4c1d95;}",
-      ".pType-sec2-sub{margin:0 0 10px;font-size:.85rem;color:#6b21a8;}",
-      ".pType-sec2-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}",
-      ".pType-sec2-row{display:flex;align-items:stretch;justify-content:space-between;",
-      "gap:12px;padding:10px 12px;border-radius:18px;background:#ffffff;",
-      "border:1px solid #e5e7eb;box-shadow:0 8px 22px rgba(148,163,184,0.22);}",
-      ".pType-sec2-info{flex:1 1 0;min-width:0;}",
-      ".pType-sec2-adr-name{font-weight:700;font-size:.9rem;color:#111827;margin-bottom:4px;}",
-      ".pType-sec2-tags{display:flex;flex-wrap:wrap;gap:6px;}",
-      ".pType-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;",
-      "font-size:.78rem;font-weight:700;white-space:nowrap;}",
-      ".pType-chip-immune{background:rgba(129,140,248,0.1);color:#4338ca;",
-      "border:1px solid rgba(129,140,248,0.55);}",
-      ".pType-chip-nonimmune{background:rgba(251,191,36,0.12);color:#92400e;",
-      "border:1px solid rgba(251,191,36,0.7);}",
-      ".pType-sec2-images{flex:0 0 auto;display:flex;gap:10px;}",
-      ".pType-image-slot{width:170px;height:115px;border-radius:18px;",
-      "background:radial-gradient(circle at 30% 20%,#fef9c3,#e0e7ff);",
-      "border:1px dashed rgba(148,163,184,0.9);display:flex;align-items:center;",
-      "justify-content:center;font-size:.8rem;color:#6b7280;font-weight:600;}",
-      ".pType-image-slot span{opacity:.9;}",
-      "@media (max-width:900px){.pType-sec2-row{flex-direction:column;align-items:flex-start;}",
-      ".pType-sec2-images{width:100%;justify-content:flex-start;}",
-      ".pType-image-slot{width:48%;min-width:130px;}}"
+      '.pType-sec2{',
+        'margin-top:28px;',
+        'padding:18px 18px 22px;',
+        'border-radius:22px;',
+        'background:linear-gradient(180deg,#faf5ff,#fdf2ff);',
+        'border:1px solid rgba(167,139,250,0.4);',
+        'box-shadow:0 18px 45px rgba(129,140,248,0.35);',
+      '}',
+      '.pType-sec2-title{',
+        'font-size:1.1rem;',
+        'font-weight:800;',
+        'color:#4c1d95;',
+        'margin:0 0 4px;',
+        'display:flex;',
+        'align-items:center;',
+        'gap:6px;',
+      '}',
+      '.pType-sec2-sub{',
+        'font-size:.87rem;',
+        'color:#6b21a8;',
+        'margin:0 0 14px;',
+      '}',
+      '.pType-sec2-badges{',
+        'display:flex;',
+        'flex-wrap:wrap;',
+        'gap:8px;',
+        'margin-bottom:10px;',
+      '}',
+      '.pType-tag-immune, .pType-tag-mixed{',
+        'font-size:.78rem;',
+        'padding:3px 10px;',
+        'border-radius:999px;',
+        'border:1px solid;',
+        'display:inline-flex;',
+        'align-items:center;',
+        'gap:5px;',
+        'background:#fff;',
+      '}',
+      '.pType-tag-immune{',
+        'border-color:rgba(16,185,129,0.45);',
+        'color:#047857;',
+      '}',
+      '.pType-tag-mixed{',
+        'border-color:rgba(245,158,11,0.55);',
+        'color:#b45309;',
+      '}',
+      '.pType-tag-dot{',
+        'width:7px;height:7px;border-radius:999px;',
+      '}',
+      '.pType-dot-immune{background:linear-gradient(135deg,#6ee7b7,#22c55e);}',
+      '.pType-dot-mixed{background:linear-gradient(135deg,#facc15,#fb923c);}',
+
+      '.pType-sec2-list{',
+        'margin-top:6px;',
+        'display:flex;',
+        'flex-direction:column;',
+        'gap:18px;',
+      '}',
+
+      /* 1 ADR ต่อ 1 แถว */
+      '.pType-sec2-card{',
+        'background:#ffffff;',
+        'border-radius:18px;',
+        'border:1px solid #e5e7eb;',
+        'box-shadow:0 12px 30px rgba(148,163,184,0.26);',
+        'padding:12px 14px 14px;',
+        'display:flex;',
+        'flex-direction:column;',
+        'gap:10px;',
+      '}',
+      '.pType-sec2-header{',
+        'display:flex;',
+        'justify-content:space-between;',
+        'align-items:flex-start;',
+        'gap:10px;',
+        'flex-wrap:wrap;',
+      '}',
+      '.pType-sec2-name{',
+        'font-weight:700;',
+        'color:#312e81;',
+        'font-size:.95rem;',
+      '}',
+      '.pType-sec2-type{',
+        'font-size:.8rem;',
+        'font-weight:600;',
+        'padding:3px 9px;',
+        'border-radius:999px;',
+        'border:1px solid;',
+        'display:inline-flex;',
+        'align-items:center;',
+        'gap:4px;',
+      '}',
+      '.pType-sec2-type-immune{',
+        'border-color:rgba(16,185,129,0.35);',
+        'background:rgba(16,185,129,0.06);',
+        'color:#047857;',
+      '}',
+      '.pType-sec2-type-mixed{',
+        'border-color:rgba(245,158,11,0.5);',
+        'background:rgba(251,191,36,0.08);',
+        'color:#b45309;',
+      '}',
+
+      '.pType-sec2-images{',
+        'margin-top:4px;',
+        'display:flex;',
+        'gap:12px;',
+        'align-items:stretch;',
+        'justify-content:space-between;',
+        'flex-wrap:wrap;',
+      '}',
+      '.pType-sec2-img-box{',
+        'flex:1 1 48%;',
+        'min-width:260px;',
+      '}',
+      '.pType-sec2-img-label{',
+        'font-size:.78rem;',
+        'color:#6b7280;',
+        'margin:0 0 4px;',
+      '}',
+      '.pType-sec2-img-placeholder{',
+        'width:100%;',
+        'height:240px;',          /* ✅ ขยายรูปให้ใหญ่เกือบเต็มแถว */
+        'border-radius:16px;',
+        'border:1px dashed rgba(148,163,184,0.7);',
+        'background:linear-gradient(135deg,#ede9fe,#fdf2ff);',
+        'display:flex;',
+        'align-items:center;',
+        'justify-content:center;',
+        'font-size:.8rem;',
+        'color:#6b21a8;',
+        'text-align:center;',
+        'padding:8px;',
+      '}',
+      '.pType-sec2-img-placeholder span{',
+        'max-width:90%;',
+      '}',
+      '@media (max-width:900px){',
+        '.pType-sec2-img-box{min-width:100%;}',
+        '.pType-sec2-img-placeholder{height:220px;}',
+      '}'
     ].join("");
+
     var tag = document.createElement("style");
     tag.id = "pType-sec2-style";
     tag.textContent = css;
     document.head.appendChild(tag);
   }
 
-  function buildSection2HTML() {
-    var rows = [];
-    for (var i = 0; i < PTYPE_ADR_ITEMS.length; i++) {
-      var it = PTYPE_ADR_ITEMS[i];
-      var chips = [
-        '<span class="pType-chip pType-chip-immune">Immunologic</span>'
-      ];
-      if (it.both) {
-        chips.push('<span class="pType-chip pType-chip-nonimmune">Non-immunologic</span>');
-      }
-      rows.push(
-        '<div class="pType-sec2-row">' +
-          '<div class="pType-sec2-info">' +
-            '<div class="pType-sec2-adr-name">' + it.label + '</div>' +
-            '<div class="pType-sec2-tags">' + chips.join("") + '</div>' +
-          '</div>' +
-          '<div class="pType-sec2-images">' +
-            '<div class="pType-image-slot"><span>รูปที่ 1</span></div>' +
-            '<div class="pType-image-slot"><span>รูปที่ 2</span></div>' +
-          '</div>' +
-        '</div>'
-      );
+  function buildTypeSection2(root) {
+    ensureSection2Styles();
+
+    // ห่อทุกอย่างของส่วนที่ 1 ไว้ แล้วต่อด้วยส่วนที่ 2
+    var wrapper = document.createElement("div");
+    wrapper.innerHTML = root.innerHTML;
+    root.innerHTML = "";
+    while (wrapper.firstChild) {
+      root.appendChild(wrapper.firstChild);
     }
 
+    // ---------- สร้าง DOM ของส่วนที่ 2 ----------
+    var sec = document.createElement("section");
+    sec.className = "pType-sec2";
+
+    var html = [
+      '<h3 class="pType-sec2-title">🧬 ส่วนที่ 2: Immunologic type &amp; Non-immunologic type</h3>',
+      '<p class="pType-sec2-sub">',
+        'จำแนกชนิดของ ADR ตามกลไกการเกิด โดยแสดงตัวอย่างภาพประกอบ 2 รูปต่อ 1 ADR ',
+        '(รูปภาพสามารถเพิ่ม/แก้ไขในภายหลังได้)',
+      '</p>',
+      '<div class="pType-sec2-badges">',
+        '<span class="pType-tag-immune">',
+          '<span class="pType-tag-dot pType-dot-immune"></span>',
+          '<span>Immunologic type</span>',
+        '</span>',
+        '<span class="pType-tag-mixed">',
+          '<span class="pType-tag-dot pType-dot-mixed"></span>',
+          '<span>Immunologic &amp; Non-immunologic type</span>',
+        '</span>',
+      '</div>',
+      '<div class="pType-sec2-list">',
+        adrRow("Urticaria", true, true),
+        adrRow("Anaphylaxis", true, true),
+        adrRow("Angioedema", true, true),
+
+        adrRow("Maculopapular rash", true, false),
+        adrRow("Fixed drug eruption", true, false),
+        adrRow("AGEP", true, false),
+        adrRow("SJS", true, false),
+        adrRow("TEN", true, false),
+        adrRow("DRESS", true, false),
+        adrRow("Erythema multiforme", true, false),
+        adrRow("Photosensitivity drug eruption", true, false),
+        adrRow("Exfoliative dermatitis", true, false),
+        adrRow("Eczematous drug eruption", true, false),
+        adrRow("Bullous Drug Eruption", true, false),
+        adrRow("Serum sickness", true, false),
+        adrRow("Vasculitis", true, false),
+        adrRow("Hemolytic anemia", true, false),
+        adrRow("Pancytopenia / Neutropenia / Thrombocytopenia", true, false),
+        adrRow("Nephritis", true, false)
+      ,'</div>'
+    ].join("");
+
+    sec.innerHTML = html;
+    root.appendChild(sec);
+  }
+
+  // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่)
+  function adrRow(label, isImmune, isMixed) {
+    var typeClass = isMixed ? "pType-sec2-type-mixed" : "pType-sec2-type-immune";
+    var typeText  = isMixed ? "Immunologic & Non-immunologic type" : "Immunologic type";
     return [
-      '<div class="pType-sec2">',
-        '<h3 class="pType-sec2-title">ส่วนที่ 2: Immunologic type &amp; Non-immunologic type</h3>',
-        '<p class="pType-sec2-sub">',
-          'จำแนก 21 ชนิดของ ADR ตามกลไกการเกิด — ',
-          'ทุก ADR จัดเป็น <strong>Immunologic type</strong> ยกเว้น ',
-          '<strong>Urticaria, Anaphylaxis และ Angioedema</strong> ที่จัดอยู่ได้ทั้ง ',
-          '<strong>Immunologic &amp; Non-immunologic type</strong> และมีช่องสำหรับใส่รูปตัวอย่าง 2 รูปต่อ 1 ADR',
-        '</p>',
-        '<div class="pType-sec2-list">',
-          rows.join(""),
+      '<article class="pType-sec2-card">',
+        '<div class="pType-sec2-header">',
+          '<div class="pType-sec2-name">', label, '</div>',
+          '<div class="pType-sec2-type ', typeClass, '">',
+            '<span class="pType-tag-dot ', (isMixed ? 'pType-dot-mixed' : 'pType-dot-immune'), '"></span>',
+            '<span>', typeText, '</span>',
+          '</div>',
         '</div>',
-      '</div>'
+        '<div class="pType-sec2-images">',
+          '<div class="pType-sec2-img-box">',
+            '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 1</p>',
+            '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="1">',
+              '<span>พื้นที่สำหรับใส่รูปตัวอย่างที่ 1 ของ ', label, '</span>',
+            '</div>',
+          '</div>',
+          '<div class="pType-sec2-img-box">',
+            '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 2</p>',
+            '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="2">',
+              '<span>พื้นที่สำหรับใส่รูปตัวอย่างที่ 2 ของ ', label, '</span>',
+            '</div>',
+          '</div>',
+        '</div>',
+      '</article>'
     ].join("");
   }
 
-  // override ฟังก์ชัน render แต่ยังเรียกของเดิมก่อนเสมอ
-  window.renderPageTypeADR = function () {
-    // วาดส่วนที่ 1 ตามเดิม
-    originalRender();
-
-    var root = document.getElementById("pageTypeADR");
-    if (!root) return;
-    injectSection2Styles();
-
-    // ลบส่วนที่ 2 เดิม (ถ้ามี) เพื่อกันซ้ำ
-    var old = root.querySelector(".pType-sec2");
-    if (old && old.parentNode) old.parentNode.removeChild(old);
-
-    // สร้าง DOM ส่วนที่ 2 แล้วแทรกหลัง .pType-wrapper
-    var holder = document.createElement("div");
-    holder.innerHTML = buildSection2HTML();
-    var sec2 = holder.firstChild;
-
-    var firstWrapper = root.querySelector(".pType-wrapper");
-    if (firstWrapper && firstWrapper.parentNode) {
-      firstWrapper.parentNode.insertBefore(sec2, firstWrapper.nextSibling);
-    } else {
-      root.appendChild(sec2);
-    }
-  };
 })();
