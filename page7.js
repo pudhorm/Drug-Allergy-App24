@@ -472,10 +472,26 @@
       return;
     }
 
-    // โหลดข้อมูลกลับเข้า window.drugAllergyData
-    window.drugAllergyData = JSON.parse(JSON.stringify(found.data || {}));
+    // 🔧 แก้จุดนี้: ใช้ object เดิมของ window.drugAllergyData แล้วลบ/ใส่ค่าใหม่
+    const srcData = found.data || {};
+    const clonedData = JSON.parse(JSON.stringify(srcData));
 
-    // แจ้งให้สมองกับหน้า 6 รีเฟรช
+    const target =
+      (window.drugAllergyData && typeof window.drugAllergyData === "object"
+        ? window.drugAllergyData
+        : {});
+
+    // ลบ key เดิมทั้งหมดออกจาก object เดิม
+    Object.keys(target).forEach((k) => {
+      delete target[k];
+    });
+    // ใส่ข้อมูลใหม่จากเคสที่เลือก (clone แล้ว)
+    Object.keys(clonedData).forEach((k) => {
+      target[k] = clonedData[k];
+    });
+    window.drugAllergyData = target;
+
+    // แจ้งให้สมองกับหน้าอื่นรีเฟรช
     try {
       document.dispatchEvent(new CustomEvent("da:update"));
     } catch (e) {
