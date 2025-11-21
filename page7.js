@@ -472,30 +472,20 @@
       return;
     }
 
-    // 🔧 แก้จุดนี้: ใช้ object เดิมของ window.drugAllergyData แล้วลบ/ใส่ค่าใหม่
-    const srcData = found.data || {};
-    const clonedData = JSON.parse(JSON.stringify(srcData));
+    // ✅ โหลด snapshot เคส แล้วแทนที่ window.drugAllergyData ทั้งก้อน (deep clone)
+    const cloned = JSON.parse(JSON.stringify(found.data || {}));
+    window.drugAllergyData = cloned || {};
 
-    const target =
-      (window.drugAllergyData && typeof window.drugAllergyData === "object"
-        ? window.drugAllergyData
-        : {});
-
-    // ลบ key เดิมทั้งหมดออกจาก object เดิม
-    Object.keys(target).forEach((k) => {
-      delete target[k];
-    });
-    // ใส่ข้อมูลใหม่จากเคสที่เลือก (clone แล้ว)
-    Object.keys(clonedData).forEach((k) => {
-      target[k] = clonedData[k];
-    });
-    window.drugAllergyData = target;
-
-    // แจ้งให้สมองกับหน้าอื่นรีเฟรช
+    // ✅ พยายามให้ทุกหน้าดึงข้อมูลใหม่จาก window.drugAllergyData
     try {
-      document.dispatchEvent(new CustomEvent("da:update"));
+      if (typeof window.renderPage1 === "function") window.renderPage1();
+      if (typeof window.renderPage2 === "function") window.renderPage2();
+      if (typeof window.renderPage3 === "function") window.renderPage3();
+      if (typeof window.renderPage4 === "function") window.renderPage4();
+      if (typeof window.renderPage5 === "function") window.renderPage5();
+      if (typeof window.renderPage6 === "function") window.renderPage6();
     } catch (e) {
-      console.warn("dispatch da:update error", e);
+      console.warn("re-render pages after load case error", e);
     }
 
     alert(
