@@ -67,6 +67,8 @@
     <button data-target="page4">หน้า 4 Naranjo</button>
     <button data-target="page5">หน้า 5 Timeline</button>
     <button data-target="page6">หน้า 6 ผลการประเมิน</button>
+    <!-- ⬇️ เพิ่มปุ่มหน้า 7 รายงานเคส -->
+    <button data-target="page7">หน้า 7 รายงานเคส</button>
   </nav>
 
   <main>
@@ -132,6 +134,11 @@
       <div id="p6Root"></div>
       <div id="p6BrainBox"></div>
     </section>
+
+    <!-- ⬇️ เพิ่ม section หน้า 7 รายงานเคส -->
+    <section id="page7" class="page">
+      <div id="p7Root"></div>
+    </section>
   </main>
 
   <!-- ต้องมาก่อนทุกไฟล์อื่น -->
@@ -156,11 +163,13 @@
   <script src="brain.section2.drugs.js"></script>
 
   <!-- ✅ ฐานข้อมูลแนวทางการรักษา หน้า 6 ส่วนที่ 3 -->
-<script src="brain.section3.treatments.js"></script>
+  <script src="brain.section3.treatments.js"></script>
   
   <!-- ⬇️ เพิ่มบรรทัดนี้ -->
   <script src="pageTypeADR.results.js"></script>
   <script src="page6.js"></script>
+  <!-- ⬇️ เพิ่มไฟล์หน้า 7 รายงานเคส -->
+  <script src="page7.js"></script>
 
   <script>
     // ปุ่มเมนูทุกปุ่ม
@@ -210,6 +219,10 @@
       }
       if (targetId === "page6" && window.renderPage6) {
         window.renderPage6();
+      }
+      // ⬇️ เรียกเรนเดอร์หน้า 7 เมื่อถูกเปิด
+      if (targetId === "page7" && window.renderPage7) {
+        window.renderPage7();
       }
     }
 
