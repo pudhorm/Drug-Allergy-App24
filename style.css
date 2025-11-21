@@ -1555,4 +1555,15 @@ body {
   border-top:10px solid #fff;
   filter: drop-shadow(0 -1px 0 rgba(148,163,184,.35));
 }
+/* ปุ่ม หน้า 7 รายงานเคส สีเหลือง */
+nav.tabs button.tab-report {
+  background: #fef3c7;        /* เหลืองอ่อน */
+  color: #92400e;             /* น้ำตาลทอง ๆ */
+}
+
+/* ตอนปุ่มหน้า 7 ถูกเลือกเป็น active ให้เหลืองเข้ม/สดขึ้น */
+nav.tabs button.tab-report.active {
+  background: linear-gradient(135deg, #fde047, #f97316);
+  color: #7c2d12;
+}
 
