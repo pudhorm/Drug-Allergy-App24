@@ -1,314 +1,369 @@
-// ===================== page7.js — หน้า 7 รายงานเคส =====================
-(function () {
-  const STORAGE_KEY = "drugAllergyCases_v1";
+// ===================== page7.js (REPLACE WHOLE FILE) =====================
+// หน้า 7: รายงานเคส / ค้นหาเคสที่บันทึกไว้ และโหลดกลับมาแก้ไขได้หลายรอบไม่หาย
 
-  // --------------------- UTIL: LocalStorage ---------------------
+(function () {
+  if (window.__p7Bound) return;
+  window.__p7Bound = true;
+
+  const STORAGE_KEY = "drugAllergyCases_v1";
+  const CURRENT_ID_KEY = "__drugAllergyCurrentCaseId";
+
+  // ---------- Utils ----------
+  function deepClone(obj) {
+    return obj ? JSON.parse(JSON.stringify(obj)) : obj;
+  }
+
   function loadCases() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      // เรียงจากใหม่ -> เก่า
-      return arr.sort((a, b) => {
-        const ta = new Date(a.createdAt || a.date || 0).getTime();
-        const tb = new Date(b.createdAt || b.date || 0).getTime();
-        return tb - ta;
-      });
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.warn("loadCases error", e);
+      console.error("loadCases error", e);
       return [];
     }
   }
 
   function saveCases(list) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch (e) {
-      console.warn("saveCases error", e);
+      console.error("saveCases error", e);
     }
   }
 
-  function fmtDateTH(str) {
-    if (!str) return "—";
-    let d;
+  function setCurrentCaseId(id) {
     try {
-      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-        d = new Date(str);
-      } else {
-        d = new Date(str);
-      }
+      if (id) localStorage.setItem(CURRENT_ID_KEY, id);
+      else localStorage.removeItem(CURRENT_ID_KEY);
+    } catch {}
+  }
+
+  function getCurrentCaseId() {
+    try {
+      return localStorage.getItem(CURRENT_ID_KEY) || null;
     } catch {
-      d = null;
+      return null;
     }
-    return d && !isNaN(d.getTime())
-      ? d.toLocaleDateString("th-TH", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : str;
   }
 
-  function extractPatientInfo() {
-    const d = window.drugAllergyData || {};
-    const p1 = d.page1 || {};
-
-    let name =
-      (p1.patientName ||
-        p1.name ||
-        (p1.patient && p1.patient.name) ||
-        (d.patient && d.patient.name) ||
-        "") + "";
-    let hn =
-      (p1.hn ||
-        p1.patientHN ||
-        (p1.patient && p1.patient.hn) ||
-        (d.patient && d.patient.hn) ||
-        "") + "";
-
-    name = name.trim();
-    hn = hn.trim();
-    return { name, hn };
+  function fmtDateTH(strOrDate) {
+    if (!strOrDate) return "—";
+    let d = strOrDate instanceof Date ? strOrDate : new Date(strOrDate);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   }
 
-  function getTopAdrLabelFromBrain() {
-    const brain = window.brainResult;
-    if (!brain || !brain.results) return "";
-    const arr = Object.values(brain.results);
-    if (!arr.length) return "";
+  function extractPatientInfo(data) {
+    // พยายามดึง HN / ชื่อ จากหลายโครงสร้างที่เป็นไปได้
+    let hn = "";
+    let name = "";
+
+    if (data?.page1?.patient) {
+      hn = data.page1.patient.hn || data.page1.patient.HN || hn;
+      name =
+        data.page1.patient.name ||
+        data.page1.patient.fullName ||
+        data.page1.patient.patientName ||
+        name;
+    }
+
+    if (!hn && data?.patient) {
+      hn = data.patient.hn || data.patient.HN || hn;
+    }
+    if (!name && data?.patient) {
+      name =
+        data.patient.name ||
+        data.patient.fullName ||
+        data.patient.patientName ||
+        name;
+    }
+
+    return {
+      hn: hn || "-",
+      name: name || "-",
+    };
+  }
+
+  function extractTopAdr(brainResult) {
+    if (!brainResult || !brainResult.results) return { label: "-", percent: 0 };
+    const arr = Object.values(brainResult.results);
+    if (!arr.length) return { label: "-", percent: 0 };
     const sorted = arr
       .slice()
       .sort((a, b) => (b.percent || 0) - (a.percent || 0));
-    const top = sorted[0];
-    if (!top || !top.label) return "";
-    if (!Number.isFinite(top.percent) || top.percent <= 0) return top.label;
-    return top.label + ` (${top.percent.toFixed(1).replace(/\.0$/, "")}%)`;
+    const top = sorted[0] || {};
+    const pct = Number.isFinite(top.percent) ? top.percent : 0;
+    return {
+      label: top.label || "-",
+      percent: pct,
+    };
   }
 
-  // --------------------- RENDER UI ---------------------
-  let initialized = false;
+  // ---------- สร้างเคสจากข้อมูลหน้า 1–6 แล้วเก็บลง localStorage ----------
+  function buildCaseFromCurrentData(existingId) {
+    const data = deepClone(window.drugAllergyData || {});
+    const brain = deepClone(window.brainResult || null);
+    const { hn, name } = extractPatientInfo(data);
+    const { label: adrLabel, percent } = extractTopAdr(brain);
 
+    const now = new Date();
+    return {
+      id: existingId || "case_" + now.getTime() + "_" + Math.random().toString(36).slice(2),
+      createdAt: now.toISOString(),
+      hn,
+      name,
+      mainAdrLabel: adrLabel,
+      mainAdrPercent: percent,
+      snapshot: data,      // ❗ deepClone แล้ว
+      brainSnapshot: brain // deepClone แล้ว
+    };
+  }
+
+  function saveCurrentCaseAndGoToPage7() {
+    const d = window.drugAllergyData || {};
+    // ถ้ายังไม่มีข้อมูลเลย ไม่ให้เซฟ
+    if (!d.page1 && !d.page2 && !d.page3 && !d.page4 && !d.page5 && !d.page6) {
+      alert("ยังไม่มีข้อมูลเคส กรุณากรอกข้อมูลก่อน");
+      return;
+    }
+
+    const currentId = getCurrentCaseId();
+    const newCase = buildCaseFromCurrentData(currentId || undefined);
+
+    const cases = loadCases();
+    const idx = cases.findIndex((c) => c.id === newCase.id);
+    if (idx >= 0) {
+      cases[idx] = newCase; // แก้เคสเดิม
+    } else {
+      cases.unshift(newCase); // เติมเคสใหม่ด้านบน
+    }
+    saveCases(cases);
+    setCurrentCaseId(newCase.id);
+
+    alert("บันทึกเคสเรียบร้อยแล้ว");
+    if (typeof window.showPage === "function") {
+      window.showPage("page7");
+    }
+    if (typeof window.renderPage7 === "function") {
+      window.renderPage7();
+    }
+  }
+
+  // ---------- โหลดเคสกลับเข้า app เพื่อดู/แก้ไข ----------
+  function loadCaseIntoApp(caseId) {
+    const cases = loadCases();
+    const found = cases.find((c) => c.id === caseId);
+    if (!found) {
+      alert("ไม่พบข้อมูลเคสนี้แล้ว");
+      return;
+    }
+
+    // clone ออกมาก่อน ไม่แก้ object ใน storage ตรง ๆ
+    window.drugAllergyData = deepClone(found.snapshot || {});
+    window.brainResult = deepClone(found.brainSnapshot || null);
+    setCurrentCaseId(found.id);
+
+    // render หน้า 1–6 ใหม่จากข้อมูล
+    if (typeof window.renderPage1 === "function") window.renderPage1();
+    if (typeof window.renderPage2 === "function") window.renderPage2();
+    if (typeof window.renderPage3 === "function") window.renderPage3();
+    if (typeof window.renderPage4 === "function") window.renderPage4();
+    if (typeof window.renderPage5 === "function") window.renderPage5();
+    if (typeof window.renderPage6 === "function") window.renderPage6();
+
+    if (typeof window.showPage === "function") {
+      window.showPage("page1");
+    }
+  }
+
+  // ---------- ลบเคส ----------
+  function deleteCase(caseId) {
+    const cases = loadCases();
+    const found = cases.find((c) => c.id === caseId);
+    if (!found) return;
+    if (!confirm(`ต้องการลบเคสของผู้ป่วย HN ${found.hn} (${found.name}) ใช่หรือไม่?`))
+      return;
+    const newList = cases.filter((c) => c.id !== caseId);
+    saveCases(newList);
+    const cur = getCurrentCaseId();
+    if (cur === caseId) setCurrentCaseId(null);
+    renderPage7();
+  }
+
+  // ---------- Render UI ----------
   function injectStyles() {
     if (document.getElementById("p7-style")) return;
     const css = `
       .p7-wrapper{
-        padding:12px 4px 24px;
-        display:flex;
-        flex-direction:column;
-        gap:16px;
+        max-width:1120px;
+        margin:0 auto;
+        padding:18px 12px 40px;
+        font-family:'Mitr', system-ui, -apple-system, 'Segoe UI', sans-serif;
       }
       .p7-card{
-        border-radius:18px;
-        background:#ffffff;
-        border:1px solid #e5e7eb;
-        box-shadow:0 12px 35px rgba(148,163,184,0.25);
-        padding:16px 18px;
+        background:linear-gradient(135deg,rgba(250,249,255,0.98),rgba(237,233,255,0.96));
+        border-radius:20px;
+        padding:18px 18px 20px;
+        box-shadow:0 16px 40px rgba(79,70,229,0.12);
+        border:1px solid rgba(129,140,248,0.5);
       }
-      .p7-search-card{
-        background:linear-gradient(135deg,#f5f3ff,#eef2ff);
-        border:1px solid #e0e7ff;
-      }
-      .p7-search-head{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        margin-bottom:10px;
-      }
-      .p7-search-icon{
-        width:34px;
-        height:34px;
-        border-radius:999px;
-        background:radial-gradient(circle at 30% 20%,#f9a8ff,#a855f7);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:#fdf2ff;
-        box-shadow:0 8px 20px rgba(147,51,234,0.4);
-        font-size:18px;
-      }
-      .p7-search-title{
-        font-weight:800;
-        font-size:1.05rem;
-        color:#4c1d95;
-      }
-      .p7-search-sub{
-        font-size:.85rem;
-        color:#6b21a8;
-      }
-      .p7-search-row{
-        margin-top:8px;
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-        align-items:center;
-      }
-      .p7-input{
-        flex:1 1 260px;
-        min-width:220px;
-        border-radius:999px;
-        border:1px solid #e5e7eb;
-        padding:8px 14px;
-        font-size:.9rem;
-        outline:none;
-        background:#fff;
-        box-shadow:0 4px 12px rgba(129,140,248,0.15);
-      }
-      .p7-input:focus{
-        border-color:#a855f7;
-        box-shadow:0 0 0 3px rgba(168,85,247,0.35);
-      }
-      .p7-btn-search{
-        border-radius:999px;
-        border:none;
-        padding:8px 16px;
-        font-size:.9rem;
-        font-weight:700;
-        cursor:pointer;
-        display:inline-flex;
-        align-items:center;
-        gap:6px;
-        color:#fdfcff;
-        background:linear-gradient(90deg,#8b5cf6,#ec4899);
-        box-shadow:0 10px 25px rgba(129,140,248,0.55);
-        transition:transform .08s ease, box-shadow .08s ease, opacity .1s ease;
-      }
-      .p7-btn-search:hover{
-        transform:translateY(-1px);
-        box-shadow:0 12px 30px rgba(129,140,248,0.7);
-        opacity:.96;
-      }
-      .p7-btn-search:active{
-        transform:translateY(0);
-        box-shadow:0 6px 18px rgba(129,140,248,0.55);
-      }
-      .p7-result-header{
+      .p7-title-row{
         display:flex;
         justify-content:space-between;
         align-items:flex-end;
-        gap:8px;
-        margin-bottom:8px;
+        gap:12px;
+        margin-bottom:14px;
       }
-      .p7-result-title{
-        font-size:1.02rem;
-        font-weight:800;
-        color:#111827;
-      }
-      .p7-result-sub{
-        font-size:.85rem;
-        color:#6b7280;
-      }
-      .p7-badge-count{
-        padding:3px 8px;
-        border-radius:999px;
-        background:rgba(129,140,248,0.1);
-        color:#4338ca;
-        font-size:.78rem;
+      .p7-title{
+        font-size:1.15rem;
         font-weight:700;
-        border:1px solid rgba(129,140,248,0.35);
+        color:#312e81;
+        display:flex;
+        align-items:center;
+        gap:8px;
       }
-      .p7-table-wrapper{
-        margin-top:6px;
-        border-radius:14px;
-        overflow:hidden;
-        border:1px solid #e5e7eb;
+      .p7-title-badge{
+        font-size:.8rem;
+        padding:2px 8px;
+        border-radius:999px;
+        background:rgba(129,140,248,0.16);
+        color:#3730a3;
       }
+      .p7-count-badge{
+        font-size:.8rem;
+        padding:3px 9px;
+        border-radius:999px;
+        background:#eef2ff;
+        color:#4338ca;
+        font-weight:600;
+      }
+      .p7-search-box{
+        margin-bottom:12px;
+        display:flex;
+        gap:8px;
+        align-items:center;
+      }
+      .p7-search-input{
+        flex:1 1 auto;
+        border-radius:999px;
+        border:1px solid #e0e7ff;
+        padding:8px 14px;
+        font-size:.9rem;
+        outline:none;
+        background:#f9fafb;
+      }
+      .p7-search-input:focus{
+        border-color:#6366f1;
+        box-shadow:0 0 0 1px rgba(99,102,241,0.4);
+        background:#ffffff;
+      }
+      .p7-search-icon{
+        width:30px;
+        height:30px;
+        border-radius:999px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:radial-gradient(circle at 0 0,#f472b6,#6366f1);
+        color:#fff;
+        font-size:14px;
+      }
+
       .p7-table{
         width:100%;
-        border-collapse:collapse;
-        font-size:.87rem;
+        border-collapse:separate;
+        border-spacing:0;
+        font-size:.86rem;
+        background:#fff;
+        border-radius:16px;
+        overflow:hidden;
+        box-shadow:0 6px 18px rgba(15,23,42,0.06);
       }
       .p7-table thead{
-        background:linear-gradient(90deg,#ede9fe,#fdf2ff);
+        background:linear-gradient(90deg,#f5f3ff,#eef2ff);
       }
       .p7-table th,
       .p7-table td{
         padding:8px 10px;
         text-align:left;
-        border-bottom:1px solid #f3f4f6;
-        white-space:nowrap;
       }
       .p7-table th{
-        font-weight:700;
-        font-size:.8rem;
+        font-weight:600;
         color:#4c1d95;
+        border-bottom:1px solid #e5e7eb;
+        font-size:.82rem;
       }
       .p7-table tbody tr:nth-child(even){
-        background:#faf5ff;
+        background:#f9fafb;
       }
       .p7-table tbody tr:hover{
         background:#eef2ff;
       }
-      .p7-col-date{width:110px;}
-      .p7-col-hn{width:90px;}
-      .p7-col-name{min-width:160px;}
-      .p7-col-adr{min-width:180px;}
-      .p7-col-actions{width:130px;}
-      .p7-tag-date{
+      .p7-date-dot{
         display:inline-flex;
         align-items:center;
-        gap:4px;
+        gap:6px;
+        font-weight:500;
+        color:#111827;
+      }
+      .p7-date-dot span.dot{
+        width:8px;
+        height:8px;
         border-radius:999px;
-        padding:2px 8px;
-        background:#eef2ff;
-        font-size:.78rem;
-        color:#4c1d95;
+        background:radial-gradient(circle at 0 0,#22c55e,#16a34a);
+        box-shadow:0 0 0 3px rgba(34,197,94,0.25);
+      }
+      .p7-adr-main{
         font-weight:600;
+        color:#4c1d95;
       }
-      .p7-tag-dot{
-        width:6px;height:6px;border-radius:999px;
-        background:#6366f1;
-      }
-      .p7-empty-row td{
-        padding:14px 10px;
-        text-align:center;
-        color:#9ca3af;
-        font-size:.85rem;
+      .p7-adr-sub{
+        font-size:.78rem;
+        color:#6b7280;
       }
 
-      .p7-btn-mini{
-        border-radius:999px;
+      .p7-actions{
+        display:flex;
+        gap:6px;
+        justify-content:flex-end;
+      }
+      .p7-btn-view,
+      .p7-btn-del{
         border:none;
-        padding:4px 10px;
-        font-size:.78rem;
-        font-weight:700;
+        border-radius:999px;
+        padding:5px 10px;
+        font-size:.8rem;
         cursor:pointer;
         display:inline-flex;
         align-items:center;
         gap:4px;
-        transition:background .08s ease, box-shadow .08s ease, transform .06s ease, opacity .08s ease;
-        white-space:nowrap;
       }
       .p7-btn-view{
-        background:rgba(129,140,248,0.1);
-        color:#4338ca;
-        box-shadow:0 4px 10px rgba(129,140,248,0.25);
+        background:rgba(129,140,248,0.18);
+        color:#312e81;
       }
       .p7-btn-view:hover{
-        background:rgba(129,140,248,0.18);
-        transform:translateY(-0.5px);
+        background:rgba(129,140,248,0.32);
       }
-      .p7-btn-delete{
-        background:rgba(248,113,113,0.12);
+      .p7-btn-del{
+        background:rgba(248,113,113,0.1);
         color:#b91c1c;
-        box-shadow:0 4px 10px rgba(248,113,113,0.25);
       }
-      .p7-btn-delete:hover{
-        background:rgba(248,113,113,0.2);
-        transform:translateY(-0.5px);
-      }
-      .p7-action-group{
-        display:flex;
-        gap:6px;
-        flex-wrap:wrap;
+      .p7-btn-del:hover{
+        background:rgba(248,113,113,0.22);
       }
 
-      @media (max-width: 720px){
-        .p7-result-header{
-          flex-direction:column;
-          align-items:flex-start;
-        }
-        .p7-col-adr{display:none;}
+      .p7-empty{
+        padding:24px 12px;
+        text-align:center;
+        color:#6b7280;
+        font-size:.88rem;
       }
     `;
     const tag = document.createElement("style");
@@ -317,141 +372,57 @@
     document.head.appendChild(tag);
   }
 
-  function buildStaticLayout(root) {
-    root.innerHTML = `
-      <div class="p7-wrapper">
-        <div class="p7-card p7-search-card">
-          <div class="p7-search-head">
-            <div class="p7-search-icon">📁</div>
-            <div>
-              <div class="p7-search-title">ค้นหารายงานเคส</div>
-              <div class="p7-search-sub">
-                พิมพ์ <strong>HN</strong> หรือ <strong>ชื่อ-สกุล</strong> ของผู้ป่วย เพื่อดึงข้อมูลที่เคยกรอกในหน้า 1–6 กลับมาแก้ไขได้
-              </div>
-            </div>
-          </div>
-          <div class="p7-search-row">
-            <input id="p7SearchInput" class="p7-input" placeholder="ค้นหาด้วย HN หรือ ชื่อ-สกุล" />
-            <button id="p7SearchBtn" class="p7-btn-search">
-              <span>🔍</span><span>ค้นหา</span>
-            </button>
-          </div>
-        </div>
+  function renderTableRows(cases, keyword) {
+    keyword = (keyword || "").trim().toLowerCase();
+    const filtered = !keyword
+      ? cases
+      : cases.filter((c) => {
+          return (
+            c.hn.toLowerCase().includes(keyword) ||
+            c.name.toLowerCase().includes(keyword)
+          );
+        });
 
-        <div class="p7-card">
-          <div class="p7-result-header">
-            <div>
-              <div class="p7-result-title">ผลการค้นหาเคส</div>
-              <div class="p7-result-sub">เลือกเคสเพื่อโหลดข้อมูลเดิมขึ้นมาแสดงที่หน้า 1–6 หรือกดลบหากต้องการล้างเคสออกจากระบบ</div>
-            </div>
-            <div id="p7CountBadge" class="p7-badge-count">0 เคส</div>
-          </div>
-
-          <div class="p7-table-wrapper">
-            <table class="p7-table">
-              <thead>
-                <tr>
-                  <th class="p7-col-date">วันที่บันทึก</th>
-                  <th class="p7-col-hn">HN</th>
-                  <th class="p7-col-name">ชื่อ-สกุล</th>
-                  <th class="p7-col-adr">ชนิด ADR หลัก</th>
-                  <th class="p7-col-actions">การดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody id="p7TableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const input = document.getElementById("p7SearchInput");
-    const btn = document.getElementById("p7SearchBtn");
     const tbody = document.getElementById("p7TableBody");
+    const countEl = document.getElementById("p7CaseCount");
+    if (countEl) countEl.textContent = filtered.length + " เคส";
 
-    if (btn && input) {
-      btn.addEventListener("click", () => {
-        renderTable(input.value || "");
-      });
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          renderTable(input.value || "");
-        }
-      });
-    }
-
-    if (tbody) {
-      tbody.addEventListener("click", (e) => {
-        const btn = e.target.closest("button");
-        if (!btn) return;
-        const id = btn.getAttribute("data-id");
-        if (!id) return;
-
-        if (btn.classList.contains("p7-btn-view")) {
-          handleViewCase(id);
-        } else if (btn.classList.contains("p7-btn-delete")) {
-          handleDeleteCase(id);
-        }
-      });
-    }
-  }
-
-  function renderTable(keyword) {
-    const tbody = document.getElementById("p7TableBody");
-    const badge = document.getElementById("p7CountBadge");
     if (!tbody) return;
-
-    const kw = (keyword || "").toLowerCase().trim();
-    const allCases = loadCases();
-    const cases = allCases.filter((c) => {
-      if (!kw) return true;
-      const hn = (c.hn || "").toLowerCase();
-      const name = (c.name || "").toLowerCase();
-      return hn.includes(kw) || name.includes(kw);
-    });
-
-    if (badge) {
-      badge.textContent = `${cases.length} เคส`;
-    }
-
-    if (!cases.length) {
+    if (!filtered.length) {
       tbody.innerHTML = `
-        <tr class="p7-empty-row">
-          <td colspan="5">ยังไม่มีเคสที่บันทึกไว้ หรือไม่พบเคสตามคำค้น</td>
-        </tr>
+        <tr><td colspan="5">
+          <div class="p7-empty">ยังไม่มีเคสที่บันทึกไว้ หรือไม่พบเคสที่ตรงกับคำค้นหา</div>
+        </td></tr>
       `;
       return;
     }
 
-    const rows = cases
+    tbody.innerHTML = filtered
       .map((c) => {
-        const dateStr = fmtDateTH(c.displayDate || c.createdAt);
-        const hn = c.hn || "—";
-        const name = c.name || "ไม่ระบุชื่อ";
-        const adr =
-          c.mainAdr ||
-          c.mainAdrLabel ||
-          (c.brain && c.brain.topLabel) ||
-          "—";
-
+        const adrText =
+          c.mainAdrLabel && Number.isFinite(c.mainAdrPercent)
+            ? `${c.mainAdrLabel} (${c.mainAdrPercent.toFixed(0)}%)`
+            : c.mainAdrLabel || "-";
         return `
           <tr>
-            <td class="p7-col-date">
-              <span class="p7-tag-date">
-                <span class="p7-tag-dot"></span>
-                <span>${dateStr}</span>
+            <td>
+              <span class="p7-date-dot">
+                <span class="dot"></span>
+                ${fmtDateTH(c.createdAt)}
               </span>
             </td>
-            <td class="p7-col-hn">${hn}</td>
-            <td class="p7-col-name">${name}</td>
-            <td class="p7-col-adr">${adr}</td>
-            <td class="p7-col-actions">
-              <div class="p7-action-group">
-                <button class="p7-btn-mini p7-btn-view" data-id="${c.id}">
+            <td>${c.hn || "-"}</td>
+            <td>${c.name || "-"}</td>
+            <td>
+              <div class="p7-adr-main">${adrText}</div>
+            </td>
+            <td>
+              <div class="p7-actions">
+                <button class="p7-btn-view" data-id="${c.id}" type="button">
                   👁️ ดู/แก้ไข
                 </button>
-                <button class="p7-btn-mini p7-btn-delete" data-id="${c.id}">
-                  🗑️ ลบ
+                <button class="p7-btn-del" data-id="${c.id}" type="button">
+                  🗑 ลบ
                 </button>
               </div>
             </td>
@@ -460,105 +431,75 @@
       })
       .join("");
 
-    tbody.innerHTML = rows;
+    // bind events
+    tbody.querySelectorAll(".p7-btn-view").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-id");
+        loadCaseIntoApp(id);
+      });
+    });
+    tbody.querySelectorAll(".p7-btn-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-id");
+        deleteCase(id);
+      });
+    });
   }
 
-  // --------------------- EVENT HANDLERS ---------------------
-  function handleViewCase(id) {
-    const cases = loadCases();
-    const found = cases.find((c) => c.id === id);
-    if (!found) {
-      alert("ไม่พบข้อมูลเคสในระบบ");
-      return;
-    }
-
-    // โหลดข้อมูลกลับเข้า window.drugAllergyData
-    window.drugAllergyData = JSON.parse(JSON.stringify(found.data || {}));
-
-    // แจ้งให้สมองกับหน้า 6 รีเฟรช
-    try {
-      document.dispatchEvent(new CustomEvent("da:update"));
-    } catch (e) {
-      console.warn("dispatch da:update error", e);
-    }
-
-    alert(
-      "โหลดข้อมูลเคสเรียบร้อยแล้ว\nระบบจะแสดงข้อมูลเดิมในหน้า 1–6 คุณสามารถแก้ไขและบันทึกทับได้"
-    );
-
-    // เด้งไปหน้า 1 เพื่อเริ่มดู/แก้ไข
-    const tab1 = document.querySelector('.tabs button[data-target="page1"]');
-    if (tab1) tab1.click();
-  }
-
-  function handleDeleteCase(id) {
-    if (!confirm("ยืนยันการลบเคสนี้ออกจากรายการหรือไม่?")) return;
-    const allCases = loadCases();
-    const remain = allCases.filter((c) => c.id !== id);
-    saveCases(remain);
-    renderTable(document.getElementById("p7SearchInput")?.value || "");
-  }
-
-  // --------------------- PUBLIC RENDER ---------------------
   function renderPage7() {
-    const root = document.getElementById("p7Root");
+    injectStyles();
+    const root = document.getElementById("page7");
     if (!root) return;
 
-    injectStyles();
-    if (!initialized) {
-      initialized = true;
-      buildStaticLayout(root);
-    }
-    renderTable(document.getElementById("p7SearchInput")?.value || "");
-  }
+    const cases = loadCases();
 
-  // --------------------- SAVE CASE & GO (เรียกจากหน้า 6) ---------------------
-  function p7SaveCaseAndGo() {
-    const d = window.drugAllergyData || {};
-    const { name, hn } = extractPatientInfo();
+    root.innerHTML = `
+      <div class="p7-wrapper">
+        <div class="p7-card">
+          <div class="p7-title-row">
+            <div class="p7-title">
+              📁 ผลการค้นหาเคส
+              <span class="p7-title-badge">เลือกเคสเพื่อโหลดข้อมูลเดิมขึ้นมาแสดงบนหน้า 1–6</span>
+            </div>
+            <span id="p7CaseCount" class="p7-count-badge">${cases.length} เคส</span>
+          </div>
 
-    if (!name && !hn) {
-      alert("กรุณากรอกชื่อหรือ HN ผู้ป่วยในหน้า 1 ก่อนบันทึกเคส");
-      const tab1 = document.querySelector('.tabs button[data-target="page1"]');
-      if (tab1) tab1.click();
-      return;
-    }
+          <div class="p7-search-box">
+            <input id="p7SearchInput" class="p7-search-input" placeholder="ค้นหาด้วย HN หรือ ชื่อ-สกุล" />
+            <div class="p7-search-icon">🔍</div>
+          </div>
 
-    const now = new Date();
-    const id =
-      "C" +
-      now.getTime().toString(36) +
-      "-" +
-      Math.random().toString(36).slice(2, 8);
+          <table class="p7-table">
+            <thead>
+              <tr>
+                <th style="width:140px;">วันที่บันทึก</th>
+                <th style="width:90px;">HN</th>
+                <th>ชื่อ-สกุล</th>
+                <th style="width:260px;">ชนิด ADR หลัก</th>
+                <th style="width:150px;text-align:right;">การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody id="p7TableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    `;
 
-    const topAdr = getTopAdrLabelFromBrain();
+    const searchInput = document.getElementById("p7SearchInput");
+    renderTableRows(cases, "");
 
-    const newCase = {
-      id,
-      createdAt: now.toISOString(),
-      displayDate: now.toISOString().slice(0, 10),
-      name: name || "ไม่ระบุชื่อ",
-      hn: hn || "",
-      mainAdr: topAdr || "",
-      data: JSON.parse(JSON.stringify(d)),
-    };
-
-    const list = loadCases();
-    list.push(newCase);
-    saveCases(list);
-
-    alert("บันทึกเคสเรียบร้อยแล้ว และนำไปยังหน้า 7 รายงานเคส");
-
-    // เปิดแท็บหน้า 7
-    const tab7 = document.querySelector('.tabs button[data-target="page7"]');
-    if (tab7) tab7.click();
-    else {
-      // ถ้ายังไม่มีแท็บหน้า 7 ก็อย่างน้อยให้ render หน้า 7 ถ้ามี container
-      renderPage7();
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        renderTableRows(cases, searchInput.value || "");
+      });
     }
   }
 
-  // export
+  // ---------- Public API ----------
   window.renderPage7 = renderPage7;
-  window.p7SaveCaseAndGo = p7SaveCaseAndGo;
+
+  // ฟังก์ชันสำหรับปุ่มในหน้า 6 (รองรับหลายชื่อเผื่อโค้ดเดิม)
+  window.p7SaveCaseAndGoFromPage6 = saveCurrentCaseAndGoToPage7;
+  window.p7SaveCaseAndGo = saveCurrentCaseAndGoToPage7;
+  window.saveCaseAndGoToPage7 = saveCurrentCaseAndGoToPage7;
 })();
