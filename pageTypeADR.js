@@ -8,7 +8,7 @@
     // ---------- ส่วนที่ 1: Rawlins & Thompson ----------
     root.innerHTML = [
       '<div class="pType-wrapper">',
-        '<h2 class="pType-title">🧩 Type of ADR (Rawlins & Thompson)</h2>',
+        '<h2 class="pType-title">🧩 ส่วนที่ 1 Type of ADR (Rawlins & Thompson)</h2>',
         '<div class="pType-grid">',
           cardHTML("A","Type A — dose-related (Augmented)","typeA"),
           cardHTML("B","Type B — non-dose-related (Bizarre)","typeB"),
