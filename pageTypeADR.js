@@ -351,21 +351,22 @@
       '}',
       '.pType-sec2-img-placeholder{',
         'width:100%;',
+        'height:260px;',
         'border-radius:16px;',
         'overflow:hidden;',
-        'border:1px solid rgba(148,163,184,0.6);',
-        'background:#0000;',
+        'background:#fff;',
+        'box-shadow:0 10px 28px rgba(148,163,184,0.35);',
+        'border:1px solid rgba(148,163,184,0.45);',
       '}',
-      '.pType-sec2-img-placeholder img{',
-        'display:block;',
+      '.pType-sec2-img{',
         'width:100%;',
         'height:100%;',
-        'max-height:260px;',
         'object-fit:cover;',
+        'display:block;',
       '}',
       '@media (max-width:900px){',
         '.pType-sec2-img-box{min-width:100%;}',
-        '.pType-sec2-img-placeholder img{max-height:none;}',
+        '.pType-sec2-img-placeholder{height:220px;}',
       '}'
     ].join("");
 
@@ -397,28 +398,30 @@
         '</span>',
       '</div>',
       '<div class="pType-sec2-list">',
-        adrRow("Urticaria", true, true),
-        adrRow("Anaphylaxis", true, true),
-        adrRow("Angioedema", true, true),
 
-        adrRow("Maculopapular rash", true, false),
-        adrRow("Fixed drug eruption", true, false),
-        adrRow("AGEP", true, false),
-        adrRow("SJS", true, false),
-        adrRow("TEN", true, false),
-        adrRow("DRESS", true, false),
-        adrRow("Erythema multiforme", true, false),
-        adrRow("Photosensitivity drug eruption", true, false),
-        adrRow("Exfoliative dermatitis", true, false),
-        adrRow("Eczematous drug eruption", true, false),
-        adrRow("Bullous Drug Eruption", true, false),
-        adrRow("Serum sickness", true, false),
-        adrRow("Vasculitis", true, false),
-        adrRow("Hemolytic anemia", true, false),
-        adrRow("Pancytopenia", true, false),
-        adrRow("Neutropenia", true, false),
-        adrRow("Thrombocytopenia", true, false),
-        adrRow("Nephritis", true, false),
+        adrRow("Urticaria", "Urticaria", true, true),
+        adrRow("Anaphylaxis", "Anaphylaxis", true, true),
+        adrRow("Angioedema", "Angioedema", true, true),
+
+        adrRow("Maculopapular rash", "Maculopapular rash", true, false),
+        adrRow("Fixed drug eruption", "Fixed drug eruption", true, false),
+        adrRow("AGEP", "AGEP", true, false),
+        adrRow("SJS", "SJS", true, false),
+        adrRow("TEN", "TEN", true, false),
+        adrRow("DRESS", "DRESS", true, false),
+        adrRow("Erythema multiforme", "Erythema multiforme", true, false),
+        adrRow("Photosensitivity drug eruption", "Photosensitivity drug eruption", true, false),
+        adrRow("Exfoliative dermatitis", "Exfoliative dermatitis", true, false),
+        adrRow("Eczematous drug eruption", "Eczematous drug eruption", true, false),
+        adrRow("Bullous Drug Eruption", "Bullous Drug Eruption", true, false),
+        adrRow("Serum sickness", "Serum sickness", true, false),
+        adrRow("Vasculitis", "Vasculitis", true, false),
+        adrRow("Hemolytic anemia", "Hemolytic anemia", true, false),
+        adrRow("Pancytopenia", "Pancytopenia", true, false),
+        adrRow("Neutropenia", "Neutropenia", true, false),
+        adrRow("Thrombocytopenia", "Thrombocytopenia", true, false),
+        adrRow("Nephritis", "Nephritis", true, false),
+
       '</div>'
     ].join("");
 
@@ -426,15 +429,16 @@
     root.appendChild(sec);
   }
 
-  // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่ / ใช้ชื่อไฟล์ [label]_1.png, [label]_2.png)
-  function adrRow(label, isImmune, isMixed, fileKey) {
+  // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่)
+  function adrRow(label, key, isImmune, isMixed) {
+    var base = key || label;
+    // ใน repo ตอนนี้ไฟล์ชื่อแบบ XXX_1.png.png / XXX_2.png.png
+    var img1 = base + "_1.png.png";
+    var img2 = base + "_2.png.png";
+
     var typeClass = isMixed ? "pType-sec2-type-mixed" : "pType-sec2-type-immune";
     var dotClass  = isMixed ? "pType-dot-mixed" : "pType-dot-immune";
     var typeText  = isMixed ? "Immunologic & Non-immunologic type" : "Immunologic type";
-
-    var base = fileKey || label;          // ถ้าไม่ส่ง key มา ใช้ชื่อ label เลย
-    var src1 = base + "_1.png";           // เช่น Urticaria_1.png
-    var src2 = base + "_2.png";           // เช่น Urticaria_2.png
 
     return [
       '<article class="pType-sec2-card">',
@@ -448,14 +452,14 @@
         '<div class="pType-sec2-images">',
           '<div class="pType-sec2-img-box">',
             '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 1</p>',
-            '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="1">',
-              '<img src="', src1, '" alt="', label, ' - ตัวอย่างที่ 1" />',
+            '<div class="pType-sec2-img-placeholder">',
+              '<img class="pType-sec2-img" src="', img1, '" alt="', label, ' - ตัวอย่างที่ 1" />',
             '</div>',
           '</div>',
           '<div class="pType-sec2-img-box">',
             '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 2</p>',
-            '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="2">',
-              '<img src="', src2, '" alt="', label, ' - ตัวอย่างที่ 2" />',
+            '<div class="pType-sec2-img-placeholder">',
+              '<img class="pType-sec2-img" src="', img2, '" alt="', label, ' - ตัวอย่างที่ 2" />',
             '</div>',
           '</div>',
         '</div>',
