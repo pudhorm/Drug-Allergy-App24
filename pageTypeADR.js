@@ -388,9 +388,6 @@
 
     var html = [
       '<h3 class="pType-sec2-title">🧬 ส่วนที่ 2: Immunologic type &amp; Non-immunologic type</h3>',
-      '<p class="pType-sec2-sub">',
-        'แสดงตัวอย่างภาพประกอบ 2 รูปต่อ 1 ADR (สามารถเพิ่ม/แก้ไขรูปภาพในภายหลังได้)',
-      '</p>',
       '<div class="pType-sec2-badges">',
         '<span class="pType-tag-immune">',
           '<span class="pType-tag-dot pType-dot-immune"></span>',
