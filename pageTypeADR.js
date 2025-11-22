@@ -351,24 +351,21 @@
       '}',
       '.pType-sec2-img-placeholder{',
         'width:100%;',
-        'height:240px;',
         'border-radius:16px;',
-        'border:1px dashed rgba(148,163,184,0.7);',
-        'background:linear-gradient(135deg,#ede9fe,#fdf2ff);',
-        'display:flex;',
-        'align-items:center;',
-        'justify-content:center;',
-        'font-size:.8rem;',
-        'color:#6b21a8;',
-        'text-align:center;',
-        'padding:8px;',
+        'overflow:hidden;',
+        'border:1px solid rgba(148,163,184,0.6);',
+        'background:#0000;',
       '}',
-      '.pType-sec2-img-placeholder span{',
-        'max-width:90%;',
+      '.pType-sec2-img-placeholder img{',
+        'display:block;',
+        'width:100%;',
+        'height:100%;',
+        'max-height:260px;',
+        'object-fit:cover;',
       '}',
       '@media (max-width:900px){',
         '.pType-sec2-img-box{min-width:100%;}',
-        '.pType-sec2-img-placeholder{height:220px;}',
+        '.pType-sec2-img-placeholder img{max-height:none;}',
       '}'
     ].join("");
 
@@ -429,11 +426,16 @@
     root.appendChild(sec);
   }
 
-  // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่)
-  function adrRow(label, isImmune, isMixed) {
+  // แถวของแต่ละ ADR (1 ADR ต่อ 1 แถว, 2 รูปใหญ่ / ใช้ชื่อไฟล์ [label]_1.png, [label]_2.png)
+  function adrRow(label, isImmune, isMixed, fileKey) {
     var typeClass = isMixed ? "pType-sec2-type-mixed" : "pType-sec2-type-immune";
     var dotClass  = isMixed ? "pType-dot-mixed" : "pType-dot-immune";
     var typeText  = isMixed ? "Immunologic & Non-immunologic type" : "Immunologic type";
+
+    var base = fileKey || label;          // ถ้าไม่ส่ง key มา ใช้ชื่อ label เลย
+    var src1 = base + "_1.png";           // เช่น Urticaria_1.png
+    var src2 = base + "_2.png";           // เช่น Urticaria_2.png
+
     return [
       '<article class="pType-sec2-card">',
         '<div class="pType-sec2-header">',
@@ -447,13 +449,13 @@
           '<div class="pType-sec2-img-box">',
             '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 1</p>',
             '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="1">',
-              '<span>พื้นที่สำหรับใส่รูปตัวอย่างที่ 1 ของ ', label, '</span>',
+              '<img src="', src1, '" alt="', label, ' - ตัวอย่างที่ 1" />',
             '</div>',
           '</div>',
           '<div class="pType-sec2-img-box">',
             '<p class="pType-sec2-img-label">ภาพตัวอย่างที่ 2</p>',
             '<div class="pType-sec2-img-placeholder" data-adr="', label, '" data-slot="2">',
-              '<span>พื้นที่สำหรับใส่รูปตัวอย่างที่ 2 ของ ', label, '</span>',
+              '<img src="', src2, '" alt="', label, ' - ตัวอย่างที่ 2" />',
             '</div>',
           '</div>',
         '</div>',
