@@ -17,13 +17,10 @@
           cardHTML("E","Type E — withdrawal (End of use)","typeE"),
           cardHTML("F","Type F — unexpected failure of therapy (Failure)","typeF"),
         '</div>',
-        '<div class="pType-actions">',
-          '<button class="pType-confirm-btn" id="pTypeConfirm">กดยืนยันผล</button>',
-        '</div>',
       '</div>'
     ].join("");
 
-    // ถ้ายังไม่มี toast ในหน้า สร้างให้
+    // ถ้ายังไม่มี toast ในหน้า สร้างให้ (เผื่ออนาคตใช้ต่อ)
     var toast = document.getElementById("pTypeToast");
     if (!toast) {
       toast = document.createElement("div");
@@ -34,28 +31,13 @@
       document.body.appendChild(toast);
     }
 
-    // ---------- hooks ----------
-    var checkboxes = root.querySelectorAll('.pType-option input[type="checkbox"]');
-    var confirmBtn = root.querySelector("#pTypeConfirm");
-
-    var mapCodeToEls = {};
-    Array.prototype.forEach.call(checkboxes, function (cb) {
-      var code = cb.value;
-      mapCodeToEls[code] = {
-        input: cb,
-        card: root.querySelector('.pType-card[data-code="' + code + '"]'),
-        badge: root.querySelector('.pType-card[data-code="' + code + '"] .pType-badge')
-      };
-      cb.addEventListener("change", onChange);
-    });
-
-    // ── popover ข้อความสำหรับ A–F ───────────────────────────────
-    var badgeA = mapCodeToEls["A"] && mapCodeToEls["A"].badge;
-    var badgeB = mapCodeToEls["B"] && mapCodeToEls["B"].badge;
-    var badgeC = mapCodeToEls["C"] && mapCodeToEls["C"].badge;
-    var badgeD = mapCodeToEls["D"] && mapCodeToEls["D"].badge;
-    var badgeE = mapCodeToEls["E"] && mapCodeToEls["E"].badge;
-    var badgeF = mapCodeToEls["F"] && mapCodeToEls["F"].badge;
+    // ---------- popover badge A–F (ไม่มี checkbox / ปุ่มยืนยันแล้ว) ----------
+    var badgeA = root.querySelector('.pType-card[data-code="A"] .pType-badge');
+    var badgeB = root.querySelector('.pType-card[data-code="B"] .pType-badge');
+    var badgeC = root.querySelector('.pType-card[data-code="C"] .pType-badge');
+    var badgeD = root.querySelector('.pType-card[data-code="D"] .pType-badge');
+    var badgeE = root.querySelector('.pType-card[data-code="E"] .pType-badge');
+    var badgeF = root.querySelector('.pType-card[data-code="F"] .pType-badge');
 
     if (badgeA) bindPopover(badgeA,
       '<h5>Type A — Augmented</h5>' +
@@ -159,55 +141,11 @@
       window.addEventListener("resize", hide);
     }
 
-    function onChange() {
-      Object.keys(mapCodeToEls).forEach(function (k) {
-        var input = mapCodeToEls[k].input;
-        var card  = mapCodeToEls[k].card;
-        if (!card || !input) return;
-        if (input.checked) card.classList.add("is-selected");
-        else card.classList.remove("is-selected");
-      });
-    }
-
-    function getChosen() {
-      var arr = [];
-      ["A","B","C","D","E","F"].forEach(function (c) {
-        var el = mapCodeToEls[c];
-        if (el && el.input && el.input.checked) arr.push(c);
-      });
-      return arr;
-    }
-
-    function showToast(kind, msg) {
-      var t = document.getElementById("pTypeToast") || toast;
-      if (!t) { alert(msg); return; } // fallback
-      t.classList.remove("success","danger","show");
-      void t.offsetWidth; // รีสตาร์ท animation
-      t.textContent = msg;
-      t.classList.add(kind === "success" ? "success" : "danger","show");
-      setTimeout(function(){ t.classList.remove("show"); }, 2200);
-    }
-
-    // Logic ของปุ่มยืนยัน
-    confirmBtn.addEventListener("click", function () {
-      var chosen = getChosen();
-      var hasB = chosen.indexOf("B") !== -1;
-      var hasOthers = chosen.some(function (c){ return c !== "B"; });
-
-      if (hasB && !hasOthers) {
-        showToast("success","✅ ได้ Type B — ทำต่อหน้าถัดไปได้");
-      } else if (!chosen.length) {
-        showToast("danger","โปรดเลือกอย่างน้อย 1 ประเภทก่อน");
-      } else {
-        showToast("danger","⚠️ ไม่ใช่ Type B — ไม่ทำต่อหน้าถัดไป");
-      }
-    });
-
     // ---------- ส่วนที่ 2: Immunologic type & Non-immunologic type ----------
     buildTypeSection2(root);
   };
 
-  // HTML การ์ด ส่วนที่ 1
+  // HTML การ์ด ส่วนที่ 1 (ตัด checkbox + label ออกแล้ว)
   function cardHTML(code, title, themeClass) {
     return [
       '<div class="pType-card ' + themeClass + '" data-code="' + code + '">',
@@ -215,17 +153,13 @@
           '<div class="pType-name">' + title + '</div>',
           '<button type="button" class="pType-badge" aria-label="รายละเอียด Type ' + code + '">Type ' + code + '</button>',
         '</div>',
-        '<div class="pType-body">',
-          '<div class="pType-option">',
-            '<input id="pType-' + code + '" type="checkbox" value="' + code + '" />',
-            '<label for="pType-' + code + '">เลือก Type ' + code + '</label>',
-          '</div>',
-        '</div>',
+        '<div class="pType-body"></div>',
       '</div>'
     ].join("");
   }
 
   // ================== ส่วนที่ 2 ==================
+  // ⬇️ ทั้งบล็อกนี้คงเหมือนเดิม ไม่ได้แก้ไขเลย
 
   function ensureSection2Styles() {
     if (document.getElementById("pType-sec2-style")) return;
@@ -349,7 +283,7 @@
         'color:#6b7280;',
         'margin:0 0 4px;',
       '}',
-            '.pType-sec2-img-placeholder{',
+      '.pType-sec2-img-placeholder{',
         'width:100%;',
         'height:260px;',
         'border-radius:16px;',
