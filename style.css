@@ -1657,5 +1657,20 @@ nav.tabs button[data-target="page7"].active {
 .hero-subtitle {
   text-align: center;
 }
+/* --- ปรับขนาด & ระยะห่างตัวหนังสือหัวแอป --- */
+.topbar h1 {
+  font-size: clamp(3rem, 5.2vw, 3.7rem);  /* เหมือนเดิม */
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* บรรทัดล่าง: โรงพยาบาลฯ ให้ใหญ่เท่าบรรทัดบน และชิดกันมากขึ้น */
+.topbar .hospital-badge {
+  display: block;
+  font-size: clamp(3rem, 5.2vw, 3.7rem);  /* = ขนาดเดียวกับ h1 */
+  line-height: 1.05;
+  margin: 0.15rem 0 0;    /* เว้นห่างจากบรรทัดบนแค่นิดเดียว */
+  padding: 0.05rem 0;     /* ลด padding บน-ล่างให้เตี้ยลง */
+}
 
 
