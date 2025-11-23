@@ -1627,5 +1627,33 @@ nav.tabs button[data-target="page7"].active {
 .hero-subtitle {
   text-align: center;
 }
+/* ===== จัดโลโก้ + ข้อความหัวแอปให้อยู่ตรงกลาง ===== */
+
+/* ครอบทุกเคส: header ใหญ่ของหน้า */
+.topbar,
+.hero,
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* จัดให้อยู่กึ่งกลางแนวนอน */
+  justify-content: center; 
+  text-align: center;    /* ข้อความกึ่งกลาง */
+}
+
+/* รูปโลโก้ใน header */
+.topbar img,
+.hero img,
+.hero-logo {
+  display: block;
+  margin: 0 auto 12px;   /* ให้อยู่กลาง + เว้นช่องด้านล่างนิดหน่อย */
+}
+
+/* ข้อความหัวเรื่อง + ชื่อโรงพยาบาล */
+.topbar h1,
+.topbar p,
+.hero-title,
+.hero-subtitle {
+  text-align: center;
+}
 
 
