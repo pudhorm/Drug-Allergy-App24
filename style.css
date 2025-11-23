@@ -1582,5 +1582,17 @@ nav.tabs button[data-target="page7"].active {
   border-color: #f472b6;
   color: #111827;
 }
+/* ปุ่ม "หน้า 7 รายงานเคส" เหลืองอ่อนพาสเทล */
+.tabs button[data-target="page7"] {
+  background: linear-gradient(135deg, #fffbeb, #fef9c3); /* เหลืองอ่อนมาก */
+  border-color: #fef3c7;
+  color: #92400e;
+}
+
+/* ตอนปุ่มหน้า 7 ถูกเลือก (active) */
+.tabs button[data-target="page7"].active {
+  background: linear-gradient(135deg, #fff7ed, #fde68a);
+  box-shadow: 0 10px 22px rgba(245, 158, 11, 0.35);
+}
 
 
