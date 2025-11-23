@@ -1,8 +1,29 @@
-// ===================== page8.js — หน้า 8 ข้อมูลสถิติ =====================
+// ====================== page8.js ======================
 (function () {
   const STORAGE_KEY = "drugAllergyCases_v1";
 
-  // ลำดับ 21 ADR ให้เรียงเหมือนหน้าอื่น ๆ
+  // --------- ดึงเคสจาก localStorage เดียวกับหน้า 7 ---------
+  function loadCases() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      console.warn("page8 loadCases error", e);
+      return [];
+    }
+  }
+
+  // ตัด % ออก เหลือแต่ชื่อ ADR
+  function normalizeAdrName(label) {
+    if (!label) return "";
+    let s = String(label).trim();
+    s = s.replace(/\s*\(.*/, ""); // ตัด "(25%)" ทิ้ง
+    return s;
+  }
+
+  // เรียงชื่อ ADR 21 ตัวให้ตรงกับหน้าอื่น
   const ADR_ORDER = [
     "Urticaria",
     "Anaphylaxis",
@@ -27,150 +48,236 @@
     "Nephritis"
   ];
 
-  // ---------- util: ดึงเคสจาก localStorage (ใช้ร่วมกับหน้า 7) ----------
-  function loadCases() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) {
-      console.warn("page8 loadCases error", e);
-      return [];
-    }
+  function computeStats() {
+    const list = loadCases();
+    const counts = {};
+    ADR_ORDER.forEach((k) => (counts[k] = 0));
+
+    list.forEach((c) => {
+      const label = normalizeAdrName(
+        c.mainAdr ||
+          c.mainAdrLabel ||
+          (c.brain && c.brain.topLabel) ||
+          ""
+      );
+      if (!label) return;
+
+      // ให้แมตช์แบบขึ้นต้นคำ ช่วยเวลา label ตามด้วย %
+      const key = ADR_ORDER.find((k) =>
+        label.toLowerCase().startsWith(k.toLowerCase())
+      );
+      if (!key) return;
+      counts[key] += 1;
+    });
+
+    return { counts, totalCases: list.length };
   }
 
-  // mainAdr ที่เก็บในหน้า 7 จะมีพวก (25%) ต่อท้าย → แปลงให้เหลือชื่อสั้น ๆ
-  function normalizeAdrLabel(label) {
-    if (!label) return "";
-    let t = String(label).trim();
-    // ตัด (xx%) ทิ้ง
-    t = t.replace(/\(.*?\)/g, "").trim();
-    // จับคู่ด้วยชื่อใน ADR_ORDER แบบขึ้นต้นเหมือนกัน
-    const lower = t.toLowerCase();
-    for (let i = 0; i < ADR_ORDER.length; i++) {
-      const name = ADR_ORDER[i];
-      if (lower.startsWith(name.toLowerCase())) {
-        return name;
+  // --------- render หน้า 8 ---------
+  function renderPage8() {
+    const root = document.getElementById("page8");
+    if (!root) return;
+
+    const stats = computeStats();
+    const counts = stats.counts;
+    const total = stats.totalCases;
+
+    injectStyles();
+
+    root.innerHTML = [
+      '<div class="p8-wrapper">',
+        '<div class="p8-header">',
+          '<h2 class="p8-title">📊 หน้า 8 ข้อมูลสถิติ — ชนิด ADR หลัก</h2>',
+          '<p class="p8-sub">สถิติจากเคสที่บันทึกในหน้า 7 รายงานเคส (รวมทั้งหมด ',
+            total,
+            " เคส)</p>",
+        "</div>",
+        '<div class="p8-chart" id="p8Chart"></div>',
+        '<div id="p8Tooltip" class="p8-tooltip" aria-hidden="true"></div>',
+      "</div>"
+    ].join("");
+
+    const chart = document.getElementById("p8Chart");
+
+    // หา max เอาไป scale ความยาวแท่ง
+    let max = 0;
+    ADR_ORDER.forEach((k) => {
+      if (counts[k] > max) max = counts[k];
+    });
+    if (max === 0) max = 1;
+
+    ADR_ORDER.forEach((name, idx) => {
+      const count = counts[name] || 0;
+      const ratio = count > 0 ? count / max : 0;
+      const widthPercent = count > 0 ? 10 + ratio * 80 : 0; // non-zero อย่างน้อย 10%
+
+      const row = document.createElement("div");
+      row.className = "p8-row";
+
+      const label = document.createElement("div");
+      label.className = "p8-row-label";
+      label.textContent = name;
+
+      const area = document.createElement("div");
+      area.className = "p8-row-area";
+
+      const bg = document.createElement("div");
+      bg.className = "p8-row-bg";
+      area.appendChild(bg);
+
+      if (count > 0) {
+        const bar = document.createElement("button");
+        bar.type = "button";
+        bar.className = "p8-bar p8-bar-" + (idx % 6);
+        bar.style.width = widthPercent + "%";
+        bar.setAttribute("data-name", name);
+        bar.setAttribute("data-count", String(count));
+        bar.textContent = name + " — " + count + " เคส";
+        area.appendChild(bar);
+      } else {
+        const zero = document.createElement("div");
+        zero.className = "p8-zero";
+        zero.textContent = "0 เคส";
+        area.appendChild(zero);
       }
-    }
-    return t;
+
+      row.appendChild(label);
+      row.appendChild(area);
+      chart.appendChild(row);
+    });
+
+    setupTooltips();
   }
 
-  // ---------- ใส่ style เฉพาะของหน้า 8 ----------
-  function ensureStyles() {
+  // --------- CSS ของหน้า 8 (กราฟแท่งพาสเทล + tooltip) ---------
+  function injectStyles() {
     if (document.getElementById("p8-style")) return;
     const css = [
       ".p8-wrapper{",
-        "padding:18px 14px 26px;",
+        "padding:18px 18px 32px;",
         "display:flex;",
         "flex-direction:column;",
-        "gap:18px;",
+        "gap:16px;",
       "}",
-      ".p8-card{",
-        "border-radius:20px;",
-        "background:#ffffff;",
-        "border:1px solid #e5e7eb;",
-        "box-shadow:0 18px 40px rgba(148,163,184,0.35);",
-        "padding:16px 18px 20px;",
-      "}",
+      ".p8-header{margin-bottom:4px;}",
       ".p8-title{",
-        "font-size:1.15rem;",
+        "margin:0;",
+        "font-size:1.25rem;",
         "font-weight:800;",
-        "color:#4c1d95;",
-        "margin:0 0 4px;",
-      "}",
-      ".p8-sub{",
-        "font-size:.88rem;",
-        "color:#6b7280;",
-        "margin:0 0 10px;",
-      "}",
-      ".p8-legend{",
+        "color:#312e81;",
         "display:flex;",
-        "flex-wrap:wrap;",
-        "gap:8px;",
-        "margin-bottom:6px;",
-        "font-size:.78rem;",
-      "}",
-      ".p8-legend-item{",
-        "display:inline-flex;",
         "align-items:center;",
         "gap:6px;",
-        "padding:3px 9px;",
-        "border-radius:999px;",
-        "background:#f9fafb;",
-        "border:1px solid #e5e7eb;",
+      "}",
+      ".p8-sub{",
+        "margin:4px 0 0;",
+        "font-size:.9rem;",
         "color:#4b5563;",
       "}",
-      ".p8-dot{",
-        "width:10px;height:10px;border-radius:999px;",
-      "}",
       ".p8-chart{",
-        "margin-top:6px;",
+        "margin-top:10px;",
         "display:flex;",
         "flex-direction:column;",
         "gap:10px;",
       "}",
       ".p8-row{",
-        "display:flex;",
+        "display:grid;",
+        "grid-template-columns:minmax(120px,190px) 1fr;",
         "align-items:center;",
         "gap:10px;",
+        "font-size:.9rem;",
       "}",
-      ".p8-label{",
-        "width:210px;",
-        "min-width:210px;",
-        "font-size:.84rem;",
-        "color:#374151;",
-        "white-space:nowrap;",
-        "overflow:hidden;",
-        "text-overflow:ellipsis;",
+      ".p8-row-label{",
+        "font-weight:600;",
+        "color:#111827;",
       "}",
-      ".p8-bar-wrap{",
-        "flex:1 1 auto;",
-        "background:linear-gradient(90deg,#f9fafb,#f3e8ff);",
-        "border-radius:999px;",
-        "overflow:hidden;",
+      ".p8-row-area{",
         "position:relative;",
-        "height:36px;",
+        "height:34px;",
+      "}",
+      ".p8-row-bg{",
+        "position:absolute;",
+        "inset:0;",
+        "border-radius:999px;",
+        "background:linear-gradient(90deg,#faf5ff,#fdf2ff);",
+        "opacity:.9;",
       "}",
       ".p8-bar{",
-        "height:100%;",
-        "border-radius:999px;",
         "position:relative;",
+        "z-index:1;",
+        "height:100%;",
+        "border:none;",
+        "border-radius:999px;",
+        "cursor:pointer;",
         "display:flex;",
         "align-items:center;",
-        "padding-left:10px;",
-        "font-size:.8rem;",
+        "justify-content:flex-end;",
+        "padding:0 14px;",
+        "font-size:.83rem;",
         "font-weight:600;",
-        "color:#4b5563;",
-        "cursor:default;",
-        "transition:transform .08s ease, box-shadow .08s ease;",
+        "color:#111827;",
+        "white-space:nowrap;",
+        "background:linear-gradient(90deg,#bfdbfe,#a5b4fc);",
+        "box-shadow:0 10px 30px rgba(129,140,248,.45);",
+        "transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease;",
       "}",
       ".p8-bar:hover{",
         "transform:translateY(-1px);",
-        "box-shadow:0 8px 18px rgba(129,140,248,0.45);",
+        "box-shadow:0 14px 36px rgba(129,140,248,.6);",
+        "opacity:.98;",
       "}",
-      ".p8-bar::after{",
-        "content:attr(data-tooltip);",
+      ".p8-bar-1{",
+        "background:linear-gradient(90deg,#fcd5ce,#fda4af);",
+        "box-shadow:0 10px 30px rgba(248,113,113,.45);",
+      "}",
+      ".p8-bar-2{",
+        "background:linear-gradient(90deg,#bbf7d0,#6ee7b7);",
+        "box-shadow:0 10px 30px rgba(34,197,94,.4);",
+      "}",
+      ".p8-bar-3{",
+        "background:linear-gradient(90deg,#fee2e2,#fed7aa);",
+        "box-shadow:0 10px 30px rgba(248,171,104,.4);",
+      "}",
+      ".p8-bar-4{",
+        "background:linear-gradient(90deg,#ddd6fe,#f9a8d4);",
+        "box-shadow:0 10px 30px rgba(192,132,252,.45);",
+      "}",
+      ".p8-bar-5{",
+        "background:linear-gradient(90deg,#bae6fd,#a7f3d0);",
+        "box-shadow:0 10px 30px rgba(59,130,246,.35);",
+      "}",
+      ".p8-zero{",
+        "position:relative;",
+        "z-index:1;",
+        "height:100%;",
+        "display:flex;",
+        "align-items:center;",
+        "padding-left:12px;",
+        "font-size:.8rem;",
+        "color:#9ca3af;",
+      "}",
+      ".p8-tooltip{",
         "position:absolute;",
-        "right:10px;",
-        "top:50%;",
-        "transform:translateY(-50%);",
+        "z-index:9999;",
+        "pointer-events:none;",
+        "padding:6px 10px;",
+        "border-radius:999px;",
+        "background:rgba(31,41,55,.94);",
+        "color:#f9fafb;",
         "font-size:.78rem;",
-        "color:#111827;",
+        "box-shadow:0 10px 30px rgba(15,23,42,.55);",
+        "opacity:0;",
+        "transform:translateY(4px);",
+        "transition:opacity .12s ease,transform .12s ease;",
       "}",
-      ".p8-empty{",
-        "margin-top:8px;",
-        "padding:14px 12px;",
-        "border-radius:14px;",
-        "background:#f9fafb;",
-        "border:1px dashed #e5e7eb;",
-        "font-size:.86rem;",
-        "color:#6b7280;",
-        "text-align:center;",
+      ".p8-tooltip.show{",
+        "opacity:1;",
+        "transform:translateY(0);",
       "}",
-      "@media(max-width:900px){",
-        ".p8-label{width:160px;min-width:160px;}", 
+      "@media (max-width:640px){",
+        ".p8-row{grid-template-columns:minmax(80px,120px) 1fr;}",
+        ".p8-row-area{height:32px;}",
+        ".p8-bar{font-size:.78rem;padding:0 10px;}",
       "}"
     ].join("");
 
@@ -180,96 +287,50 @@
     document.head.appendChild(tag);
   }
 
-  // พาเลตสีพาสเทลสำหรับแท่งกราฟ
-  const BAR_COLORS = [
-    "linear-gradient(90deg,#bfdbfe,#a5b4fc)",
-    "linear-gradient(90deg,#fed7e2,#f9a8d4)",
-    "linear-gradient(90deg,#bbf7d0,#6ee7b7)",
-    "linear-gradient(90deg,#fee2e2,#fecaca)",
-    "linear-gradient(90deg,#ddd6fe,#f5d0fe)",
-    "linear-gradient(90deg,#bae6fd,#e0f2fe)",
-    "linear-gradient(90deg,#fef9c3,#fee2b3)",
-    "linear-gradient(90deg,#e0f2fe,#f5d0fe)",
-  ];
+  // --------- tooltip เวลาเอาเมาส์ชี้แท่ง ---------
+  function setupTooltips() {
+    const tooltip = document.getElementById("p8Tooltip");
+    if (!tooltip) return;
 
-  function pickColor(idx) {
-    return BAR_COLORS[idx % BAR_COLORS.length];
-  }
+    function position(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = rect.left + rect.width / 2 + window.scrollX;
+      const y = rect.top - 8 + window.scrollY;
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
 
-  // ---------- render ----------
-  function renderPage8() {
-    const root = document.getElementById("p8Root");
-    if (!root) return;
+      let left = x - tw / 2;
+      const minLeft = 8 + window.scrollX;
+      const maxLeft =
+        window.scrollX + document.documentElement.clientWidth - tw - 8;
 
-    ensureStyles();
+      if (left < minLeft) left = minLeft;
+      if (left > maxLeft) left = maxLeft;
 
-    const cases = loadCases();
+      tooltip.style.left = left + "px";
+      tooltip.style.top = y - th + "px";
+    }
 
-    // นับจำนวนเคสต่อ ADR
-    const counts = {};
-    ADR_ORDER.forEach(name => { counts[name] = 0; });
+    function show(e) {
+      const target = e.currentTarget;
+      const name = target.getAttribute("data-name") || "";
+      const count = target.getAttribute("data-count") || "0";
+      tooltip.textContent = name + " — " + count + " เคส";
+      tooltip.classList.add("show");
+      position(e);
+    }
 
-    cases.forEach(c => {
-      const raw = c.mainAdr || c.mainAdrLabel || (c.brain && c.brain.topLabel) || "";
-      const norm = normalizeAdrLabel(raw);
-      if (counts.hasOwnProperty(norm)) {
-        counts[norm] += 1;
-      }
+    function hide() {
+      tooltip.classList.remove("show");
+    }
+
+    document.querySelectorAll(".p8-bar").forEach((bar) => {
+      bar.addEventListener("mouseenter", show);
+      bar.addEventListener("mouseleave", hide);
+      bar.addEventListener("mousemove", position);
+      bar.addEventListener("focus", show);
+      bar.addEventListener("blur", hide);
     });
-
-    const max = Math.max(
-      1,
-      ...ADR_ORDER.map(name => counts[name] || 0)
-    );
-
-    let rowsHtml = "";
-    ADR_ORDER.forEach((name, idx) => {
-      const value = counts[name] || 0;
-      const percent = (value / max) * 100;
-      const width = value === 0 ? 4 : Math.max(12, percent); // ให้แท่งสั้นสุดยังมองเห็น
-
-      const tooltip = name + " — " + value + " เคส";
-
-      rowsHtml += [
-        '<div class="p8-row">',
-          '<div class="p8-label">', name, "</div>",
-          '<div class="p8-bar-wrap">',
-            '<div class="p8-bar"',
-              ' style="width:', width, '%; background:', pickColor(idx), ';"',
-              ' data-tooltip="', tooltip, '">',
-              value > 0 ? (value + " เคส") : "0 เคส",
-            "</div>",
-          "</div>",
-        "</div>"
-      ].join("");
-    });
-
-    const totalCases = cases.length;
-
-    root.innerHTML = [
-      '<div class="p8-wrapper">',
-        '<div class="p8-card">',
-          '<h2 class="p8-title">📊 หน้า 8 ข้อมูลสถิติ — ชนิด ADR หลัก</h2>',
-          '<p class="p8-sub">',
-            "สถิติจากเคสที่บันทึกในหน้า 7 รายงานเคส (รวมทั้งหมด ",
-            totalCases,
-            " เคส)",
-          "</p>",
-          '<div class="p8-legend">',
-            '<span class="p8-legend-item"><span class="p8-dot" style="background:',
-              BAR_COLORS[0],
-            ';"></span> 1 แท่ง = 1 ชนิด ADR</span>',
-            '<span class="p8-legend-item">เลื่อนเมาส์ไปที่แท่งกราฟเพื่อดูรายละเอียดจำนวนเคส</span>',
-          "</div>",
-          '<div class="p8-chart">',
-            rowsHtml,
-          "</div>",
-          (totalCases === 0
-            ? '<div class="p8-empty">ยังไม่มีเคสในระบบ กรุณาบันทึกเคสจากหน้า 6 และหน้า 7 ก่อน จึงจะเห็นกราฟสถิติ</div>'
-            : ""),
-        "</div>",
-      "</div>"
-    ].join("");
   }
 
   // export
