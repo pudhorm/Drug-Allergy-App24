@@ -69,6 +69,8 @@
     <button data-target="page6">หน้า 6 ผลการประเมิน</button>
     <!-- ⬇️ เพิ่มปุ่มหน้า 7 รายงานเคส -->
     <button data-target="page7" class="tab-report">หน้า 7 รายงานเคส</button>
+    <!-- ⬇️ เพิ่มอันนี้ -->
+  <button data-target="page8">หน้า 8 ข้อมูลสถิติ</button>
 
   </nav>
 
@@ -142,6 +144,11 @@
     </section>
   </main>
 
+  <!-- ⬇️ หน้า 8: ข้อมูลสถิติ -->
+<section id="page8" class="page">
+  <div id="p8Root"></div>
+</section>
+
   <!-- ต้องมาก่อนทุกไฟล์อื่น -->
   <script src="ephemeral-mode.js"></script>
   <!-- โหลดไฟล์โค้ดก่อน แล้วค่อยเขียนสคริปต์หลัก -->
@@ -172,6 +179,11 @@
   <!-- ⬇️ เพิ่มไฟล์หน้า 7 รายงานเคส -->
   <script src="page7.js"></script>
 
+    <!-- ⬇️ โหลด Chart.js สำหรับกราฟ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ⬇️ หน้า 8 -->
+  <script src="page8.js"></script>
   <script>
     // ปุ่มเมนูทุกปุ่ม
     const tabBtns = document.querySelectorAll(".tabs button");
