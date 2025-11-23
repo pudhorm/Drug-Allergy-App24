@@ -1,11 +1,9 @@
-// ====================== page8.js — หน้า 8 ข้อมูลสถิติ ======================
+// ===================== page8.js — หน้า 8 ข้อมูลสถิติ =====================
 (function () {
-  // ใช้ key เดียวกับหน้า 7
-  var STORAGE_KEY = "drugAllergyCases_v1";
-  var chartInstance = null;
+  const STORAGE_KEY = "drugAllergyCases_v1";
 
-  // 21 ADR หลัก (ชื่อให้ตรงกับที่บันทึกใน mainAdrLabel / mainAdr / brain.topLabel)
-  var ADR_LABELS = [
+  // ลำดับ 21 ADR ให้เรียงเหมือนหน้าอื่น ๆ
+  const ADR_ORDER = [
     "Urticaria",
     "Anaphylaxis",
     "Angioedema",
@@ -29,203 +27,251 @@
     "Nephritis"
   ];
 
+  // ---------- util: ดึงเคสจาก localStorage (ใช้ร่วมกับหน้า 7) ----------
   function loadCases() {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
-      var arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      return arr;
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
     } catch (e) {
       console.warn("page8 loadCases error", e);
       return [];
     }
   }
 
-  // ดึงชื่อ ADR หลักจากเคส แล้วตัด % ทิ้ง
-  function getMainAdrName(c) {
-    var raw =
-      (c && (c.mainAdrLabel || c.mainAdr)) ||
-      (c && c.brain && c.brain.topLabel) ||
-      "";
-
-    raw = String(raw).trim();
-    if (!raw) return "";
-
-    // ตัดส่วนที่เป็น (70%) หรือ (70.5 %) ออก
-    var m = raw.match(/^(.+?)(\s*\([\d.,]+\s*%?\))?$/);
-    var base = m ? m[1].trim() : raw;
-    return base;
-  }
-
-  function buildCounts() {
-    var cases = loadCases();
-    var counts = {};
-    ADR_LABELS.forEach(function (name) {
-      counts[name] = 0;
-    });
-
-    cases.forEach(function (c) {
-      var name = getMainAdrName(c);
-      if (!name) return;
-      if (counts.hasOwnProperty(name)) {
-        counts[name] += 1;
+  // mainAdr ที่เก็บในหน้า 7 จะมีพวก (25%) ต่อท้าย → แปลงให้เหลือชื่อสั้น ๆ
+  function normalizeAdrLabel(label) {
+    if (!label) return "";
+    let t = String(label).trim();
+    // ตัด (xx%) ทิ้ง
+    t = t.replace(/\(.*?\)/g, "").trim();
+    // จับคู่ด้วยชื่อใน ADR_ORDER แบบขึ้นต้นเหมือนกัน
+    const lower = t.toLowerCase();
+    for (let i = 0; i < ADR_ORDER.length; i++) {
+      const name = ADR_ORDER[i];
+      if (lower.startsWith(name.toLowerCase())) {
+        return name;
       }
-      // ถ้าอยากมีกลุ่ม Others ค่อยเพิ่ม logic ทีหลัง
-    });
-
-    // สร้าง array สำหรับกราฟ (เอาแค่ ADR ที่เคส ≥ 0 ทั้ง 21 ตัว)
-    var labels = [];
-    var values = [];
-    ADR_LABELS.forEach(function (name) {
-      labels.push(name);
-      values.push(counts[name] || 0);
-    });
-
-    return { labels: labels, values: values, totalCases: cases.length };
+    }
+    return t;
   }
 
-  function createPastelColors(n) {
-    var colors = [];
-    var baseHues = [260, 280, 300, 320, 340, 200, 220]; // โทนม่วง-ชมพู-ฟ้าอ่อน
-    for (var i = 0; i < n; i++) {
-      var h = baseHues[i % baseHues.length];
-      var s = 70;
-      var l = 80;
-      // ใช้ HSL → rgba แบบง่าย ๆ โดยให้ browser แปลง
-      colors.push("hsl(" + h + " " + s + "% " + l + "%)");
-    }
-    return colors;
+  // ---------- ใส่ style เฉพาะของหน้า 8 ----------
+  function ensureStyles() {
+    if (document.getElementById("p8-style")) return;
+    const css = [
+      ".p8-wrapper{",
+        "padding:18px 14px 26px;",
+        "display:flex;",
+        "flex-direction:column;",
+        "gap:18px;",
+      "}",
+      ".p8-card{",
+        "border-radius:20px;",
+        "background:#ffffff;",
+        "border:1px solid #e5e7eb;",
+        "box-shadow:0 18px 40px rgba(148,163,184,0.35);",
+        "padding:16px 18px 20px;",
+      "}",
+      ".p8-title{",
+        "font-size:1.15rem;",
+        "font-weight:800;",
+        "color:#4c1d95;",
+        "margin:0 0 4px;",
+      "}",
+      ".p8-sub{",
+        "font-size:.88rem;",
+        "color:#6b7280;",
+        "margin:0 0 10px;",
+      "}",
+      ".p8-legend{",
+        "display:flex;",
+        "flex-wrap:wrap;",
+        "gap:8px;",
+        "margin-bottom:6px;",
+        "font-size:.78rem;",
+      "}",
+      ".p8-legend-item{",
+        "display:inline-flex;",
+        "align-items:center;",
+        "gap:6px;",
+        "padding:3px 9px;",
+        "border-radius:999px;",
+        "background:#f9fafb;",
+        "border:1px solid #e5e7eb;",
+        "color:#4b5563;",
+      "}",
+      ".p8-dot{",
+        "width:10px;height:10px;border-radius:999px;",
+      "}",
+      ".p8-chart{",
+        "margin-top:6px;",
+        "display:flex;",
+        "flex-direction:column;",
+        "gap:10px;",
+      "}",
+      ".p8-row{",
+        "display:flex;",
+        "align-items:center;",
+        "gap:10px;",
+      "}",
+      ".p8-label{",
+        "width:210px;",
+        "min-width:210px;",
+        "font-size:.84rem;",
+        "color:#374151;",
+        "white-space:nowrap;",
+        "overflow:hidden;",
+        "text-overflow:ellipsis;",
+      "}",
+      ".p8-bar-wrap{",
+        "flex:1 1 auto;",
+        "background:linear-gradient(90deg,#f9fafb,#f3e8ff);",
+        "border-radius:999px;",
+        "overflow:hidden;",
+        "position:relative;",
+        "height:36px;",
+      "}",
+      ".p8-bar{",
+        "height:100%;",
+        "border-radius:999px;",
+        "position:relative;",
+        "display:flex;",
+        "align-items:center;",
+        "padding-left:10px;",
+        "font-size:.8rem;",
+        "font-weight:600;",
+        "color:#4b5563;",
+        "cursor:default;",
+        "transition:transform .08s ease, box-shadow .08s ease;",
+      "}",
+      ".p8-bar:hover{",
+        "transform:translateY(-1px);",
+        "box-shadow:0 8px 18px rgba(129,140,248,0.45);",
+      "}",
+      ".p8-bar::after{",
+        "content:attr(data-tooltip);",
+        "position:absolute;",
+        "right:10px;",
+        "top:50%;",
+        "transform:translateY(-50%);",
+        "font-size:.78rem;",
+        "color:#111827;",
+      "}",
+      ".p8-empty{",
+        "margin-top:8px;",
+        "padding:14px 12px;",
+        "border-radius:14px;",
+        "background:#f9fafb;",
+        "border:1px dashed #e5e7eb;",
+        "font-size:.86rem;",
+        "color:#6b7280;",
+        "text-align:center;",
+      "}",
+      "@media(max-width:900px){",
+        ".p8-label{width:160px;min-width:160px;}", 
+      "}"
+    ].join("");
+
+    const tag = document.createElement("style");
+    tag.id = "p8-style";
+    tag.textContent = css;
+    document.head.appendChild(tag);
   }
 
-  // วาดกราฟ
-  function renderChart(ctx, data) {
-    var labels = data.labels;
-    var values = data.values;
-    var total = data.totalCases;
+  // พาเลตสีพาสเทลสำหรับแท่งกราฟ
+  const BAR_COLORS = [
+    "linear-gradient(90deg,#bfdbfe,#a5b4fc)",
+    "linear-gradient(90deg,#fed7e2,#f9a8d4)",
+    "linear-gradient(90deg,#bbf7d0,#6ee7b7)",
+    "linear-gradient(90deg,#fee2e2,#fecaca)",
+    "linear-gradient(90deg,#ddd6fe,#f5d0fe)",
+    "linear-gradient(90deg,#bae6fd,#e0f2fe)",
+    "linear-gradient(90deg,#fef9c3,#fee2b3)",
+    "linear-gradient(90deg,#e0f2fe,#f5d0fe)",
+  ];
 
-    var bgColors = createPastelColors(labels.length);
+  function pickColor(idx) {
+    return BAR_COLORS[idx % BAR_COLORS.length];
+  }
 
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
+  // ---------- render ----------
+  function renderPage8() {
+    const root = document.getElementById("p8Root");
+    if (!root) return;
 
-    chartInstance = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: "จำนวนเคส",
-            data: values,
-            backgroundColor: bgColors,
-            borderRadius: 12,
-            borderSkipped: false,
-            barThickness: 30, // แท่งใหญ่ขึ้น
-            maxBarThickness: 40
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              title: function (items) {
-                if (!items.length) return "";
-                var label = items[0].label || "";
-                return label;
-              },
-              label: function (ctx) {
-                var val = ctx.parsed.y || 0;
-                return "พบ " + val + " เคส";
-              },
-              footer: function () {
-                return "";
-              }
-            }
-          },
-          title: {
-            display: true,
-            text: "สถิติชนิด ADR หลัก (รวม " + total + " เคส)",
-            font: {
-              size: 16,
-              weight: "bold"
-            },
-            color: "#4c1d95"
-          }
-        },
-        scales: {
-          x: {
-            ticks: {
-              color: "#4b5563",
-              maxRotation: 60,
-              minRotation: 45,
-              font: {
-                size: 10
-              }
-            },
-            grid: {
-              display: false
-            }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: {
-              precision: 0,
-              color: "#6b7280"
-            },
-            grid: {
-              color: "rgba(156,163,175,0.2)"
-            }
-          }
-        }
+    ensureStyles();
+
+    const cases = loadCases();
+
+    // นับจำนวนเคสต่อ ADR
+    const counts = {};
+    ADR_ORDER.forEach(name => { counts[name] = 0; });
+
+    cases.forEach(c => {
+      const raw = c.mainAdr || c.mainAdrLabel || (c.brain && c.brain.topLabel) || "";
+      const norm = normalizeAdrLabel(raw);
+      if (counts.hasOwnProperty(norm)) {
+        counts[norm] += 1;
       }
     });
-  }
 
-  // สร้าง layout หน้า 8
-  function buildLayout(root) {
+    const max = Math.max(
+      1,
+      ...ADR_ORDER.map(name => counts[name] || 0)
+    );
+
+    let rowsHtml = "";
+    ADR_ORDER.forEach((name, idx) => {
+      const value = counts[name] || 0;
+      const percent = (value / max) * 100;
+      const width = value === 0 ? 4 : Math.max(12, percent); // ให้แท่งสั้นสุดยังมองเห็น
+
+      const tooltip = name + " — " + value + " เคส";
+
+      rowsHtml += [
+        '<div class="p8-row">',
+          '<div class="p8-label">', name, "</div>",
+          '<div class="p8-bar-wrap">',
+            '<div class="p8-bar"',
+              ' style="width:', width, '%; background:', pickColor(idx), ';"',
+              ' data-tooltip="', tooltip, '">',
+              value > 0 ? (value + " เคส") : "0 เคส",
+            "</div>",
+          "</div>",
+        "</div>"
+      ].join("");
+    });
+
+    const totalCases = cases.length;
+
     root.innerHTML = [
-      '<div class="p8-wrapper" style="padding:14px 10px 22px;">',
-        '<h2 style="margin:0 0 8px;font-size:1.2rem;font-weight:800;color:#4c1d95;">📊 หน้า 8 ข้อมูลสถิติชนิด ADR หลัก</h2>',
-        '<p style="margin:0 0 12px;font-size:.9rem;color:#6b21a8;">',
-          'แสดงจำนวนเคสในแต่ละชนิด ADR หลักจากข้อมูลที่บันทึกไว้ในหน้า 7 รายงานเคส',
-        '</p>',
-        '<div style="border-radius:18px;border:1px solid #e5e7eb;background:linear-gradient(180deg,#faf5ff,#fefce8);box-shadow:0 16px 40px rgba(148,163,184,0.35);padding:12px 12px 16px;">',
-          '<div style="height:420px;">',
-            '<canvas id="p8Chart"></canvas>',
-          '</div>',
-          '<p id="p8NoData" style="margin-top:8px;font-size:.85rem;color:#9ca3af;display:none;">ยังไม่มีเคสที่บันทึกไว้จากหน้า 7</p>',
-        '</div>',
-      '</div>'
+      '<div class="p8-wrapper">',
+        '<div class="p8-card">',
+          '<h2 class="p8-title">📊 หน้า 8 ข้อมูลสถิติ — ชนิด ADR หลัก</h2>',
+          '<p class="p8-sub">',
+            "สถิติจากเคสที่บันทึกในหน้า 7 รายงานเคส (รวมทั้งหมด ",
+            totalCases,
+            " เคส)",
+          "</p>",
+          '<div class="p8-legend">',
+            '<span class="p8-legend-item"><span class="p8-dot" style="background:',
+              BAR_COLORS[0],
+            ';"></span> 1 แท่ง = 1 ชนิด ADR</span>',
+            '<span class="p8-legend-item">เลื่อนเมาส์ไปที่แท่งกราฟเพื่อดูรายละเอียดจำนวนเคส</span>',
+          "</div>",
+          '<div class="p8-chart">',
+            rowsHtml,
+          "</div>",
+          (totalCases === 0
+            ? '<div class="p8-empty">ยังไม่มีเคสในระบบ กรุณาบันทึกเคสจากหน้า 6 และหน้า 7 ก่อน จึงจะเห็นกราฟสถิติ</div>'
+            : ""),
+        "</div>",
+      "</div>"
     ].join("");
   }
 
-  // renderer สำหรับ router
-  window.renderPage8 = function () {
-    var root = document.getElementById("p8Root");
-    if (!root) return;
-
-    buildLayout(root);
-
-    var info = buildCounts();
-    var canvas = document.getElementById("p8Chart");
-    var noData = document.getElementById("p8NoData");
-
-    if (!canvas) return;
-    var ctx = canvas.getContext("2d");
-
-    var hasAny = info.values.some(function (v) { return v > 0; });
-
-    if (!hasAny) {
-      if (noData) noData.style.display = "block";
-    }
-
-    renderChart(ctx, info);
-  };
+  // export
+  window.renderPage8 = renderPage8;
 })();
