@@ -1604,5 +1604,28 @@ nav.tabs button[data-target="page7"].active {
   border-color: #fde68a !important;
   color: #92400e !important;
 }
+/* ===== Fix header center logo + text ===== */
+.hero-inner {
+  /* บังคับให้โลโก้ + ข้อความเรียงแนวตั้งและอยู่กลาง */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;      /* ข้อความอยู่กลาง */
+}
+
+/* กล่อง/รูปโลโก้ตรงกลางพอดี */
+.hero-logo,
+.hero-logo img {
+  display: block;
+  margin: 0 auto 12px;     /* ตรงกลาง และมีช่องว่างใต้โลโก้นิดหน่อย */
+}
+
+/* ให้หัวข้อกับชื่อ รพ. กลางเป๊ะ */
+.hero-title,
+.hero-subtitle {
+  text-align: center;
+}
 
 
