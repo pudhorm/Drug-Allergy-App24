@@ -16,7 +16,7 @@ body {
 .topbar {
   position: relative;
   background: radial-gradient(circle at 0% 0%, #ffe4f3 0, #fdf2ff 20%, #e0f2fe 45%, #e0f7fa 65%, #ffe4e6 80%, #faf5ff 100%);
-  background-attachment: fixed;
+
 }
   color: #fff;
   padding: 2.4rem 1.5rem 3.1rem;
