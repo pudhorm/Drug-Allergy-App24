@@ -1594,5 +1594,13 @@ nav.tabs button[data-target="page7"].active {
   background: linear-gradient(135deg, #fff7ed, #fde68a);
   box-shadow: 0 10px 22px rgba(245, 158, 11, 0.35);
 }
+/* ปุ่มหน้า 7 รายงานเคส — เหลืองอ่อนพาสเทล */
+.tabs button[data-target="page7"],
+.tabs button[data-target="page7"].active,
+.tabs button[data-target="page7"]:hover {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7) !important; /* เหลืองอ่อนมาก */
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
 
 
