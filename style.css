@@ -1569,5 +1569,18 @@ nav.tabs button[data-target="page7"].active {
   color: #78350f;
   border-color: #fbbf24;
 }
+/* ปุ่มหน้า 8 ข้อมูลสถิติ ให้เป็นชมพูอ่อน */
+.tabs button[data-target="page8"] {
+  background: linear-gradient(135deg, #ffe4f5, #fbcfe8); /* ชมพูอ่อนแบบไล่สี */
+  border-color: #f9a8d4;
+  color: #111827;
+}
+
+/* ตอนอยู่สถานะ active (ถูกเลือกอยู่) ก็ให้เป็นชมพูอ่อนเหมือนกัน */
+.tabs button[data-target="page8"].active {
+  background: linear-gradient(135deg, #fbcfe8, #f9a8d4);
+  border-color: #f472b6;
+  color: #111827;
+}
 
 
