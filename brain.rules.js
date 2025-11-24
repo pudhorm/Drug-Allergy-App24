@@ -1,4 +1,3 @@
-```js
 // ===================== brain.rules.js (REPLACE WHOLE FILE) =====================
 // โหมด C: "แมตช์ตรงตัว" ระหว่างสิ่งที่ผู้ใช้ติ๊กในหน้า 1–3 กับเกณฑ์ของแต่ละ ADR
 // - คิดเฉพาะข้อที่ติ๊กจริง
@@ -1430,7 +1429,7 @@
         {
           id: "lab",
           label:
-            "ผลตรวจ Lab: ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L / Cr เพิ่มขึ้น / protein+ / SpO₂ <94% / EKG ผิดปกติ / Troponin I/T > ULN",
+            "ผลตรวจ Lab: ALT/AST ≥ 2X ULN หรือ ≥ 40 U/L / Cr เพิ่มขึ้น / protein+ / SpO₂ <94% / EKG ผิดปกติ / Troponin ผิดปกติ",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -1462,7 +1461,7 @@
               details.push("EKG ผิดปกติ");
             }
             if (hasLabToken(c, ["tropi_gt004", "tropt_gt001_003"])) {
-              let txt = "Troponin I/T > ULN";
+              let txt = "Troponin ผิดปกติ";
               if (Number.isFinite(c.troponin)) txt += ` (${c.troponin})`;
               details.push(txt);
             }
@@ -2033,7 +2032,7 @@
         },
         {
           id: "lab1",
-          label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
+          label: "ผลตรวจ Lab: protein+ / C3<90, C4<10",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -2043,7 +2042,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 และ/หรือ C4 < LLN";
+              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
@@ -2173,7 +2172,7 @@
         },
         {
           id: "lab2",
-          label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
+          label: "ผลตรวจ Lab2: protein+ / C3<90, C4<10",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -2183,7 +2182,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 และ/หรือ C4 < LLN";
+              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
@@ -2851,4 +2850,3 @@
     defs: ADR_DEFS
   };
 })();
-```
