@@ -2042,7 +2042,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
+              let txt = "C3 และ/หรือ C4 < LLN";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
@@ -2182,7 +2182,7 @@
               details.push(txt);
             }
             if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 < 90 mg/dL, C4 < 10 mg/dL";
+              let txt = "C3 และ/หรือ C4 < LLN";
               const parts = [];
               if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
               if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
