@@ -77,8 +77,8 @@
       emoji: "❤️",
       items: [
         { key: "ekg_abnormal", label: "EKG ผิดปกติ", unit: "" },
-        { key: "tropi_gt004", label: "Troponin I >0.04 ng/mL", unit: "ng/mL" },
-        { key: "tropt_gt001_003", label: "Troponin T > 0.01-0.03 ng/mL", unit: "ng/mL" }
+        { key: "tropi_gt004", label: "Troponin I > ULN", unit: "ng/mL" },
+        { key: "tropt_gt001_003", label: "Troponin T > ULN", unit: "ng/mL" }
       ]
     },
     {
@@ -88,7 +88,7 @@
       items: [
         { key: "igg_pos", label: "IgG+", unit: "" },
         { key: "c3_pos", label: "C3+", unit: "" },
-        { key: "c3c4_low", label: "C3<90 mg/dL, C4<10 mg/dL", unit: "mg/dL" }
+        { key: "c3c4_low", label: "C3 และ/หรือ C4 < LLN", unit: "mg/dL" }
       ]
     },
     {
