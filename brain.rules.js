@@ -2043,12 +2043,7 @@
             }
             if (hasLabToken(c, "c3c4_low")) {
               let txt = "C3 และ/หรือ C4 < LLN";
-              const parts = [];
-              if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
-              if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
-              if (parts.length) txt += ` (${parts.join(", ")})`;
-              details.push(txt);
-            }
+              
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2183,12 +2178,7 @@
             }
             if (hasLabToken(c, "c3c4_low")) {
               let txt = "C3 และ/หรือ C4 < LLN";
-              const parts = [];
-              if (Number.isFinite(c.c3)) parts.push(`C3 ${c.c3}`);
-              if (Number.isFinite(c.c4)) parts.push(`C4 ${c.c4}`);
-              if (parts.length) txt += ` (${parts.join(", ")})`;
-              details.push(txt);
-            }
+            
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
