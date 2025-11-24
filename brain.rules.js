@@ -2032,7 +2032,7 @@
         },
         {
           id: "lab1",
-          label: "ผลตรวจ Lab: protein+ / C3<90, C4<10",
+          label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
           weight: 1,
           check: (c) => {
             const details = [];
@@ -2172,7 +2172,7 @@
         },
         {
           id: "lab2",
-          label: "ผลตรวจ Lab2: protein+ / C3<90, C4<10",
+          label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
           weight: 1,
           check: (c) => {
             const details = [];
