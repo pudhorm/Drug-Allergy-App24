@@ -2031,22 +2031,24 @@
           }
         },
         {
-          id: "lab1",
-          label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
-          weight: 1,
-          check: (c) => {
-            const details = [];
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
-            }
-            if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 และ/หรือ C4 < LLN";
-              
-            return details.length ? { ok: true, details } : { ok: false };
-          }
-        },
+  id: "lab1",
+  label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
+  weight: 1,
+  check: (c) => {
+    const details = [];
+    if (hasLabToken(c, "protein_pos")) {
+      let txt = "protein+ ในปัสสาวะ";
+      if (c.protU) txt += ` (${c.protU})`;
+      details.push(txt);
+    }
+    if (hasLabToken(c, "c3c4_low")) {
+      // ไม่เอาตัวเลข C3 / C4 ต่อท้ายแล้ว
+      details.push("C3 และ/หรือ C4 < LLN");
+    }
+    return details.length ? { ok: true, details } : { ok: false };
+  }
+},
+
         {
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
@@ -2165,23 +2167,25 @@
           check: (c) =>
             onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
-        {
-          id: "lab2",
-          label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
-          weight: 1,
-          check: (c) => {
-            const details = [];
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
-            }
-            if (hasLabToken(c, "c3c4_low")) {
-              let txt = "C3 และ/หรือ C4 < LLN";
-            
-            return details.length ? { ok: true, details } : { ok: false };
-          }
-        },
+       {
+  id: "lab2",
+  label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
+  weight: 1,
+  check: (c) => {
+    const details = [];
+    if (hasLabToken(c, "protein_pos")) {
+      let txt = "protein+ ในปัสสาวะ";
+      if (c.protU) txt += ` (${c.protU})`;
+      details.push(txt);
+    }
+    if (hasLabToken(c, "c3c4_low")) {
+      // ตัดตัวเลข C3 / C4 ออก
+      details.push("C3 และ/หรือ C4 < LLN");
+    }
+    return details.length ? { ok: true, details } : { ok: false };
+  }
+},
+
         {
           id: "lab3",
           label:
