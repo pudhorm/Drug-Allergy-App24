@@ -1061,13 +1061,15 @@
           id: "shape",
           label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
-          check: (c) => {
-            const details = detailFromList(c.shapes, [
-              "วงกลมคล้ายเป้าธนู",
-              "เป้าธนูไม่ครบ 3 ชั้น"
-            ]);
-            return details.length ? { ok: true, details } : { ok: false };
-          }
+        check: (c) => {
+        const details = detailFromList(c.shapes, [
+          "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)", // ตรงกับข้อความ checkbox หน้า 1
+          "วงกลมคล้ายเป้าธนู",                // เผื่อเคยใช้ข้อความสั้น
+          "เป้าธนูไม่ครบ 3 ชั้น"               // เผื่อรูปแบบเก่า
+        ]);
+        return details.length ? { ok: true, details } : { ok: false };
+      }
+
         },
         {
           id: "color",
@@ -1518,13 +1520,15 @@
           id: "typical",
           label: "ลักษณะสำคัญ (x3): วงกลม 3 ชั้น (เป้าธนู)",
           weight: 3,
-          check: (c) => {
-            const details = detailFromList(c.shapes, [
-              "วงกลม 3 ชั้น",
-              "เป้าธนู 3 ชั้น"
-            ]);
-            return details.length ? { ok: true, details } : { ok: false };
-          }
+        check: (c) => {
+        const details = detailFromList(c.shapes, [
+          "วงกลม 3 ชั้น (เป้าธนู)", // ตรงกับข้อความ checkbox ใหม่
+          "วงกลม 3 ชั้น",
+          "เป้าธนู 3 ชั้น"
+        ]);
+        return details.length ? { ok: true, details } : { ok: false };
+      }
+
         },
         {
           id: "skin_extra",
