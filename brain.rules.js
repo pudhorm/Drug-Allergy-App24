@@ -1697,7 +1697,7 @@
           check: (c) => {
             const details = [];
             if (c.exSerous) details.push("น้ำเหลือง");
-            if (c.scaleCrust || c.exCrust) details.push("สะเก็ด/ขุย");
+            if (c.scaleCrust || c.exCrust) details.push("สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1711,7 +1711,7 @@
             if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
             if (c.scalePeel) details.push("ลอก");
-            if (c.scaleDry) details.push("ขุย/แห้ง");
+            if (c.scaleDry) details.push("ขุย");
             if (c.itch) details.push("คัน");
             return details.length ? { ok: true, details } : { ok: false };
           }
