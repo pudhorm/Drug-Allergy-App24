@@ -1106,7 +1106,7 @@
             if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
             if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("ตุ่มหนอง/น้ำเหลือง");
+            if (c.pustule) details.push("น้ำเหลือง");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
