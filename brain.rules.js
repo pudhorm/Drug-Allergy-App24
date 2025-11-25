@@ -1680,16 +1680,16 @@
           }
         },
         {
-          id: "burn_major",
-          label: "ลักษณะสำคัญ (x2): แดงไหม้/แสบ",
-          weight: 2,
-          check: (c) => {
-            const details = [];
-            if (hasAny(c.colors, ["แดงไหม้"])) details.push("แดงไหม้");
-            if (c.burn) details.push("แสบ");
-            return details.length ? { ok: true, details } : { ok: false };
-          }
-        },
+  id: "burn_major",
+  label: "ลักษณะสำคัญ (x2): แดงไหม้",
+  weight: 2,
+  check: (c) => {
+    const details = [];
+    if (hasAny(c.colors, ["แดงไหม้"])) details.push("แดงไหม้");
+    return details.length ? { ok: true, details } : { ok: false };
+  }
+},
+
         {
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: น้ำเหลือง/สะเก็ด",
