@@ -110,24 +110,6 @@
     return String(x).trim();
   }
 
-  // helper สำหรับ field แบบ checkbox/boolean (ใช้กับ 1.3, 1.5, 1.6, 1.8 และช่องอื่นๆ)
-  function boolField(x) {
-    if (x == null) return false;
-    if (typeof x === "object") {
-      if ("has" in x) return flag(x.has);
-      if ("checked" in x) return flag(x.checked);
-      if ("value" in x) return flag(x.value);
-      return flag(x);
-    }
-    return flag(x);
-  }
-
-  function subBool(obj, key) {
-    if (!obj || typeof obj !== "object") return false;
-    if (!(key in obj)) return false;
-    return boolField(obj[key]);
-  }
-
   function normOnset(str) {
     return String(str || "")
       .replace(/[–—−]/g, "-")
@@ -293,48 +275,23 @@
     const onsetRaw = onsetInfo.raw;
     const onsetCat = onsetInfo.cat;
 
-    // 1.7 คัน / 1.9 บวม / 1.8 ปวด-แสบ-เจ็บ (รองรับทั้ง boolean ตรงๆ และ object)
-    const itch = boolField(p1.itch);
-    const swell = boolField(p1.swelling || p1.edema);
-    const pain = boolField(p1.pain);
-    const burn = boolField(p1.burn);
+    const itch = !!(p1.itch && flag(p1.itch.has));
+    const swell = !!(p1.swelling && flag(p1.swelling.has));
+    const pain = !!(p1.pain && flag(p1.pain.has));
+    const burn = !!(p1.burn && flag(p1.burn.has));
 
-    // 1.6 น้ำเหลือง / สะเก็ด — เผื่อ key หลายแบบ
-    const exud =
-      p1.exudate || p1.exud || p1.ooze || p1.exudateFluid || p1.exudateCrust || {};
-    const hasSerousOoze = boolField(
-      (exud && (exud.serous || exud.namLueang || exud.serum)) || p1.namLueang
-    );
-    const hasCrustExud = boolField(
-      (exud && (exud.crust || exud.sakad || exud.crusted)) ||
-        p1.crust ||
-        p1.scaleCrust
-    );
+    const bullaeSmall = !!(p1.blister && flag(p1.blister.small));
+    const bullaeMed = !!(p1.blister && flag(p1.blister.medium));
+    const bullaeLarge = !!(p1.blister && flag(p1.blister.large));
 
-    // 1.3 ตุ่มน้ำ (เล็ก/กลาง/ใหญ่) — รองรับทั้ง p1.bullaeSmall และ p1.blister.small
-    const bullaeSmall =
-      boolField(p1.bullaeSmall || p1.blisterSmall) || subBool(p1.blister, "small");
-    const bullaeMed =
-      boolField(p1.bullaeMedium || p1.bullaeMed || p1.blisterMedium) ||
-      subBool(p1.blister, "medium");
-    const bullaeLarge =
-      boolField(p1.bullaeLarge || p1.blisterLarge) || subBool(p1.blister, "large");
+    const pustule = !!(p1.pustule && flag(p1.pustule.has));
+    const peelCenter = !!(p1.skinDetach && flag(p1.skinDetach.center));
+    const peelLt10 = !!(p1.skinDetach && flag(p1.skinDetach.lt10));
+    const peelGt30 = !!(p1.skinDetach && flag(p1.skinDetach.gt30));
 
-    // ตุ่มหนอง / น้ำเหลือง ใช้ร่วมกันใน rule ที่พูดถึง "น้ำเหลือง"
-    const pustule = boolField(p1.pustule) || hasSerousOoze;
-
-    // ผิวหลุดลอก 1.4
-    const skinDetach = p1.skinDetach || p1.peeling || {};
-    const peelCenter = subBool(skinDetach, "center");
-    const peelLt10 = subBool(skinDetach, "lt10");
-    const peelGt30 = subBool(skinDetach, "gt30");
-
-    // 1.5 ขุย / แห้ง / ลอก — map เข้า scaleDry / scalePeel / scaleCrust
-    const scale = p1.scale || p1.scaling || {};
-    const scaleDry = boolField(p1.scaleDry) || subBool(scale, "dry");
-    const scalePeel = boolField(p1.scalePeel) || subBool(scale, "peel");
-    const scaleCrust =
-      boolField(p1.scaleCrust) || subBool(scale, "crust") || hasCrustExud;
+    const scaleDry = !!(p1.scale && flag(p1.scale.dry));
+    const scalePeel = !!(p1.scale && flag(p1.scale.peel));
+    const scaleCrust = !!(p1.scale && flag(p1.scale.crust));
 
     const mucosalCountGt1 = !!p1.mucosalCountGt1 || !!p1.sjs_mucosal_gt1;
 
@@ -1104,14 +1061,14 @@
           id: "shape",
           label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
-          check: (c) => {
-            const details = detailFromList(c.shapes, [
-              "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)", // ตรงกับข้อความ checkbox หน้า 1
-              "วงกลมคล้ายเป้าธนู",                // เผื่อเคยใช้ข้อความสั้น
-              "เป้าธนูไม่ครบ 3 ชั้น"               // เผื่อรูปแบบเก่า
-            ]);
-            return details.length ? { ok: true, details } : { ok: false };
-          }
+        check: (c) => {
+        const details = detailFromList(c.shapes, [
+          "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)", // ตรงกับข้อความ checkbox หน้า 1
+          "วงกลมคล้ายเป้าธนู",                // เผื่อเคยใช้ข้อความสั้น
+          "เป้าธนูไม่ครบ 3 ชั้น"               // เผื่อรูปแบบเก่า
+        ]);
+        return details.length ? { ok: true, details } : { ok: false };
+      }
 
         },
         {
@@ -1563,14 +1520,14 @@
           id: "typical",
           label: "ลักษณะสำคัญ (x3): วงกลม 3 ชั้น (เป้าธนู)",
           weight: 3,
-          check: (c) => {
-            const details = detailFromList(c.shapes, [
-              "วงกลม 3 ชั้น (เป้าธนู)", // ตรงกับข้อความ checkbox ใหม่
-              "วงกลม 3 ชั้น",
-              "เป้าธนู 3 ชั้น"
-            ]);
-            return details.length ? { ok: true, details } : { ok: false };
-          }
+        check: (c) => {
+        const details = detailFromList(c.shapes, [
+          "วงกลม 3 ชั้น (เป้าธนู)", // ตรงกับข้อความ checkbox ใหม่
+          "วงกลม 3 ชั้น",
+          "เป้าธนู 3 ชั้น"
+        ]);
+        return details.length ? { ok: true, details } : { ok: false };
+      }
 
         },
         {
@@ -2078,22 +2035,23 @@
           }
         },
         {
-          id: "lab1",
-          label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
-          weight: 1,
-          check: (c) => {
-            const details = [];
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
-            }
-            if (hasLabToken(c, "c3c4_low")) {
-              details.push("C3 และ/หรือ C4 < LLN");
-            }
-            return details.length ? { ok: true, details } : { ok: false };
-          }
-        },
+  id: "lab1",
+  label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
+  weight: 1,
+  check: (c) => {
+    const details = [];
+    if (hasLabToken(c, "protein_pos")) {
+      let txt = "protein+ ในปัสสาวะ";
+      if (c.protU) txt += ` (${c.protU})`;
+      details.push(txt);
+    }
+    if (hasLabToken(c, "c3c4_low")) {
+      // ไม่เอาตัวเลข C3 / C4 ต่อท้ายแล้ว
+      details.push("C3 และ/หรือ C4 < LLN");
+    }
+    return details.length ? { ok: true, details } : { ok: false };
+  }
+},
 
         {
           id: "onset",
@@ -2213,23 +2171,24 @@
           check: (c) =>
             onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
-        {
-          id: "lab2",
-          label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
-          weight: 1,
-          check: (c) => {
-            const details = [];
-            if (hasLabToken(c, "protein_pos")) {
-              let txt = "protein+ ในปัสสาวะ";
-              if (c.protU) txt += ` (${c.protU})`;
-              details.push(txt);
-            }
-            if (hasLabToken(c, "c3c4_low")) {
-              details.push("C3 และ/หรือ C4 < LLN");
-            }
-            return details.length ? { ok: true, details } : { ok: false };
-          }
-        },
+       {
+  id: "lab2",
+  label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
+  weight: 1,
+  check: (c) => {
+    const details = [];
+    if (hasLabToken(c, "protein_pos")) {
+      let txt = "protein+ ในปัสสาวะ";
+      if (c.protU) txt += ` (${c.protU})`;
+      details.push(txt);
+    }
+    if (hasLabToken(c, "c3c4_low")) {
+      // ตัดตัวเลข C3 / C4 ออก
+      details.push("C3 และ/หรือ C4 < LLN");
+    }
+    return details.length ? { ok: true, details } : { ok: false };
+  }
+},
 
         {
           id: "lab3",
@@ -2885,7 +2844,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-20-21ADR-LABTOKENS-FDE-MUANGx3-NOTBLACK-FIX-BLISTER-SCALE-EXUD-PAIN",
+    version: "2025-11-20-21ADR-LABTOKENS-FDE-MUANGx3-NOTBLACK",
     defs: ADR_DEFS
   };
 })();
