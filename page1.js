@@ -409,13 +409,22 @@
       store.rashShapes = SHAPES.filter((s,i)=>document.getElementById("shape_"+i).checked);
       store.rashColors = COLORS.filter((c,i)=>document.getElementById("color_"+i).checked);
 
+      // 1.3 ตุ่มน้ำ
       store.blisters = {
         small:document.getElementById("blister_small").checked,
         medium:document.getElementById("blister_medium").checked,
         large:document.getElementById("blister_large").checked,
         other:document.getElementById("blister_other").value
       };
+      // 🔁 ทำสำเนาไป field เดิม "blister" ให้สมองดึงใช้ได้
+      store.blister = {
+        small: store.blisters.small,
+        medium: store.blisters.medium,
+        large: store.blisters.large,
+        other: store.blisters.other
+      };
 
+      // 1.4 ผิวหนังหลุดลอก
       store.skinDetach = {
         center:document.getElementById("detach_center").checked,
         lt10:document.getElementById("detach_lt10").checked,
@@ -424,6 +433,7 @@
         other:document.getElementById("detach_other").value
       };
 
+      // 1.5 ขุย / แห้ง / ลอก
       store.scales = {
         scale:document.getElementById("scale_scale").checked,
         dry:document.getElementById("scale_dry").checked,
@@ -431,7 +441,14 @@
         none:document.getElementById("scale_none").checked,
         other:document.getElementById("scale_other").value
       };
+      // 🔁 map ไป field เดิม "scale" เพื่อให้สมองอ่าน dry/peel/crust ได้
+      store.scale = {
+        dry: store.scales.dry,
+        peel: store.scales.peel,
+        crust: store.scales.scale // ใช้ "ขุย" เป็น crust
+      };
 
+      // 1.6 น้ำเหลือง / สะเก็ด
       store.exudate = {
         serous:document.getElementById("ex_serous").checked,
         crust:document.getElementById("ex_crust").checked,
@@ -446,12 +463,18 @@
         none:document.getElementById("itch_none").checked
       };
 
-      // ✅ 1.8 ตัด "ตึง" ออกแล้ว
+      // ✅ 1.8 ปวด / แสบ / เจ็บ
       store.pain = {
         pain:document.getElementById("pain_pain").checked,
         burn:document.getElementById("pain_burn").checked,
         sore:document.getElementById("pain_sore").checked,
         none:document.getElementById("pain_none").checked
+      };
+      // flag รวมให้สมองใช้ (pain.has = มีปวด/เจ็บอย่างน้อยหนึ่ง)
+      store.pain.has = !!(store.pain.pain || store.pain.sore);
+      // field burn แยกตามโครงเก่า (burn.has)
+      store.burn = {
+        has: !!store.pain.burn
       };
 
       store.swelling = {
