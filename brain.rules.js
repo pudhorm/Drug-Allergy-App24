@@ -1221,7 +1221,7 @@
           check: (c) => {
             const details = [];
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("น้ำเหลือง/ตุ่มหนอง");
+            if (c.pustule) details.push("ตุ่มหนอง");
             if (c.scaleCrust) details.push("สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1382,7 +1382,7 @@
             if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
             if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("ตุ่มหนอง/จ้ำเลือด");
+            if (c.pustule) details.push("ตุ่มหนอง");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
