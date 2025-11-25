@@ -1681,7 +1681,7 @@
         },
         {
           id: "burn_major",
-          label: "ลักษณะสำคัญ (x2): แดงไหม้",
+          label: "ลักษณะสำคัญ (x2): แดงไหม้/แสบ",
           weight: 2,
           check: (c) => {
             const details = [];
