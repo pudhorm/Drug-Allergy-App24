@@ -89,7 +89,7 @@
     if (x == null) return "";
     if (typeof x === "object") {
       const hasGate =
-        "use" in x || "checked" in x || "tick" in x || "on" in x || "selected" in x;
+        "use" in x || "checked" in x || "tick" in x || "on" || "selected" in x;
       const used =
         flag(x.use) ||
         flag(x.checked) ||
@@ -277,21 +277,67 @@
 
     const itch = !!(p1.itch && flag(p1.itch.has));
     const swell = !!(p1.swelling && flag(p1.swelling.has));
-    const pain = !!(p1.pain && flag(p1.pain.has));
-    const burn = !!(p1.burn && flag(p1.burn.has));
 
-    const bullaeSmall = !!(p1.blister && flag(p1.blister.small));
-    const bullaeMed = !!(p1.blister && flag(p1.blister.medium));
-    const bullaeLarge = !!(p1.blister && flag(p1.blister.large));
+    // 1.8 ปวด / แสบ / เจ็บ → map จากโครงสร้างใหม่ pain.pain / pain.sore / pain.burn
+    const pain =
+      !!(
+        p1.pain &&
+        (flag(p1.pain.pain) ||
+          flag(p1.pain.sore) ||
+          flag(p1.pain.has))
+      );
 
+    const burn =
+      !!(
+        (p1.pain && flag(p1.pain.burn)) ||
+        (p1.burn && flag(p1.burn.has))
+      );
+
+    // 1.3 ตุ่มน้ำ — รองรับทั้ง field เก่า blister และ field ใหม่ blisters
+    const bullaeSmall =
+      !!(
+        (p1.blister && flag(p1.blister.small)) ||
+        (p1.blisters && flag(p1.blisters.small))
+      );
+    const bullaeMed =
+      !!(
+        (p1.blister && flag(p1.blister.medium)) ||
+        (p1.blisters && flag(p1.blisters.medium))
+      );
+    const bullaeLarge =
+      !!(
+        (p1.blister && flag(p1.blister.large)) ||
+        (p1.blisters && flag(p1.blisters.large))
+      );
+
+    // 1.6 น้ำเหลือง / สะเก็ด
+    const exSerous = !!(p1.exudate && flag(p1.exudate.serous)); // น้ำเหลือง
+    const exCrust = !!(p1.exudate && flag(p1.exudate.crust));   // สะเก็ด
+
+    // 1.10 ตุ่มหนอง (ยังคงใช้ field เดิม)
     const pustule = !!(p1.pustule && flag(p1.pustule.has));
+
     const peelCenter = !!(p1.skinDetach && flag(p1.skinDetach.center));
     const peelLt10 = !!(p1.skinDetach && flag(p1.skinDetach.lt10));
     const peelGt30 = !!(p1.skinDetach && flag(p1.skinDetach.gt30));
 
-    const scaleDry = !!(p1.scale && flag(p1.scale.dry));
-    const scalePeel = !!(p1.scale && flag(p1.scale.peel));
-    const scaleCrust = !!(p1.scale && flag(p1.scale.crust));
+    // 1.5 ขุย / แห้ง / ลอก + ผูกกับ 1.6 "สะเก็ด" ให้ใช้ร่วมใน scaleCrust
+    const scaleDry =
+      !!(
+        (p1.scale && flag(p1.scale.dry)) ||
+        (p1.scales && flag(p1.scales.dry))
+      );
+    const scalePeel =
+      !!(
+        (p1.scale && flag(p1.scale.peel)) ||
+        (p1.scales && flag(p1.scales.peel))
+      );
+    const scaleCrust =
+      !!(
+        (p1.scale && flag(p1.scale.crust)) ||   // โครงเก่า
+        (p1.scales && flag(p1.scales.scale)) || // "ขุย" จาก 1.5
+        exCrust                                 // "สะเก็ด" จาก 1.6
+      );
 
     const mucosalCountGt1 = !!p1.mucosalCountGt1 || !!p1.sjs_mucosal_gt1;
 
@@ -415,6 +461,8 @@
       scaleDry,
       scalePeel,
       scaleCrust,
+      exSerous,
+      exCrust,
       mucosalCountGt1,
       dyspnea,
       wheeze,
@@ -847,7 +895,6 @@
           label: "สี: แดง/ดำ-คล้ำ",
           weight: 1,
           check: (c) => {
-            // ข้อ 2 สี: แดง, ดำ/คล้ำ (น้ำหนักปกติ)
             const details = detailFromList(c.colors, [
               "แดง",
               "ดำ/คล้ำ",
@@ -862,7 +909,6 @@
           label: "ลักษณะสำคัญ (พบมาก) (x3): ม่วง/คล้ำ",
           weight: 3,
           check: (c) => {
-            // ข้อ 3 ลักษณะสำคัญ: ให้คิดคะแนนเฉพาะ ม่วง/คล้ำ (และรองรับคำว่า ม่วง ถ้ามี)
             const details = detailFromList(c.colors, [
               "ม่วง/คล้ำ",
               "ม่วง"
@@ -999,7 +1045,7 @@
             if (hasAny(c.shapes, ["จ้ำเลือด"])) details.push("จ้ำเลือด");
             if (c.scaleDry) details.push("แห้ง");
             if (c.scalePeel) details.push("ลอก");
-            if (c.scaleCrust) details.push("ขุย");
+            if (c.scaleCrust) details.push("ขุย/สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1061,15 +1107,14 @@
           id: "shape",
           label: "รูปร่าง: วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
           weight: 1,
-        check: (c) => {
-        const details = detailFromList(c.shapes, [
-          "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)", // ตรงกับข้อความ checkbox หน้า 1
-          "วงกลมคล้ายเป้าธนู",                // เผื่อเคยใช้ข้อความสั้น
-          "เป้าธนูไม่ครบ 3 ชั้น"               // เผื่อรูปแบบเก่า
-        ]);
-        return details.length ? { ok: true, details } : { ok: false };
-      }
-
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "วงกลมคล้ายเป้าธนู (ไม่ครบ 3 ชั้น)",
+              "วงกลมคล้ายเป้าธนู",
+              "เป้าธนูไม่ครบ 3 ชั้น"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "color",
@@ -1106,7 +1151,7 @@
             if (c.bullaeSmall) details.push("ตุ่มน้ำขนาดเล็ก");
             if (c.bullaeMed) details.push("ตุ่มน้ำขนาดกลาง");
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("น้ำเหลือง");
+            if (c.exSerous || c.pustule) details.push("น้ำเหลือง");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1221,7 +1266,7 @@
           check: (c) => {
             const details = [];
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("ตุ่มหนอง");
+            if (c.pustule) details.push("ตุ่มหนอง/น้ำเหลือง");
             if (c.scaleCrust) details.push("สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1520,15 +1565,14 @@
           id: "typical",
           label: "ลักษณะสำคัญ (x3): วงกลม 3 ชั้น (เป้าธนู)",
           weight: 3,
-        check: (c) => {
-        const details = detailFromList(c.shapes, [
-          "วงกลม 3 ชั้น (เป้าธนู)", // ตรงกับข้อความ checkbox ใหม่
-          "วงกลม 3 ชั้น",
-          "เป้าธนู 3 ชั้น"
-        ]);
-        return details.length ? { ok: true, details } : { ok: false };
-      }
-
+          check: (c) => {
+            const details = detailFromList(c.shapes, [
+              "วงกลม 3 ชั้น (เป้าธนู)",
+              "วงกลม 3 ชั้น",
+              "เป้าธนู 3 ชั้น"
+            ]);
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "skin_extra",
@@ -1650,10 +1694,12 @@
           id: "skin_extra",
           label: "อาการเพิ่มเติมทางผิวหนัง: น้ำเหลือง/สะเก็ด",
           weight: 1,
-          check: (c) =>
-            c.scaleCrust
-              ? { ok: true, details: ["สะเก็ด/น้ำเหลืองแห้ง"] }
-              : { ok: false }
+          check: (c) => {
+            const details = [];
+            if (c.exSerous) details.push("น้ำเหลือง");
+            if (c.scaleCrust || c.exCrust) details.push("สะเก็ด/ขุย");
+            return details.length ? { ok: true, details } : { ok: false };
+          }
         },
         {
           id: "may",
@@ -1860,7 +1906,8 @@
           check: (c) => {
             const details = [];
             if (hasAny(c.shapes, ["จุดเล็กแดง"])) details.push("จุดเล็กแดง");
-            if (c.scaleCrust) details.push("น้ำเหลือง/สะเก็ด");
+            if (c.exSerous) details.push("น้ำเหลือง");
+            if (c.scaleCrust || c.exCrust) details.push("สะเก็ด/ขุย");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -2035,24 +2082,22 @@
           }
         },
         {
-  id: "lab1",
-  label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
-  weight: 1,
-  check: (c) => {
-    const details = [];
-    if (hasLabToken(c, "protein_pos")) {
-      let txt = "protein+ ในปัสสาวะ";
-      if (c.protU) txt += ` (${c.protU})`;
-      details.push(txt);
-    }
-    if (hasLabToken(c, "c3c4_low")) {
-      // ไม่เอาตัวเลข C3 / C4 ต่อท้ายแล้ว
-      details.push("C3 และ/หรือ C4 < LLN");
-    }
-    return details.length ? { ok: true, details } : { ok: false };
-  }
-},
-
+          id: "lab1",
+          label: "ผลตรวจ Lab: protein+ / C3 และ/หรือ C4 < LLN",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (hasLabToken(c, "protein_pos")) {
+              let txt = "protein+ ในปัสสาวะ";
+              if (c.protU) txt += ` (${c.protU})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "c3c4_low")) {
+              details.push("C3 และ/หรือ C4 < LLN");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
         {
           id: "onset",
           label: "ระยะเวลาการเกิด: 1–6 ชม./6–24 ชม./1–3 สัปดาห์",
@@ -2171,25 +2216,23 @@
           check: (c) =>
             onsetIsAny(c, ["h1to6", "h6to24", "w1", "w2", "w3"])
         },
-       {
-  id: "lab2",
-  label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
-  weight: 1,
-  check: (c) => {
-    const details = [];
-    if (hasLabToken(c, "protein_pos")) {
-      let txt = "protein+ ในปัสสาวะ";
-      if (c.protU) txt += ` (${c.protU})`;
-      details.push(txt);
-    }
-    if (hasLabToken(c, "c3c4_low")) {
-      // ตัดตัวเลข C3 / C4 ออก
-      details.push("C3 และ/หรือ C4 < LLN");
-    }
-    return details.length ? { ok: true, details } : { ok: false };
-  }
-},
-
+        {
+          id: "lab2",
+          label: "ผลตรวจ Lab2: protein+ / C3 และ/หรือ C4 < LLN",
+          weight: 1,
+          check: (c) => {
+            const details = [];
+            if (hasLabToken(c, "protein_pos")) {
+              let txt = "protein+ ในปัสสาวะ";
+              if (c.protU) txt += ` (${c.protU})`;
+              details.push(txt);
+            }
+            if (hasLabToken(c, "c3c4_low")) {
+              details.push("C3 และ/หรือ C4 < LLN");
+            }
+            return details.length ? { ok: true, details } : { ok: false };
+          }
+        },
         {
           id: "lab3",
           label:
@@ -2844,7 +2887,7 @@
   window.brainComputeAndRender = brainComputeAndRender;
   window.brainRules = {
     mode: "C",
-    version: "2025-11-20-21ADR-LABTOKENS-FDE-MUANGx3-NOTBLACK",
+    version: "2025-11-20-21ADR-LABTOKENS-FDE-MUANGx3-NOTBLACK-P1BLISTER-SCALE-PAIN-EXUDATE",
     defs: ADR_DEFS
   };
 })();
