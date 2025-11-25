@@ -741,7 +741,7 @@
           weight: 1,
           check: (c) => {
             const details = [];
-            if (c.burn || c.pain) details.push("ผิวหนังตึง/เจ็บ/แสบ");
+            if (c.burn || c.pain) details.push("ผิวหนังตึง");
             if (hasAny(c.shapes, ["ตึง"])) details.push("ตึง");
             return details.length ? { ok: true, details } : { ok: false };
           }
