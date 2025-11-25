@@ -1045,7 +1045,7 @@
             if (hasAny(c.shapes, ["จ้ำเลือด"])) details.push("จ้ำเลือด");
             if (c.scaleDry) details.push("แห้ง");
             if (c.scalePeel) details.push("ลอก");
-            if (c.scaleCrust) details.push("ขุย/สะเก็ด");
+            if (c.scaleCrust) details.push("ขุย");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
@@ -1266,7 +1266,7 @@
           check: (c) => {
             const details = [];
             if (c.bullaeLarge) details.push("ตุ่มน้ำขนาดใหญ่");
-            if (c.pustule) details.push("ตุ่มหนอง/น้ำเหลือง");
+            if (c.pustule) details.push("น้ำเหลือง");
             if (c.scaleCrust) details.push("สะเก็ด");
             return details.length ? { ok: true, details } : { ok: false };
           }
@@ -1686,7 +1686,7 @@
           check: (c) => {
             const details = [];
             if (hasAny(c.colors, ["แดงไหม้"])) details.push("แดงไหม้");
-            if (c.burn) details.push("แสบ/ไหม้แดด");
+            if (c.burn) details.push("แสบ");
             return details.length ? { ok: true, details } : { ok: false };
           }
         },
